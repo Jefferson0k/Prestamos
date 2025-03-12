@@ -1,12 +1,16 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
-
 class PrestamosModelo extends Model{
-    protected $table = 'clientes';
+    protected $table = 'prestamos';
     protected $fillable = [
-
+        'cliente_id', 'fecha_inicio', 'fecha_vencimiento', 'capital', 'numero_cuotas', 'estado_cliente', 'recomendacion', 'tasa_interes_diario'
     ];
+    public function cliente(){
+        return $this->belongsTo(ClienteModelo::class, 'cliente_id');
+    }
+    public function pagos(){
+        return $this->hasMany(PagosModelo::class, 'prestamo_id');
+    }
 }
