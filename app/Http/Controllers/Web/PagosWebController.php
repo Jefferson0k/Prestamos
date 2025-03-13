@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
-class ClienteWebController extends Controller{
+class PagosWebController extends Controller{
     public function index(): Response{
-        return Inertia::render('Cliente/indexCliente');
+        return Inertia::render('Pagos/indexPagos');
     }
 }
