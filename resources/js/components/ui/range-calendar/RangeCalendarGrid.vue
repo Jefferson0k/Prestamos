@@ -1,9 +1,9 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { cn } from '@/lib/utils'
-import { DialogDescription, type DialogDescriptionProps, useForwardProps } from 'reka-ui'
+import { RangeCalendarGrid, type RangeCalendarGridProps, useForwardProps } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
 
-const props = defineProps<DialogDescriptionProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<RangeCalendarGridProps & { class?: HTMLAttributes['class'] }>()
 
 const delegatedProps = computed(() => {
   const { class: _, ...delegated } = props
@@ -15,10 +15,10 @@ const forwardedProps = useForwardProps(delegatedProps)
 </script>
 
 <template>
-  <DialogDescription
+  <RangeCalendarGrid
+    :class="cn('w-full border-collapse space-y-1', props.class)"
     v-bind="forwardedProps"
-    :class="cn('text-sm text-muted-foreground', props.class)"
   >
     <slot />
-  </DialogDescription>
+  </RangeCalendarGrid>
 </template>
