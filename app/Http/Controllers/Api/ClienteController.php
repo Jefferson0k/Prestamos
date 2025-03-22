@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ClienteRequest;
+use App\Http\Requests\Cliente\StoreClienteRequest;
+use App\Http\Requests\Cliente\UpdateClienteRequest;
 use App\Http\Resources\ClienteResource;
 use App\Models\ClienteModelo;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
-class ClienteController extends Controller {    
+class ClienteController extends Controller {
     public function index() {
         return ClienteResource::collection(ClienteModelo::all());
     }
-    public function store(ClienteRequest $request) {
+    public function store(StoreClienteRequest $request) {
         $data = $request->validated();
         $data['foto'] = $this->handleFotoUpload($request);
         $cliente = ClienteModelo::create($data);
@@ -23,7 +24,7 @@ class ClienteController extends Controller {
     public function show(ClienteModelo $cliente) {
         return response()->json($cliente);
     }
-    public function update(ClienteRequest $request, ClienteModelo $cliente) {
+    public function update(UpdateClienteRequest $request, ClienteModelo $cliente) {
         $data = $request->validated();
         $data['foto'] = $this->handleFotoUpload($request, $cliente);
         $cliente->update($data);
@@ -42,11 +43,13 @@ class ClienteController extends Controller {
     private function handleFotoUpload(Request $request, ClienteModelo $cliente = null) {
         if (!$request->hasFile('foto')) return $cliente?->foto;
         if ($cliente && $cliente->foto) {
-            Storage::delete('public/clientes/' . $cliente->foto);
+            if (file_exists(public_path('clientes/' . $cliente->foto))) {
+                unlink(public_path('clientes/' . $cliente->foto));
+            }
         }
         $file = $request->file('foto');
         $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->storeAs('public/clientes', $fileName);
+        $file->move(public_path('clientes'), $fileName);
         return $fileName;
     }
 }

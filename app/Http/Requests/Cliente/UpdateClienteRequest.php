@@ -1,9 +1,9 @@
 <?php
-namespace App\Http\Requests;
+namespace App\Http\Requests\Cliente;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ClienteRequest extends FormRequest {
+class UpdateClienteRequest extends FormRequest {
     public function authorize() {
         return true;
     }
@@ -41,7 +41,6 @@ class ClienteRequest extends FormRequest {
             'telefono.required' => 'El teléfono es obligatorio.',
             'telefono.numeric' => 'El teléfono debe contener solo números.',
             'telefono.min_digits' => 'El teléfono debe tener al menos 9 dígitos.',
-            //'telefono.max' => 'El teléfono no puede tener más de 10 dígitos.',
 
             'direccion.required' => 'La dirección es obligatoria.',
             'direccion.string' => 'La dirección debe ser una cadena de texto.',
