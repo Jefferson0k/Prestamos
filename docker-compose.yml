@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   app:
     build:
@@ -8,10 +10,9 @@ services:
     volumes:
       - .:/var/www
     depends_on:
-      mysql:
-        condition: service_healthy
+      - postgres
     networks:
-      - prestamo_red
+      - prestamo
 
   nginx:
     image: nginx:latest
@@ -25,58 +26,47 @@ services:
     depends_on:
       - app
     networks:
-      - prestamo_red
+      - prestamo
 
-  mysql:
-    image: mysql:8.0
-    container_name: prestamo_mysql
+  postgres:
+    image: postgres:16.8
+    container_name: prestamo_postgres
     restart: always
-    command: --default-authentication-plugin=mysql_native_password
+    shm_size: 128mb
     environment:
-      MYSQL_DATABASE: prestamo
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: prestamo_user
-      MYSQL_PASSWORD: password
+      POSTGRES_USER: prestamo_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: prestamo
     ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - prestamo_red
+      - prestamo
 
-  phpmyadmin:
-    image: phpmyadmin:5.2.1
-    container_name: prestamo_phpmyadmin
+  adminer:
+    image: adminer:latest
+    container_name: prestamo_adminer
     restart: always
     ports:
-      - "8080:80"
+      - "8080:8080"
     environment:
-      PMA_HOST: mysql
-      PMA_USER: root
-      PMA_PASSWORD: root
-      MYSQL_ROOT_PASSWORD: root
+      ADMINER_DEFAULT_SERVER: postgres
     depends_on:
-      mysql:
-        condition: service_healthy
+      - postgres
     networks:
-      - prestamo_red
-
+      - prestamo
   node:
-    image: node:22
+    image: node:22-alpine
     container_name: prestamo_node
     working_dir: /var/www
     volumes:
       - .:/var/www
-    command: bash -c "npm install && npm run dev -- --host"
+    command: sh -c "npm install && npm run dev"
     ports:
       - "5173:5173"
     networks:
-      - prestamo_red
+      - prestamo
 
   composer:
     build:
@@ -87,10 +77,11 @@ services:
       - .:/var/www
     entrypoint: ["composer"]
     networks:
-      - prestamo_red
+      - prestamo
 
 networks:
-  prestamo_red:
+  prestamo:
+    driver: bridge
 
 volumes:
-  mysql_data:
+  postgres_data:

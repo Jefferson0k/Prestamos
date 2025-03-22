@@ -172,7 +172,7 @@ const submitForm = async () => {
             <Label for="dni">DNI <span class="text-red-500 text-sm">*</span></Label>
             <Input
               id="dni"
-              type="text"
+              type="number"
               v-model="form.dni"
               placeholder="Dni"
               @keydown="(e) => handleKeydown(e, 'nombre')"
@@ -209,7 +209,7 @@ const submitForm = async () => {
             >
             <Input
               id="telefono"
-              type="text"
+              type="number"
               v-model="form.telefono"
               placeholder="Telefono"
               @keydown="(e) => handleKeydown(e, 'direccion')"
