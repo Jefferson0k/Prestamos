@@ -6,9 +6,7 @@ class StoreClienteRequest extends FormRequest {
     public function authorize() {
         return true;
     }
-
     public function rules() {
-        $id = $this->route('cliente')?->id;
         return [
             'dni' => 'required|digits:8|unique:clientes,dni',
             'nombre' => 'required|string|min:2|max:100',
@@ -20,7 +18,6 @@ class StoreClienteRequest extends FormRequest {
             'foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
-
     public function messages() {
         return [
             'dni.required' => 'El DNI es obligatorio.',

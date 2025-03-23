@@ -25,7 +25,7 @@ class ClienteResource extends JsonResource{
             'numero_cuotas'       => $prestamo ? $prestamo->numero_cuotas : null,
             'estado_cliente'      => $prestamo ? $prestamo->estado_cliente : null,
             'recomendacion'      => $prestamo ? $prestamo->recomendacion : null,
-            'foto'                => $this->foto ? asset("storage/clientes/{$this->foto}") : null,
+            'foto'                => $this->foto ? asset("customers/{$this->foto}") : null,
         ];
     }
 }

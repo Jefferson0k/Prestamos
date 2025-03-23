@@ -35,7 +35,7 @@ class ClienteController extends Controller {
     }
     public function destroy(ClienteModelo $cliente) {
         if ($cliente->foto) {
-            Storage::delete('public/clientes/' . $cliente->foto);
+            Storage::delete('public/customers/' . $cliente->foto);
         }
         $cliente->delete();
         return response()->json(['message' => 'Cliente eliminado correctamente']);
@@ -43,13 +43,13 @@ class ClienteController extends Controller {
     private function handleFotoUpload(Request $request, ClienteModelo $cliente = null) {
         if (!$request->hasFile('foto')) return $cliente?->foto;
         if ($cliente && $cliente->foto) {
-            if (file_exists(public_path('clientes/' . $cliente->foto))) {
-                unlink(public_path('clientes/' . $cliente->foto));
+            if (file_exists(public_path('customers/' . $cliente->foto))) {
+                unlink(public_path('customers/' . $cliente->foto));
             }
         }
         $file = $request->file('foto');
         $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('clientes'), $fileName);
+        $file->move(public_path('customers'), $fileName);
         return $fileName;
     }
 }
