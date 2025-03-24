@@ -7,8 +7,7 @@ class ClienteResource extends JsonResource{
         $prestamo = $this->prestamos()->latest()->first();
         return [
             'id'                  => $this->id,
-            'nombres'             => $this->nombre,
-            'apellidos'           => $this->apellidos,
+            'nombre_completo' => $this->nombre . ' ' . $this->apellidos,
             'direccion'           => $this->direccion,
             'centro_trabajo'      => $this->centro_trabajo,
             'celular'             => $this->telefono,

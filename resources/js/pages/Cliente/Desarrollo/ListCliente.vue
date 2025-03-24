@@ -198,8 +198,6 @@ const getColumnWidthClass = (columnId: string) => {
     return columnWidths[columnId as keyof typeof columnWidths] || '';
 };
 
-// El resto de su código sigue aquí...
-
 interface Cliente {
     id: number;
     nombres: string;
@@ -232,19 +230,20 @@ const isClienteDetailsOpen = ref(false);
 const pageSize = ref(10);
 const currentPage = ref(0);
 
-// Convert pageSize to string for SelectValue component
 const pageSizeString = computed(() => String(pageSize.value));
 
-// Sorting state
 const sorting = ref<SortingState>([]);
 
-// Column visibility state
-const columnVisibility = ref<VisibilityState>({});
+const columnVisibility = ref<VisibilityState>({
+    'direccion': false,
+    'centro_trabajo': false,
+    'recomendacion': false,
+    'foto': false,
+    'celular': false,
+});
 
-// Column filters state
 const columnFilters = ref<ColumnFiltersState>([]);
 
-// Define table columns
 const columns = [
     {
         id: 'select',
@@ -288,19 +287,13 @@ const columns = [
                 ]
             })
         ]),
-        enableSorting: false,
-    },
-    {
-        id: 'nombres',
-        accessorKey: 'nombres',
-        header: () => 'Nombres',
-        cell: (info) => info.getValue(),
         enableSorting: true,
+        enableHiding: true,
     },
     {
-        id: 'apellidos',
-        accessorKey: 'apellidos',
-        header: () => 'Apellidos',
+        id: 'nombre_completo',
+        accessorKey: 'nombre_completo',
+        header: () => 'Nombre completo',
         cell: (info) => info.getValue(),
         enableSorting: true,
     },
@@ -308,22 +301,24 @@ const columns = [
         id: 'celular',
         accessorKey: 'celular',
         header: () => 'Celular',
-        cell: ({ row }) => formatPhoneNumber(row.original.celular),
+        cell: (info) => info.getValue(),
         enableSorting: true,
-    },
+        enableHiding: true,    },
     {
         id: 'direccion',
         accessorKey: 'direccion',
         header: () => 'Dirección',
         cell: (info) => info.getValue(),
         enableSorting: true,
+        enableHiding: true,
     },
     {
         id: 'centro_trabajo',
         accessorKey: 'centro_trabajo',
-        header: () => 'CentrodeTrabajo',
+        header: () => 'Centro de Trabajo',
         cell: (info) => info.getValue(),
         enableSorting: true,
+        enableHiding: true,
     },
     {
         id: 'estado',
@@ -351,42 +346,42 @@ const columns = [
     {
         id: 'tasa_interes_diario',
         accessorKey: 'tasa_interes_diario',
-        header: () => 'InterésDiario',
+        header: () => 'Interés Diario',
         cell: ({ row }) => row.original.tasa_interes_diario ? `${row.original.tasa_interes_diario}%` : 'N/A',
         enableSorting: true,
     },
     {
         id: 'capital_inicial',
         accessorKey: 'capital_inicial',
-        header: () => 'CapitalInicial',
+        header: () => 'Capital Inicial',
         cell: ({ row }) => row.original.capital_inicial || 'N/A',
         enableSorting: true,
     },
     {
         id: 'capital_del_mes',
         accessorKey: 'capital_del_mes',
-        header: () => 'CapitaldelMes',
+        header: () => 'Capital del Mes',
         cell: ({ row }) => row.original.capital_del_mes || 'N/A',
         enableSorting: true,
     },
     {
         id: 'capital_actual',
         accessorKey: 'capital_actual',
-        header: () => 'CapitalActual',
+        header: () => 'Capital Actual',
         cell: ({ row }) => row.original.capital_actual || 'N/A',
         enableSorting: true,
     },
     {
         id: 'interes_actual',
         accessorKey: 'interes_actual',
-        header: () => 'InterésActual',
+        header: () => 'Interés Actual',
         cell: ({ row }) => row.original.interes_actual || 'N/A',
         enableSorting: true,
     },
     {
         id: 'interes_total',
         accessorKey: 'interes_total',
-        header: () => 'InterésTotal',
+        header: () => 'Interés Total',
         cell: ({ row }) => row.original.interes_total || 'N/A',
         enableSorting: true,
     },
@@ -400,7 +395,7 @@ const columns = [
     {
         id: 'numero_cuotas',
         accessorKey: 'numero_cuotas',
-        header: () => 'NúmerodeCuotas',
+        header: () => 'Nº de Cuotas',
         cell: ({ row }) => row.original.numero_cuotas || 'N/A',
         enableSorting: true,
     },
@@ -410,6 +405,7 @@ const columns = [
         header: () => 'Recomendación',
         cell: ({ row }) => row.original.recomendacion || 'Sin recomendación',
         enableSorting: true,
+        enableHiding: true,
     },
     {
         id: 'actions',
@@ -435,10 +431,10 @@ const columns = [
             })
         ]),
         enableSorting: false,
+        enableHiding: false,
     },
 ];
 
-// Filtered data computation
 const filteredData = computed(() => {
     if (!searchQuery.value) return clientes.value;
 
@@ -453,13 +449,11 @@ const filteredData = computed(() => {
     });
 });
 
-// Calculate correct total page count
 const totalPageCount = computed(() => {
     if (!filteredData.value.length) return 0;
     return Math.ceil(filteredData.value.length / pageSize.value);
 });
 
-// Initialize table with tanstack/vue-table
 const table = useVueTable({
     get data() {
         return filteredData.value;
@@ -510,12 +504,10 @@ const table = useVueTable({
     manualPagination: false,
 });
 
-// Reset pagination when search or data changes
 watch([searchQuery, clientes], () => {
     table.resetPageIndex(true);
 }, { deep: true });
 
-// Fetch clientes data from API
 const fetchClientes = async () => {
     isLoading.value = true;
     try {
@@ -557,7 +549,6 @@ const fetchClientes = async () => {
     }
 };
 
-// Refresh data
 const refreshData = () => {
     fetchClientes();
     toast({
@@ -566,22 +557,10 @@ const refreshData = () => {
     });
 };
 
-// Get initials for avatar fallback
 const getInitials = (firstName: string = '', lastName: string = '') => {
     return `${firstName.charAt(0) || ''}${lastName.charAt(0) || ''}`.toUpperCase() || 'NA';
 };
 
-// Format phone number
-const formatPhoneNumber = (phone: string = '') => {
-    if (!phone) return '';
-    // Format as needed, example: +51 123 456 789
-    if (phone.length === 9) {
-        return phone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
-    }
-    return phone;
-};
-
-// Get badge variant based on client status
 const getEstadoBadgeVariant = (estado: string | null) => {
     if (!estado) return 'outline';
 
@@ -593,30 +572,24 @@ const getEstadoBadgeVariant = (estado: string | null) => {
     return 'secondary';
 };
 
-// Open client details dialog
 const openClienteDetails = (cliente: Cliente) => {
     selectedCliente.value = cliente;
     isClienteDetailsOpen.value = true;
 };
 
-// View client details
 const viewClienteDetails = (cliente: Cliente) => {
     selectedCliente.value = cliente;
     isClienteDetailsOpen.value = true;
 };
 
-// Edit client
 const editCliente = (cliente: Cliente) => {
-    // Implement edit functionality
     toast({
         title: "Función en desarrollo",
         description: `Editar cliente: ${cliente.nombres} ${cliente.apellidos}`,
     });
 };
 
-// Delete client
 const deleteCliente = (cliente: Cliente) => {
-    // Implement delete functionality with confirmation
     toast({
         title: "Función en desarrollo",
         description: `Eliminar cliente: ${cliente.nombres} ${cliente.apellidos}`,
@@ -624,7 +597,6 @@ const deleteCliente = (cliente: Cliente) => {
     });
 };
 
-// Handle search changes
 const onSearchChange = () => {
     table.resetPageIndex(true);
 };
@@ -635,20 +607,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Estilos adicionales para mejorar la presentación de la tabla */
-:deep(.truncate) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    :deep(.truncate) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    }
 
-:deep(th), :deep(td) {
-  padding: 0.5rem 0.75rem;
-}
+    :deep(th), :deep(td) {
+    padding: 0.5rem 0.75rem;
+    }
 
-/* Asegurar que el contenedor tiene scroll horizontal en pantallas pequeñas */
-:deep(.table-container) {
-  width: 100%;
-  overflow-x: auto;
-}
+    :deep(.table-container) {
+    width: 100%;
+    overflow-x: auto;
+    }
 </style>

@@ -41,19 +41,28 @@
     table: Table<any>;
   }>();
 
-  // Function to get user-friendly column labels
+  // Complete mapping of column IDs to user-friendly labels
   const getColumnLabel = (columnId: string) => {
     const columnLabels: Record<string, string> = {
       'dni': 'DNI',
       'foto': 'Foto',
-      'nombres': 'Nombres',
-      'apellidos': 'Apellidos',
+      'nombre_completo': 'Nombre completo',
       'celular': 'Celular',
       'direccion': 'Dirección',
       'centro_trabajo': 'Centro de Trabajo',
       'estado': 'Estado',
+      'fecha_inicio': 'Inicio',
+      'fecha_vencimiento': 'Vencimiento',
+      'tasa_interes_diario': 'Interés Diario',
+      'capital_inicial': 'Capital Inicial',
+      'capital_del_mes': 'Capital del Mes',
+      'capital_actual': 'Capital Actual',
+      'interes_actual': 'Interés Actual',
+      'interes_total': 'Interés Total',
+      'total': 'Total',
+      'numero_cuotas': 'Nº de Cuotas',
+      'recomendacion': 'Recomendación'
     };
-
     return columnLabels[columnId] || columnId;
   };
   </script>
