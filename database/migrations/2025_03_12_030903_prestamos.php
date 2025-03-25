@@ -18,8 +18,8 @@ return new class extends Migration
             $table->date('fecha_vencimiento');
             $table->decimal('capital', 15, 2);
             $table->integer('numero_cuotas');
-            $table->string('estado_cliente', 50);
-            $table->text('recomendacion')->nullable();
+            $table->integer('estado_cliente');
+            $table->text('recomendacion');
             $table->decimal('tasa_interes_diario', 5, 2);
             $table->timestamps();
 

@@ -98,7 +98,7 @@ const submitForm = async () => {
         if (form.foto) {
             formData.append("foto", form.foto);
         }
-        const response = await axios.post("/api/cliente", formData, {
+        const response = await axios.post("/cliente", formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
