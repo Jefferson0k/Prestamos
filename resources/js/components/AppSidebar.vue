@@ -38,26 +38,26 @@ const mainNavItems: NavItem[] = [
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
-                        <Link :href="route('dashboard')">
-                            <AppLogo />
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
-        </SidebarHeader>
+  <Sidebar collapsible="icon" variant="inset">
+    <SidebarHeader>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" as-child>
+            <Link :href="route('dashboard')">
+              <AppLogo />
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarHeader>
 
-        <SidebarContent>
-            <NavMain :items="mainNavItems" />
-        </SidebarContent>
+    <SidebarContent>
+      <NavMain :items="mainNavItems" />
+    </SidebarContent>
 
-        <SidebarFooter>
-            <NavUser />
-        </SidebarFooter>
-    </Sidebar>
-    <slot />
+    <SidebarFooter>
+      <NavUser />
+    </SidebarFooter>
+  </Sidebar>
+  <slot />
 </template>
