@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-cols-1 gap-6">
+    <div class="grid grid-cols-1gap-6">
         <Toaster />
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">

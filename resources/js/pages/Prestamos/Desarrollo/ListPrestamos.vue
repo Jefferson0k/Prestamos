@@ -100,7 +100,7 @@
                     <p class="text-sm font-medium">Filas por página</p>
                     <Select
                         v-model="pageSize"
-                        @update:modelValue="table.setPageSize($event)"
+                            @update:modelValue="(value) => table.setPageSize(Number(value) || 10)"
                     >
                         <SelectTrigger class="h-8 w-[70px]">
                             <SelectValue :placeholder="pageSizeString" />

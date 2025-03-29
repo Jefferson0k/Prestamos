@@ -102,7 +102,7 @@ export const columns: ColumnDef<Cliente>[] = [
             return h(Badge, {
                 variant: estado === 1 ? 'default' : 'destructive',
                 class: estado === 1 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-            }, () => estado === 1 ? 'Activo' : 'Inactivo');
+            }, () => estado === 1 ? 'Paga' : 'Moroso');
         },
         enableSorting: true,
     },
