@@ -21,54 +21,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { toast } from '@/components/ui/toast'
 
-interface Cliente {
-    id: number
-    label: string
-    value: number
-}
-
-interface ClienteResponse {
-    data: Cliente[]
-    pagination: {
-        current_page: number
-        last_page: number
-        next_page_url: string
-    }
-}
+const emit = defineEmits(['prestamo-agregado'])
 
 const isOpen = ref(false)
 const loading = ref(false)
-const clientes = ref<Cliente[]>([])
-const selectedCliente = ref<Cliente | null>(null)
-const errors = ref<Record<string, string[]>>({})
+const clientes = ref([])
+const selectedCliente = ref(null)
+const errors = ref({})
 
 const today = new Date()
 
-// State for date range with start and end dates
 const dateRange = ref({
     start: new CalendarDate(
         today.getFullYear(),
         today.getMonth() + 1,
         today.getDate()
     ),
-    end: null as CalendarDate | null
+    end: null
 })
 
-const capital = ref<number | null>(null)
-const numeroCuotas = ref<number | null>(null)
-const tasaInteresDiario = ref<number | null>(null)
-const recomendacion = ref<string>('')
-const estadoCliente = ref<number>(1)
+const capital = ref(null)
+const numeroCuotas = ref(null)
+const tasaInteresDiario = ref(null)
+const recomendacion = ref('')
+const estadoCliente = ref(1)
 
-// Character count for recommendation
 const recommendationCharLimit = 255
 const remainingChars = computed(() => {
     return recommendationCharLimit - (recomendacion.value?.length || 0)
 })
 
-// Función para deshabilitar fechas pasadas
-const isDateDisabled = (date: CalendarDate) => {
+const isDateDisabled = (date) => {
   const currentDate = new CalendarDate(
     today.getFullYear(),
     today.getMonth() + 1,
@@ -77,24 +62,26 @@ const isDateDisabled = (date: CalendarDate) => {
   return date.compare(currentDate) < 0
 }
 
-// Fetch clients from backend
 const fetchClientes = async (query = '', page = 1) => {
     try {
-        const { data } = await axios.get<ClienteResponse>('/prestamo/cliente', {
+        const { data } = await axios.get('/prestamo/cliente', {
             params: { search: query, page }
         })
         clientes.value = data.data
     } catch (error) {
         console.error('Error al cargar clientes:', error)
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los clientes",
+          variant: "destructive"
+        })
     }
 }
 
 const handleSubmit = async () => {
-    // Reset previous errors
     errors.value = {}
     loading.value = true
 
-    // Prepare submission data
     const submissionData = {
         cliente_id: selectedCliente.value?.value,
         fecha_inicio: dateRange.value.start?.toString(),
@@ -109,20 +96,28 @@ const handleSubmit = async () => {
     try {
         const response = await axios.post('/prestamo', submissionData)
 
-        // Reset form and close dialog on success
+        toast({
+            title: "¡Éxito!",
+            description: "Cliente registrado exitosamente",
+        });
+        emit('prestamo-agregado', response.data)
+
         isOpen.value = false
         resetForm()
-    } catch (error: any) {
-        // Handle backend validation errors
+    } catch (error) {
         if (error.response?.data?.errors) {
             errors.value = error.response.data.errors
+            toast({
+              title: "Error al guardar",
+              description: "Por favor, revise los datos ingresados",
+              variant: "destructive"
+            })
         }
     } finally {
         loading.value = false
     }
 }
 
-// Reset form method
 const resetForm = () => {
     selectedCliente.value = null
     dateRange.value = {
@@ -141,15 +136,9 @@ const resetForm = () => {
     errors.value = {}
 }
 
-// Lifecycle hook
 onMounted(() => {
     fetchClientes()
 })
-
-// Optional: Watch for date range changes (for debugging or additional logic)
-watch(dateRange, (newValue) => {
-  console.log('Date range updated:', newValue)
-}, { deep: true })
 </script>
 
 <template>

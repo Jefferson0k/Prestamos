@@ -63,7 +63,7 @@
                     </template>
                     <template v-else>
                         <TableRow>
-                            <TableCell :colspan="columns.length" class="h-24 text-center">
+                            <TableCell :colspan="columns.length" class="text-center">
                                 No hay resultados.
                             </TableCell>
                         </TableRow>
@@ -167,15 +167,12 @@ import {
 } from 'lucide-vue-next';
 import { ChevronRightIcon, ChevronLeftIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon } from "@radix-icons/vue";
 
-// Resto del código igual que el original...
-
-// NUEVO: Función para asignar ancho a cada columna según su contenido
 const getColumnWidthClass = (columnId: string) => {
     const columnWidths = {
         'select': 'w-10',
         'dni': 'w-28',
         'foto': 'w-14',
-        'nombres': 'w-40 min-w-[120px]',
+        'nombres': 'w-10 min-w-[20px]',
         'apellidos': 'w-40 min-w-[120px]',
         'celular': 'w-32',
         'direccion': 'w-48 min-w-[180px] max-w-md',
@@ -256,7 +253,6 @@ const columns = [
             'checked': row.getIsSelected(),
             'onUpdate:checked': (value) => {
                 row.toggleSelected(!!value);
-                // Stop propagation to prevent row click when checkbox is clicked
                 event?.stopPropagation();
             },
             'ariaLabel': 'Select row',
@@ -561,15 +557,11 @@ const getInitials = (firstName: string = '', lastName: string = '') => {
     return `${firstName.charAt(0) || ''}${lastName.charAt(0) || ''}`.toUpperCase() || 'NA';
 };
 
-const getEstadoBadgeVariant = (estado: string | null) => {
-    if (!estado) return 'outline';
 
-    const estadoLower = estado.toLowerCase();
-    if (estadoLower.includes('activ')) return 'success';
-    if (estadoLower.includes('pendiente')) return 'warning';
-    if (estadoLower.includes('moroso')) return 'destructive';
-    if (estadoLower.includes('complet')) return 'default';
-    return 'secondary';
+const getEstadoBadgeVariant = (estado: number | null) => {
+    if (estado === 1) return "success"; // Verde para "Paga"
+    if (estado === 2) return "destructive"; // Rojo para "Moroso"
+    return "secondary"; // Otro estado
 };
 
 const openClienteDetails = (cliente: Cliente) => {
