@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-cols-1 gap-6">
+    <div class="grid grid-cols-1gap-6">
         <Toaster />
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
@@ -16,10 +16,7 @@
                     Actualizar
                 </Button>
                 <DataTableViewOptions :table="table" />
-                <Button variant="default" size="sm" @click="agregarNuevoCliente">
-                    <Plus class="h-4 w-4 mr-2" />
-                    Nuevo Cliente
-                </Button>
+                <AddPrestamos variant="default" size="sm" @click="agregarNuevoCliente" />
             </div>
         </div>
 
@@ -168,8 +165,8 @@
 <script setup lang="ts">
 import { h } from 'vue';
 import { FlexRender } from '@tanstack/vue-table';
-import { useClienteTable } from './listcliente';
-import { columns } from './columns';
+import { useClienteTable } from './typsPrestamos/listcliente';
+import { columns } from './typsPrestamos/columns';
 
 import { Toaster } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
@@ -199,6 +196,8 @@ import {
     DoubleArrowLeftIcon,
     DoubleArrowRightIcon
 } from "@radix-icons/vue";
+
+import AddPrestamos from './AddPrestamos.vue';
 
 // Initialize the client table logic
 const {

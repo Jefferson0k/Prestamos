@@ -5,7 +5,6 @@ import path from 'path';
 import tailwindcss from 'tailwindcss';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
-import RekaResolver from 'reka-ui/resolver'
 
 export default defineConfig({
     plugins: [
@@ -22,7 +21,6 @@ export default defineConfig({
                 },
             },
         }),
-        RekaResolver(),
     ],
     resolve: {
         alias: {

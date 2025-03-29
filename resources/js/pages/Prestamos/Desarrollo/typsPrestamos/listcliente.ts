@@ -12,7 +12,6 @@ import {
 import { useToast } from '@/components/ui/toast';
 import { columns } from './columns';
 
-// Interfaces
 export interface Cliente {
     id: number;
     id_cliente: number;
@@ -20,18 +19,16 @@ export interface Cliente {
     NombreCompleto: string;
     fecha_inicio: string;
     fecha_vencimiento: string;
-    capital: string;
+    capital: number;
     numero_cuotas: number;
     estado_cliente: number;
     recomendacion: string;
-    tasa_interes_diario: string;
+    tasa_interes_diario: number;
 }
 
 export function useClienteTable() {
-    // Toast
-    const { toast } = useToast();
 
-    // Refs
+    const { toast } = useToast();
     const clientes = ref<Cliente[]>([]);
     const isLoading = ref(true);
     const searchQuery = ref('');
@@ -45,7 +42,6 @@ export function useClienteTable() {
     });
     const columnFilters = ref<ColumnFiltersState>([]);
 
-    // Computed
     const pageSizeString = computed(() => String(pageSize.value));
 
     const filteredData = computed(() => {
@@ -66,7 +62,6 @@ export function useClienteTable() {
         return Math.ceil(filteredData.value.length / pageSize.value);
     });
 
-    // Table Configuration
     const table = useVueTable({
         get data() {
             return filteredData.value;
@@ -125,7 +120,7 @@ export function useClienteTable() {
             const result = await response.json();
 
             if (result && result.data) {
-                clientes.value = result.data.map(cliente => ({
+                clientes.value = (result.data as Cliente[]).map(cliente => ({
                     ...cliente,
                     capital: Number(cliente.capital),
                     tasa_interes_diario: Number(cliente.tasa_interes_diario)
@@ -191,19 +186,16 @@ export function useClienteTable() {
         });
     };
 
-    // Watchers
     watch([searchQuery, clientes], () => {
         table.resetPageIndex(true);
     }, { deep: true });
 
-    // Lifecycle
     onMounted(() => {
         fetchClientes();
     });
 
     const getColumnWidthClass = (columnId: string) => {
         const columnWidths = {
-            // Add your column width classes here
         };
 
         return columnWidths[columnId as keyof typeof columnWidths] || '';

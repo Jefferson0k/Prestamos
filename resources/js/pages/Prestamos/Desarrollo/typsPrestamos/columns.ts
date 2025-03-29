@@ -13,7 +13,6 @@ import {
 import { MoreHorizontal } from 'lucide-vue-next';
 import { Cliente } from './listcliente';
 
-// Action handlers - define these in your component
 const verDetalleCliente = (cliente: Cliente) => {};
 const editarCliente = (cliente: Cliente) => {};
 const eliminarCliente = (cliente: Cliente) => {};
@@ -23,17 +22,17 @@ export const columns: ColumnDef<Cliente>[] = [
         id: 'select',
         header: ({ table }) => h(Checkbox, {
             'checked': table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-            'onUpdate:checked': value => table.toggleAllPageRowsSelected(!!value),
+            'onUpdate:checked': (value: boolean) => table.toggleAllPageRowsSelected(!!value),
             'ariaLabel': 'Select all',
         }),
         cell: ({ row }) => h(Checkbox, {
             'checked': row.getIsSelected(),
-            'onUpdate:checked': (value) => {
+            'onUpdate:checked': (value: boolean) => {
                 row.toggleSelected(!!value);
                 event?.stopPropagation();
             },
             'ariaLabel': 'Select row',
-            'onClick': (e) => e.stopPropagation()
+            'onClick': (e: MouseEvent) => e.stopPropagation()
         }),
         enableSorting: false,
         enableHiding: false,
@@ -101,11 +100,13 @@ export const columns: ColumnDef<Cliente>[] = [
         cell: ({ row }) => {
             const estado = row.original.estado_cliente;
             return h(Badge, {
-                variant: estado === 1 ? 'success' : 'destructive'
+                variant: estado === 1 ? 'default' : 'destructive',
+                class: estado === 1 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
             }, () => estado === 1 ? 'Activo' : 'Inactivo');
         },
         enableSorting: true,
     },
+
     {
         id: 'recomendacion',
         accessorKey: 'recomendacion',
