@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
-import axios from 'axios'
-import { Plus, ChevronsUpDown, Check, Info } from 'lucide-vue-next'
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Combobox, ComboboxAnchor, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox'
-import { cn } from '@/lib/utils'
-import { CalendarDate } from '@internationalized/date'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { RangeCalendar } from '@/components/ui/range-calendar'
-import InputError from '@/components/InputError.vue'
+import { Plus, ChevronsUpDown, Check, Info } from 'lucide-vue-next';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Combobox, ComboboxAnchor, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RangeCalendar } from '@/components/ui/range-calendar';
+import InputError from '@/components/InputError.vue';
 import {
   Select,
   SelectContent,
@@ -20,125 +17,30 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { toast } from '@/components/ui/toast'
+} from '@/components/ui/select';
+import { AddPrestamoEmits } from './typsPrestamos/AddPrestamos.types';
+import { useAddPrestamo } from './typsPrestamos/useAddPrestamo';
 
-const emit = defineEmits(['prestamo-agregado'])
-
-const isOpen = ref(false)
-const loading = ref(false)
-const clientes = ref([])
-const selectedCliente = ref(null)
-const errors = ref({})
-
-const today = new Date()
-
-const dateRange = ref({
-    start: new CalendarDate(
-        today.getFullYear(),
-        today.getMonth() + 1,
-        today.getDate()
-    ),
-    end: null
-})
-
-const capital = ref(null)
-const numeroCuotas = ref(null)
-const tasaInteresDiario = ref(null)
-const recomendacion = ref('')
-const estadoCliente = ref(1)
-
-const recommendationCharLimit = 255
-const remainingChars = computed(() => {
-    return recommendationCharLimit - (recomendacion.value?.length || 0)
-})
-
-const isDateDisabled = (date) => {
-  const currentDate = new CalendarDate(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    today.getDate()
-  )
-  return date.compare(currentDate) < 0
-}
-
-const fetchClientes = async (query = '', page = 1) => {
-    try {
-        const { data } = await axios.get('/prestamo/cliente', {
-            params: { search: query, page }
-        })
-        clientes.value = data.data
-    } catch (error) {
-        console.error('Error al cargar clientes:', error)
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los clientes",
-          variant: "destructive"
-        })
-    }
-}
-
-const handleSubmit = async () => {
-    errors.value = {}
-    loading.value = true
-
-    const submissionData = {
-        cliente_id: selectedCliente.value?.value,
-        fecha_inicio: dateRange.value.start?.toString(),
-        fecha_vencimiento: dateRange.value.end?.toString(),
-        capital: capital.value,
-        numero_cuotas: numeroCuotas.value,
-        tasa_interes_diario: tasaInteresDiario.value,
-        estado_cliente: estadoCliente.value,
-        recomendacion: recomendacion.value
-    }
-
-    try {
-        const response = await axios.post('/prestamo', submissionData)
-
-        toast({
-            title: "¡Éxito!",
-            description: "Cliente registrado exitosamente",
-        });
-        emit('prestamo-agregado', response.data)
-
-        isOpen.value = false
-        resetForm()
-    } catch (error) {
-        if (error.response?.data?.errors) {
-            errors.value = error.response.data.errors
-            toast({
-              title: "Error al guardar",
-              description: "Por favor, revise los datos ingresados",
-              variant: "destructive"
-            })
-        }
-    } finally {
-        loading.value = false
-    }
-}
-
-const resetForm = () => {
-    selectedCliente.value = null
-    dateRange.value = {
-        start: new CalendarDate(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            today.getDate()
-        ),
-        end: null
-    }
-    capital.value = null
-    numeroCuotas.value = null
-    tasaInteresDiario.value = null
-    recomendacion.value = ''
-    estadoCliente.value = 1
-    errors.value = {}
-}
-
-onMounted(() => {
-    fetchClientes()
-})
+const emit = defineEmits<AddPrestamoEmits>();
+const {
+    isOpen,
+    loading,
+    clientes,
+    selectedCliente,
+    errors,
+    dateRange,
+    capital,
+    numeroCuotas,
+    tasaInteresDiario,
+    recomendacion,
+    estadoCliente,
+    today,
+    recommendationCharLimit,
+    remainingChars,
+    isDateDisabled,
+    fetchClientes,
+    handleSubmit
+} = useAddPrestamo(emit);
 </script>
 
 <template>
