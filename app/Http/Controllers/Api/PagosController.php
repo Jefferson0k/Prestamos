@@ -3,57 +3,47 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Pago\StorePagoRequest;
-use App\Http\Requests\Pago\UpdatePagoRequest;
-use App\Http\Resources\PagoResource;
+use App\Models\CuotasModelo;
 use App\Models\PagosModelo;
+use App\Models\PrestamosModelo;
+use App\Services\PagoService;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PagosController extends Controller{
-    public function index(){
-        $pagos = PagosModelo::with('prestamo')->get();
-        return PagoResource::collection($pagos);
+    protected $pagoService;
+    public function __construct(PagoService $pagoService) {
+        $this->pagoService = $pagoService;
     }
-    public function store(StorePagoRequest $request){
-        $pago = PagosModelo::create($request->validated());
-
+    public function index() {
+        $pagos = PagosModelo::with(['prestamo.cliente', 'cuota'])->latest()->paginate(10);
+        return response()->json($pagos);
+    }
+    public function create(){
+        $prestamos = PrestamosModelo::with('cliente')->get();
+        return response()->json($prestamos);
+    }    
+    public function getCuotas(Request $request, PrestamosModelo $prestamo){
+        $cuotas = $prestamo->cuotas()
+            ->where('estado', '!=', 'Pagado')
+            ->orderBy('numero_cuota')
+            ->get();
+            
+        return response()->json($cuotas);
+    }
+    public function store(Request $request){
+        $validatedData = $request->validate([
+            'cuota_id' => 'required|exists:cuotas,id',
+            'fecha_pago' => 'required|date',
+        ]);
+        $cuota = CuotasModelo::findOrFail($validatedData['cuota_id']);
+        $pago = $this->pagoService->registrarPago($cuota, $validatedData['fecha_pago']);
         return response()->json([
-            'message' => 'Pago registrado exitosamente',
-            'data'    => new PagoResource($pago),
-        ], Response::HTTP_CREATED);
-    }
-    public function show($id){
-        $pago = PagosModelo::with('prestamo')->find($id);
-
-        if (!$pago) {
-            return response()->json(['message' => 'Pago no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-
-        return new PagoResource($pago);
-    }
-    public function update(UpdatePagoRequest $request, $id){
-        $pago = PagosModelo::find($id);
-
-        if (!$pago) {
-            return response()->json(['message' => 'Pago no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-
-        $pago->update($request->validated());
-
-        return response()->json([
-            'message' => 'Pago actualizado correctamente',
-            'data'    => new PagoResource($pago),
+            'message' => 'Pago registrado correctamente.',
+            'pago' => $pago,
         ]);
     }
-    public function destroy($id){
-        $pago = PagosModelo::find($id);
-
-        if (!$pago) {
-            return response()->json(['message' => 'Pago no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-
-        $pago->delete();
-
-        return response()->json(['message' => 'Pago eliminado correctamente']);
+    public function show(PagosModelo $pago){
+        return response()->json($pago);
     }
 }

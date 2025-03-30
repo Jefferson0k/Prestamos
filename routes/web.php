@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{id}', [PrestamosController::class, 'show'])->name('api.prestamo.show');
         Route::put('{id}', [PrestamosController::class, 'update'])->name('api.prestamo.update');
         Route::delete('{id}', [PrestamosController::class, 'destroy'])->name('api.prestamo.destroy');
+        Route::get('/{prestamo}/simulacion', [PrestamosController::class, 'simulacion'])->name('prestamos.simulacion');
     });
 
     Route::prefix('pago')->group(function () {
@@ -45,6 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{id}', [PagosController::class, 'show'])->name('api.pago.show');
         Route::put('{id}', [PagosController::class, 'update'])->name('api.pago.update');
         Route::delete('{id}', [PagosController::class, 'destroy'])->name('api.pago.destroy');
+        Route::get('/{prestamo}/cuotas', [PagosController::class, 'getCuotas'])->name('prestamos.cuotas');
     });
 
     Route::prefix('reporte')->group(function () {

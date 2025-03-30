@@ -29,9 +29,9 @@ class PrestamosModelo extends Model{
         return $this->belongsTo(ClienteModelo::class);
     }
     public function cuotas(){
-        return $this->hasMany(CuotasModelo::class);
-    }
+        return $this->hasMany(CuotasModelo::class, 'prestamo_id');
+    }    
     public function pagos(){
-        return $this->hasMany(PagosModelo::class);
+        return $this->hasMany(PagosModelo::class, 'prestamo_id'); 
     }
 }
