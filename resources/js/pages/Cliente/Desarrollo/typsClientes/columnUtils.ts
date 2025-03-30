@@ -29,7 +29,7 @@ export const getColumnWidthClass = (columnId: string): string => {
 export function getEstadoBadgeVariant(estado: number | null): "default" | "secondary" | "destructive" | "outline" | null {
     switch (estado) {
         case 1:
-            return "default";
+            return "destructive";
         case 2:
             return "secondary";
         case 3:

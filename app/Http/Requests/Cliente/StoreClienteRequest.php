@@ -12,7 +12,7 @@ class StoreClienteRequest extends FormRequest {
             'nombre' => 'required|string|min:2|max:100',
             'apellidos' => 'required|string|min:2|max:100',
             'telefono' => 'required|numeric|min_digits:9',
-            'direccion' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9\s\-,.#]+$/'],
+            'direccion' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9\s\-,.#°\/]+$/'],
             'correo' => 'required|unique:clientes,correo',
             'centro_trabajo' => 'required|string|max:150',
             'foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',

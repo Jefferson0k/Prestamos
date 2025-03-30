@@ -100,12 +100,12 @@ export const columns: ColumnDef<Cliente>[] = [
         cell: ({ row }) => {
             const estado = row.original.estado_cliente;
             return h(Badge, {
-                variant: estado === 1 ? 'default' : 'destructive',
-                class: estado === 1 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                variant: estado === 1 ? 'destructive' : 'secondary', // 'secondary' para Moroso
+                class: estado === 1 ? 'bg-green-500 text-white' : 'bg-purple-500 text-white' // Morado para Moroso
             }, () => estado === 1 ? 'Paga' : 'Moroso');
         },
         enableSorting: true,
-    },
+    },   
 
     {
         id: 'recomendacion',

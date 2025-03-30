@@ -107,10 +107,13 @@ export const createColumns = (callbacks: ClienteCallbacks): ColumnDef<Cliente>[]
         accessorKey: 'estado_cliente',
         header: () => 'Estado',
         cell: ({ row }) => h(Badge, {
-            variant: getEstadoBadgeVariant(row.original.estado_cliente as number | null)
-        }, () => row.original.estado_cliente || 'Sin estado'),
+            variant: getEstadoBadgeVariant(Number(row.original.estado_cliente) || null)
+        }, () => {
+            const estado = Number(row.original.estado_cliente);
+            return estado === 1 ? 'Paga' : estado === 2 ? 'Moroso' : 'Sin estado';
+        }),
         enableSorting: true,
-    },
+    },    
     {
         id: 'fecha_inicio',
         accessorKey: 'fecha_inicio',

@@ -1,28 +1,32 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-class PagosModelo extends Model{    
+
+class CuotasModelo extends Model{
     use HasFactory;
     protected $fillable = [
         'prestamo_id',
-        'cuota_id',
-        'fecha_pago',
-        'monto_capital',
-        'monto_interes',
-        'monto_total'
+        'numero_cuota',
+        'capital',
+        'interes',
+        'monto_total',
+        'fecha_vencimiento',
+        'estado'
     ];
     protected $casts = [
-        'fecha_pago' => 'date',
-        'monto_capital' => 'decimal:2',
-        'monto_interes' => 'decimal:2',
+        'fecha_vencimiento' => 'date',
+        'capital' => 'decimal:2',
+        'interes' => 'decimal:2',
         'monto_total' => 'decimal:2',
     ];
     public function prestamo(){
         return $this->belongsTo(PrestamosModelo::class);
     }
-    public function cuota(){
-        return $this->belongsTo(CuotasModelo::class);
+
+    public function pagos(){
+        return $this->hasMany(PagosModelo::class);
     }
 }

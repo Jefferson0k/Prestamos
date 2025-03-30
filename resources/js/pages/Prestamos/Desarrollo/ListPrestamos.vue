@@ -169,7 +169,6 @@ import { useClienteTable } from './typsPrestamos/listcliente';
 import { columns } from './typsPrestamos/columns';
 
 import { Toaster } from '@/components/ui/toast';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
