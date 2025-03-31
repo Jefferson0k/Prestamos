@@ -41,20 +41,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::prefix('pago')->group(function () {
-        Route::get('/', [PagosController::class, 'index'])->name('api.pago.index');
-        Route::post('/', [PagosController::class, 'store'])->name('api.pago.store');
-        Route::get('{id}', [PagosController::class, 'show'])->name('api.pago.show');
-        Route::put('{id}', [PagosController::class, 'update'])->name('api.pago.update');
-        Route::delete('{id}', [PagosController::class, 'destroy'])->name('api.pago.destroy');
-        Route::get('/{prestamo}/cuotas', [PagosController::class, 'getCuotas'])->name('prestamos.cuotas');
-    });
+        Route::get('/', [PagosController::class, 'index'])->name('pago.index');
+        Route::post('/', [PagosController::class, 'store'])->name('pago.store');
+        Route::get('/{id}', [PagosController::class, 'show'])->name('pago.show');
+        Route::put('/{id}', [PagosController::class, 'update'])->name('pago.update'); 
+        Route::delete('/{id}', [PagosController::class, 'destroy'])->name('pago.destroy');
+        Route::get('/{prestamo}/cuotas', [PagosController::class, 'getCuotas'])->name('pago.getCuotas'); 
+        Route::get('/create', [PagosController::class, 'create'])->name('pago.create'); 
+    });   
 
     Route::prefix('reporte')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('api.reporte.index');
         Route::get('{id}', [ReporteController::class, 'show'])->name('api.reporte.show');
     });
-});
-
+}); 
 // Archivos de configuración adicionales
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

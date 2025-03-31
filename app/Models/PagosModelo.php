@@ -9,6 +9,7 @@ class PagosModelo extends Model{
     protected $fillable = [
         'prestamo_id',
         'cuota_id',
+        'capital',
         'fecha_pago',
         'monto_capital',
         'monto_interes',
