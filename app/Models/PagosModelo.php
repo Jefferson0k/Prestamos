@@ -1,22 +1,30 @@
 <?php
 
 namespace App\Models;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-class PagosModelo extends Model{
+class PagosModelo extends Model{    
+    use HasFactory;
     protected $table = 'pagos';
     protected $fillable = [
-        'prestamo_id', 'numero_cuota', 'capital', 'fecha_inicio',
-        'fecha_pago', 'dias_interes', 'tasa_interes_diario',
-        'monto_interes_pagar', 'monto_capital_pagar',
-        'saldo_capital', 'monto_capital_mas'
+        'prestamo_id',
+        'cuota_id',
+        'capital',
+        'fecha_pago',
+        'monto_capital',
+        'monto_interes',
+        'monto_total'
+    ];
+    protected $casts = [
+        'fecha_pago' => 'date',
+        'monto_capital' => 'decimal:2',
+        'monto_interes' => 'decimal:2',
+        'monto_total' => 'decimal:2',
     ];
     public function prestamo(){
-        return $this->belongsTo(PrestamosModelo::class, 'prestamo_id');
+        return $this->belongsTo(PrestamosModelo::class);
     }
-    public function getFechaPagoFormattedAttribute(){
-        return date('d-m-Y', strtotime($this->fecha_pago));
-    }
-    public function scopePorPrestamo($query, $prestamoId){
-        return $query->where('prestamo_id', $prestamoId);
+    public function cuota(){
+        return $this->belongsTo(CuotasModelo::class);
     }
 }

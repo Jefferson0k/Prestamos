@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
-import axios from 'axios'
-import { Plus, ChevronsUpDown, Check, Info } from 'lucide-vue-next'
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Combobox, ComboboxAnchor, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox'
-import { cn } from '@/lib/utils'
-import { CalendarDate } from '@internationalized/date'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { RangeCalendar } from '@/components/ui/range-calendar'
-import InputError from '@/components/InputError.vue'
+import { Plus, ChevronsUpDown, Check, Info } from 'lucide-vue-next';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Combobox, ComboboxAnchor, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RangeCalendar } from '@/components/ui/range-calendar';
+import InputError from '@/components/InputError.vue';
 import {
   Select,
   SelectContent,
@@ -20,136 +17,30 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
+import { AddPrestamoEmits } from './typsPrestamos/AddPrestamos.types';
+import { useAddPrestamo } from './typsPrestamos/useAddPrestamo';
 
-interface Cliente {
-    id: number
-    label: string
-    value: number
-}
-
-interface ClienteResponse {
-    data: Cliente[]
-    pagination: {
-        current_page: number
-        last_page: number
-        next_page_url: string
-    }
-}
-
-const isOpen = ref(false)
-const loading = ref(false)
-const clientes = ref<Cliente[]>([])
-const selectedCliente = ref<Cliente | null>(null)
-const errors = ref<Record<string, string[]>>({})
-
-const today = new Date()
-
-// State for date range with start and end dates
-const dateRange = ref({
-    start: new CalendarDate(
-        today.getFullYear(),
-        today.getMonth() + 1,
-        today.getDate()
-    ),
-    end: null as CalendarDate | null
-})
-
-const capital = ref<number | null>(null)
-const numeroCuotas = ref<number | null>(null)
-const tasaInteresDiario = ref<number | null>(null)
-const recomendacion = ref<string>('')
-const estadoCliente = ref<number>(1)
-
-// Character count for recommendation
-const recommendationCharLimit = 255
-const remainingChars = computed(() => {
-    return recommendationCharLimit - (recomendacion.value?.length || 0)
-})
-
-// Función para deshabilitar fechas pasadas
-const isDateDisabled = (date: CalendarDate) => {
-  const currentDate = new CalendarDate(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    today.getDate()
-  )
-  return date.compare(currentDate) < 0
-}
-
-// Fetch clients from backend
-const fetchClientes = async (query = '', page = 1) => {
-    try {
-        const { data } = await axios.get<ClienteResponse>('/prestamo/cliente', {
-            params: { search: query, page }
-        })
-        clientes.value = data.data
-    } catch (error) {
-        console.error('Error al cargar clientes:', error)
-    }
-}
-
-const handleSubmit = async () => {
-    // Reset previous errors
-    errors.value = {}
-    loading.value = true
-
-    // Prepare submission data
-    const submissionData = {
-        cliente_id: selectedCliente.value?.value,
-        fecha_inicio: dateRange.value.start?.toString(),
-        fecha_vencimiento: dateRange.value.end?.toString(),
-        capital: capital.value,
-        numero_cuotas: numeroCuotas.value,
-        tasa_interes_diario: tasaInteresDiario.value,
-        estado_cliente: estadoCliente.value,
-        recomendacion: recomendacion.value
-    }
-
-    try {
-        const response = await axios.post('/prestamo', submissionData)
-
-        // Reset form and close dialog on success
-        isOpen.value = false
-        resetForm()
-    } catch (error: any) {
-        // Handle backend validation errors
-        if (error.response?.data?.errors) {
-            errors.value = error.response.data.errors
-        }
-    } finally {
-        loading.value = false
-    }
-}
-
-// Reset form method
-const resetForm = () => {
-    selectedCliente.value = null
-    dateRange.value = {
-        start: new CalendarDate(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            today.getDate()
-        ),
-        end: null
-    }
-    capital.value = null
-    numeroCuotas.value = null
-    tasaInteresDiario.value = null
-    recomendacion.value = ''
-    estadoCliente.value = 1
-    errors.value = {}
-}
-
-// Lifecycle hook
-onMounted(() => {
-    fetchClientes()
-})
-
-// Optional: Watch for date range changes (for debugging or additional logic)
-watch(dateRange, (newValue) => {
-  console.log('Date range updated:', newValue)
-}, { deep: true })
+const emit = defineEmits<AddPrestamoEmits>();
+const {
+    isOpen,
+    loading,
+    clientes,
+    selectedCliente,
+    errors,
+    dateRange,
+    capital,
+    numeroCuotas,
+    tasaInteresDiario,
+    recomendacion,
+    estadoCliente,
+    today,
+    recommendationCharLimit,
+    remainingChars,
+    isDateDisabled,
+    fetchClientes,
+    handleSubmit
+} = useAddPrestamo(emit);
 </script>
 
 <template>

@@ -9,8 +9,53 @@ use App\Models\ClienteModelo;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 class ClienteController extends Controller {
-    public function index() {
-        return ClienteResource::collection(ClienteModelo::all());
+    public function index(Request $request){
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+        $estadoCliente = $request->input('estado_cliente');
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+        
+        $query = ClienteModelo::query()
+            ->with(['prestamos' => function($query) {
+                $query->latest()->with('pagos');
+            }]);
+        
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('dni', 'ILIKE', "%{$search}%")
+                ->orWhere('nombre', 'ILIKE', "%{$search}%")
+                ->orWhere('apellidos', 'ILIKE', "%{$search}%")
+                ->orWhere('telefono', 'ILIKE', "%{$search}%")
+                ->orWhere('direccion', 'ILIKE', "%{$search}%")
+                ->orWhere('correo', 'ILIKE', "%{$search}%")
+                ->orWhere('centro_trabajo', 'ILIKE', "%{$search}%");
+            });
+        }
+        
+        if (!is_null($estadoCliente)) {
+            $query->whereHas('prestamos', function($q) use ($estadoCliente) {
+                $q->where('estado_cliente', $estadoCliente);
+            });
+        }
+        
+        if (!empty($fechaInicio) && !empty($fechaFin)) {
+            $query->whereHas('prestamos', function($q) use ($fechaInicio, $fechaFin) {
+                $q->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
+            });
+        }
+        
+        /*$today = date('Y-m-d');
+        $query->whereHas('prestamos', function($q) use ($today) {
+            $q->where('created_at', 'ILIKE', "{$today}%")
+            ->orWhereHas('pagos', function($subQ) use ($today) {
+                $subQ->where('created_at', 'ILIKE', "{$today}%");
+            });
+        });*/
+        
+        $clientes = $query->paginate($perPage);
+        
+        return ClienteResource::collection($clientes);
     }
     public function store(StoreClienteRequest $request) {
         $data = $request->validated();

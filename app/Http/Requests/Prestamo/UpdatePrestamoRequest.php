@@ -1,20 +1,27 @@
 <?php
 
 namespace App\Http\Requests\Prestamo;
+
 use Illuminate\Foundation\Http\FormRequest;
-class UpdatePrestamoRequest extends FormRequest{
-    public function authorize(){
+
+class UpdatePrestamoRequest extends FormRequest
+{
+    public function authorize()
+    {
         return true;
     }
-    public function rules(){
+
+    public function rules()
+    {
         return [
-            'fecha_inicio'       => 'sometimes|date',
-            'fecha_vencimiento'  => 'sometimes|date|after_or_equal:fecha_inicio',
-            'capital'            => 'sometimes|numeric|min:0',
-            'numero_cuotas'      => 'sometimes|integer|min:1',
-            'estado_cliente'     => 'sometimes|string|max:255',
-            'recomendacion'      => 'sometimes|string|max:255',
-            'tasa_interes_diario'=> 'sometimes|numeric|min:0',
+            'cliente_id' => 'required|exists:clientes,id',
+            'fecha_inicio' => 'required|date',
+            'fecha_vencimiento' => 'required|date|after:fecha_inicio',
+            'capital' => 'required|numeric|min:1',
+            'numero_cuotas' => 'required|integer|min:1',
+            'estado_cliente' => 'required|in:Paga,Moroso',
+            'recomendacion' => 'nullable|string',
+            'tasa_interes_diario' => 'required|numeric|min:0',
         ];
     }
 }

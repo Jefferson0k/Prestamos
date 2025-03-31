@@ -5,17 +5,45 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Prestamo\StorePrestamoRequest;
 use App\Http\Requests\Prestamo\UpdatePrestamoRequest;
-use App\Http\Resources\ClienteListResource;
 use App\Http\Resources\PrestamoResource;
 use App\Models\ClienteModelo;
 use App\Models\PrestamosModelo;
+use App\Services\PagoService;
+use App\Services\PrestamoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PrestamosController extends Controller{
-    public function index(){
-        $prestamos = PrestamosModelo::with('cliente', 'pagos')->get();
-        return PrestamoResource::collection($prestamos);
+    protected $prestamoService;
+    protected $pagoService;
+    public function __construct(PrestamoService $prestamoService, PagoService $pagoService){
+        $this->prestamoService = $prestamoService;
+        $this->pagoService = $pagoService;
+    }
+    public function index(Request $request){
+        $query = PrestamosModelo::with('cliente', 'pagos');
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'LIKE', "%{$search}%")
+                ->orWhere('cliente_id', 'LIKE', "%{$search}%")
+                ->orWhere('capital', 'LIKE', "%{$search}%")
+                ->orWhere('numero_cuotas', 'LIKE', "%{$search}%")
+                ->orWhere('estado_cliente', 'LIKE', "%{$search}%")
+                ->orWhere('recomendacion', 'LIKE', "%{$search}%")
+                ->orWhere('tasa_interes_diario', 'LIKE', "%{$search}%")
+                ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
+                    $clienteQuery->where('dni', 'LIKE', "%{$search}%")
+                                ->orWhere('nombre', 'LIKE', "%{$search}%")
+                                ->orWhere('apellidos', 'LIKE', "%{$search}%");
+                });
+            });
+        }
+        $prestamos = $query->paginate(10);
+        return response()->json([
+            'total' => $prestamos->total(),
+            'data' => PrestamoResource::collection($prestamos),
+        ]);
     }
     public function indexCliente(Request $request){
         $query = ClienteModelo::query();
@@ -45,36 +73,51 @@ class PrestamosController extends Controller{
         ]);
     }
     public function store(StorePrestamoRequest $request){
-        $prestamo = PrestamosModelo::create($request->validated());
+        $prestamo = $this->prestamoService->crearPrestamo($request->validated());
         return response()->json([
             'message' => 'Préstamo creado exitosamente',
-            'data'    => new PrestamoResource($prestamo),
+            'prestamo' => $prestamo
         ], Response::HTTP_CREATED);
     }
-    public function show($id){
-        $prestamo = PrestamosModelo::with('cliente', 'pagos')->find($id);
-        if (!$prestamo) {
-            return response()->json(['message' => 'Préstamo no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-        return new PrestamoResource($prestamo);
-    }
-    public function update(UpdatePrestamoRequest $request, $id){
-        $prestamo = PrestamosModelo::find($id);
-        if (!$prestamo) {
-            return response()->json(['message' => 'Préstamo no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-        $prestamo->update($request->validated());
+    public function show(PrestamosModelo $prestamo){
+        $cuotas = $prestamo->cuotas()->orderBy('numero_cuota')->get();
+        $pagos = $prestamo->pagos()->orderBy('created_at', 'desc')->get();
+        $simulacion = $this->pagoService->simularCalendarioPagos($prestamo);
         return response()->json([
-            'message' => 'Préstamo actualizado correctamente',
-            'data'    => new PrestamoResource($prestamo),
+            'prestamo' => $prestamo,
+            'cuotas' => $cuotas,
+            'pagos' => $pagos,
+            'simulacion' => $simulacion,
         ]);
     }
-    public function destroy($id){
-        $prestamo = PrestamosModelo::find($id);
-        if (!$prestamo) {
-            return response()->json(['message' => 'Préstamo no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-        $prestamo->delete();
-        return response()->json(['message' => 'Préstamo eliminado correctamente']);
+    public function edit(PrestamosModelo $prestamo){
+        $clientes = ClienteModelo::all();
+
+        return response()->json([
+            'prestamo' => $prestamo,
+            'clientes' => $clientes,
+        ]);
     }
+    public function update(UpdatePrestamoRequest $request, PrestamosModelo $prestamo){
+        $prestamo->update($request->validated());
+
+        return response()->json([
+            'message' => 'Préstamo actualizado correctamente.',
+            'prestamo' => $prestamo,
+        ]);
+    }
+    public function destroy(PrestamosModelo $prestamo){
+        $prestamo->delete();
+        return response()->json([
+            'message' => 'Préstamo eliminado correctamente.',
+        ]);
+    }
+    public function simulacion(PrestamosModelo $prestamo){
+        $simulacion = $this->pagoService->simularCalendarioPagos($prestamo);
+        return response()->json([
+            'prestamo' => $prestamo,
+            'simulacion' => $simulacion,
+        ]);
+    }
+
 }

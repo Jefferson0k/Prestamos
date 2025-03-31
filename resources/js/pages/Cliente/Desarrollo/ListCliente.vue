@@ -3,8 +3,12 @@
         <Toaster />
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
-                <Input placeholder="Buscar clientes..." class="h-8 w-[250px]" v-model="searchQuery"
-                    @input="onSearchChange" />
+                <Input 
+                    placeholder="Buscar clientes..." 
+                    class="h-8 w-[250px]" 
+                    v-model="searchQuery"
+                    @input="onSearchChange" 
+                />
             </div>
             <div class="flex items-center gap-2">
                 <Button variant="outline" size="sm" @click="refreshData">
@@ -19,12 +23,15 @@
             <Table>
                 <TableHeader>
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                        <TableHead v-for="header in headerGroup.headers" :key="header.id"
+                        <TableHead 
+                            v-for="header in headerGroup.headers" 
+                            :key="header.id"
                             :class="[
                                 header.column.getCanSort() ? 'cursor-pointer select-none' : '',
                                 getColumnWidthClass(header.column.id)
                             ]"
-                            @click="header.column.getCanSort() ? header.column.toggleSorting() : null">
+                            @click="header.column.getCanSort() ? header.column.toggleSorting() : null"
+                        >
                             <div class="flex items-center justify-between space-x-2" v-if="!header.isPlaceholder">
                                 <component
                                     :is="() => h(FlexRender, {
@@ -43,13 +50,18 @@
                 </TableHeader>
                 <TableBody>
                     <template v-if="table.getRowModel().rows?.length">
-                        <TableRow v-for="row in table.getRowModel().rows"
+                        <TableRow 
+                            v-for="row in table.getRowModel().rows"
                             :key="row.id"
                             :data-state="row.getIsSelected() && 'selected'"
                             class="cursor-pointer hover:bg-muted/50"
-                            @click="openClienteDetails(row.original)">
-                            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
-                                :class="getColumnWidthClass(cell.column.id)">
+                            @click="openClienteDetails(row.original)"
+                        >
+                            <TableCell 
+                                v-for="cell in row.getVisibleCells()" 
+                                :key="cell.id"
+                                :class="getColumnWidthClass(cell.column.id)"
+                            >
                                 <div class="truncate">
                                     <component
                                         :is="() => h(FlexRender, {
@@ -63,7 +75,7 @@
                     </template>
                     <template v-else>
                         <TableRow>
-                            <TableCell :colspan="columns.length" class="h-24 text-center">
+                            <TableCell :colspan="columns.length" class="text-center">
                                 No hay resultados.
                             </TableCell>
                         </TableRow>
@@ -80,7 +92,7 @@
                 <!-- Selección de filas por página -->
                 <div class="flex items-center space-x-2">
                     <p class="text-sm font-medium">Filas por página</p>
-                    <Select v-model="pageSize" @update:modelValue="table.setPageSize($event)">
+                    <Select v-model="pageSize" @update:modelValue="table.setPageSize(Number($event))">
                         <SelectTrigger class="h-8 w-[70px]">
                             <SelectValue :placeholder="pageSizeString" />
                         </SelectTrigger>
@@ -100,20 +112,36 @@
 
                     <!-- Controles de paginación -->
                     <div class="flex items-center space-x-2">
-                        <Button variant="outline" class="hidden h-8 w-8 p-0 lg:flex" :disabled="!table.getCanPreviousPage()"
-                            @click="table.setPageIndex(0)">
+                        <Button 
+                            variant="outline" 
+                            class="hidden h-8 w-8 p-0 lg:flex" 
+                            :disabled="!table.getCanPreviousPage()"
+                            @click="table.setPageIndex(0)"
+                        >
                             <DoubleArrowLeftIcon class="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanPreviousPage()"
-                            @click="table.previousPage()">
+                        <Button 
+                            variant="outline" 
+                            class="h-8 w-8 p-0" 
+                            :disabled="!table.getCanPreviousPage()"
+                            @click="table.previousPage()"
+                        >
                             <ChevronLeftIcon class="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanNextPage()"
-                            @click="table.nextPage()">
+                        <Button 
+                            variant="outline" 
+                            class="h-8 w-8 p-0" 
+                            :disabled="!table.getCanNextPage()"
+                            @click="table.nextPage()"
+                        >
                             <ChevronRightIcon class="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" class="hidden h-8 w-8 p-0 lg:flex" :disabled="!table.getCanNextPage()"
-                            @click="table.setPageIndex(table.getPageCount() - 1)">
+                        <Button 
+                            variant="outline" 
+                            class="hidden h-8 w-8 p-0 lg:flex" 
+                            :disabled="!table.getCanNextPage()"
+                            @click="table.setPageIndex(table.getPageCount() - 1)"
+                        >
                             <DoubleArrowRightIcon class="h-4 w-4" />
                         </Button>
                     </div>
@@ -131,96 +159,29 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     getFilteredRowModel,
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
     FlexRender
 } from '@tanstack/vue-table';
+
+// Tipos y utilitarios
+import { Cliente, SortingState, VisibilityState, ColumnFiltersState } from './typsClientes/typesCliente';
+import { getColumnWidthClass } from './typsClientes/columnUtils';
+import { createColumns } from './typsClientes/columns';
+
+// Componentes UI
 import { Toaster } from '@/components/ui/toast';
 import { useToast } from '@/components/ui/toast';
 import AddCliente from './AddCliente.vue';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import DataTableViewOptions from './DataTableViewOptions.vue';
-import {
-    Loader2,
-    RefreshCcw,
-    ChevronLeft,
-    ChevronRight,
-    MoreHorizontal,
-    ArrowUpDown,
-    ArrowUp,
-    ArrowDown
-} from 'lucide-vue-next';
+
+// Iconos
+import { RefreshCcw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { ChevronRightIcon, ChevronLeftIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon } from "@radix-icons/vue";
 
-// Resto del código igual que el original...
-
-// NUEVO: Función para asignar ancho a cada columna según su contenido
-const getColumnWidthClass = (columnId: string) => {
-    const columnWidths = {
-        'select': 'w-10',
-        'dni': 'w-28',
-        'foto': 'w-14',
-        'nombres': 'w-40 min-w-[120px]',
-        'apellidos': 'w-40 min-w-[120px]',
-        'celular': 'w-32',
-        'direccion': 'w-48 min-w-[180px] max-w-md',
-        'centro_trabajo': 'w-40 min-w-[150px] max-w-md',
-        'estado': 'w-28',
-        'fecha_inicio': 'w-32',
-        'fecha_vencimiento': 'w-32',
-        'tasa_interes_diario': 'w-36',
-        'capital_inicial': 'w-32',
-        'capital_del_mes': 'w-32',
-        'capital_actual': 'w-32',
-        'interes_actual': 'w-32',
-        'interes_total': 'w-32',
-        'total': 'w-28',
-        'numero_cuotas': 'w-24',
-        'recomendacion': 'w-48 min-w-[180px] max-w-xs',
-        'actions': 'w-10'
-    };
-
-    return columnWidths[columnId as keyof typeof columnWidths] || '';
-};
-
-interface Cliente {
-    id: number;
-    nombres: string;
-    apellidos: string;
-    direccion: string;
-    centro_trabajo: string;
-    celular: string;
-    dni: string;
-    fecha_inicio: string | null;
-    fecha_vencimiento: string | null;
-    tasa_interes_diario: number | null;
-    capital_inicial: number | null;
-    capital_del_mes: number;
-    capital_actual: number;
-    interes_actual: number;
-    interes_total: number;
-    total: number;
-    numero_cuotas: number | null;
-    estado_cliente: string | null;
-    recomendacion: string | null;
-    foto: string;
-}
-
+// Estado
 const { toast } = useToast();
 const clientes = ref<Cliente[]>([]);
 const isLoading = ref(true);
@@ -230,10 +191,11 @@ const isClienteDetailsOpen = ref(false);
 const pageSize = ref(10);
 const currentPage = ref(0);
 
+// Computed properties
 const pageSizeString = computed(() => String(pageSize.value));
 
+// Estados de la tabla
 const sorting = ref<SortingState>([]);
-
 const columnVisibility = ref<VisibilityState>({
     'direccion': false,
     'centro_trabajo': false,
@@ -241,200 +203,42 @@ const columnVisibility = ref<VisibilityState>({
     'foto': false,
     'celular': false,
 });
-
 const columnFilters = ref<ColumnFiltersState>([]);
 
-const columns = [
-    {
-        id: 'select',
-        header: ({ table }) => h(Checkbox, {
-            'checked': table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-            'onUpdate:checked': value => table.toggleAllPageRowsSelected(!!value),
-            'ariaLabel': 'Select all',
-        }),
-        cell: ({ row }) => h(Checkbox, {
-            'checked': row.getIsSelected(),
-            'onUpdate:checked': (value) => {
-                row.toggleSelected(!!value);
-                // Stop propagation to prevent row click when checkbox is clicked
-                event?.stopPropagation();
-            },
-            'ariaLabel': 'Select row',
-            'onClick': (e) => e.stopPropagation()
-        }),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
-        id: 'dni',
-        accessorKey: 'dni',
-        header: () => 'DNI',
-        cell: (info) => info.getValue(),
-        enableSorting: true,
-    },
-    {
-        id: 'foto',
-        accessorKey: 'foto',
-        header: () => 'Foto',
-        cell: ({ row }) => h('div', {}, [
-            h(Avatar, {}, {
-                default: () => [
-                    h(AvatarImage, {
-                        src: row.original.foto || '',
-                        alt: `Foto de ${row.original.nombres}`
-                    }),
-                    h(AvatarFallback, {}, () => getInitials(row.original.nombres, row.original.apellidos))
-                ]
-            })
-        ]),
-        enableSorting: true,
-        enableHiding: true,
-    },
-    {
-        id: 'nombre_completo',
-        accessorKey: 'nombre_completo',
-        header: () => 'Nombre completo',
-        cell: (info) => info.getValue(),
-        enableSorting: true,
-    },
-    {
-        id: 'celular',
-        accessorKey: 'celular',
-        header: () => 'Celular',
-        cell: (info) => info.getValue(),
-        enableSorting: true,
-        enableHiding: true,    },
-    {
-        id: 'direccion',
-        accessorKey: 'direccion',
-        header: () => 'Dirección',
-        cell: (info) => info.getValue(),
-        enableSorting: true,
-        enableHiding: true,
-    },
-    {
-        id: 'centro_trabajo',
-        accessorKey: 'centro_trabajo',
-        header: () => 'Centro de Trabajo',
-        cell: (info) => info.getValue(),
-        enableSorting: true,
-        enableHiding: true,
-    },
-    {
-        id: 'estado',
-        accessorKey: 'estado_cliente',
-        header: () => 'Estado',
-        cell: ({ row }) => h(Badge, {
-            variant: getEstadoBadgeVariant(row.original.estado_cliente)
-        }, () => row.original.estado_cliente || 'Sin estado'),
-        enableSorting: true,
-    },
-    {
-        id: 'fecha_inicio',
-        accessorKey: 'fecha_inicio',
-        header: () => 'Inicio',
-        cell: ({ row }) => row.original.fecha_inicio || '11-11-2021',
-        enableSorting: true,
-    },
-    {
-        id: 'fecha_vencimiento',
-        accessorKey: 'fecha_vencimiento',
-        header: () => 'Vencimiento',
-        cell: ({ row }) => row.original.fecha_vencimiento || '11-11-2021',
-        enableSorting: true,
-    },
-    {
-        id: 'tasa_interes_diario',
-        accessorKey: 'tasa_interes_diario',
-        header: () => 'Interés Diario',
-        cell: ({ row }) => row.original.tasa_interes_diario ? `${row.original.tasa_interes_diario}%` : 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'capital_inicial',
-        accessorKey: 'capital_inicial',
-        header: () => 'Capital Inicial',
-        cell: ({ row }) => row.original.capital_inicial || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'capital_del_mes',
-        accessorKey: 'capital_del_mes',
-        header: () => 'Capital del Mes',
-        cell: ({ row }) => row.original.capital_del_mes || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'capital_actual',
-        accessorKey: 'capital_actual',
-        header: () => 'Capital Actual',
-        cell: ({ row }) => row.original.capital_actual || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'interes_actual',
-        accessorKey: 'interes_actual',
-        header: () => 'Interés Actual',
-        cell: ({ row }) => row.original.interes_actual || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'interes_total',
-        accessorKey: 'interes_total',
-        header: () => 'Interés Total',
-        cell: ({ row }) => row.original.interes_total || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'total',
-        accessorKey: 'total',
-        header: () => 'Total',
-        cell: ({ row }) => row.original.total || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'numero_cuotas',
-        accessorKey: 'numero_cuotas',
-        header: () => 'Nº de Cuotas',
-        cell: ({ row }) => row.original.numero_cuotas || 'N/A',
-        enableSorting: true,
-    },
-    {
-        id: 'recomendacion',
-        accessorKey: 'recomendacion',
-        header: () => 'Recomendación',
-        cell: ({ row }) => row.original.recomendacion || 'Sin recomendación',
-        enableSorting: true,
-        enableHiding: true,
-    },
-    {
-        id: 'actions',
-        header: () => '',
-        cell: ({ row }) => h('div', { onClick: (e) => e.stopPropagation() }, [
-            h(DropdownMenu, {}, {
-                default: () => [
-                    h(DropdownMenuTrigger, { asChild: true }, () =>
-                        h(Button, { variant: 'ghost', class: 'h-8 w-8 p-0' }, () =>
-                            h(MoreHorizontal, { class: 'h-4 w-4' })
-                        )
-                    ),
-                    h(DropdownMenuContent, { align: 'end' }, () => [
-                        h(DropdownMenuItem, { onClick: () => viewClienteDetails(row.original) }, () => 'Ver detalles'),
-                        h(DropdownMenuItem, { onClick: () => editCliente(row.original) }, () => 'Editar'),
-                        h(DropdownMenuSeparator),
-                        h(DropdownMenuItem, {
-                            onClick: () => deleteCliente(row.original),
-                            class: 'text-destructive focus:text-destructive'
-                        }, () => 'Eliminar')
-                    ])
-                ]
-            })
-        ]),
-        enableSorting: false,
-        enableHiding: false,
-    },
-];
+// Manejadores de clientes
+const viewClienteDetails = (cliente: Cliente) => {
+    selectedCliente.value = cliente;
+    isClienteDetailsOpen.value = true;
+};
 
+const editCliente = (cliente: Cliente) => {
+    toast({
+        title: "Función en desarrollo",
+        description: `Editar cliente: ${cliente.nombres} ${cliente.apellidos}`,
+    });
+};
+
+const deleteCliente = (cliente: Cliente) => {
+    toast({
+        title: "Función en desarrollo",
+        description: `Eliminar cliente: ${cliente.nombres} ${cliente.apellidos}`,
+        variant: "destructive",
+    });
+};
+
+const openClienteDetails = (cliente: Cliente) => {
+    selectedCliente.value = cliente;
+    isClienteDetailsOpen.value = true;
+};
+
+// Definición de columnas
+const columns = createColumns({
+    viewClienteDetails,
+    editCliente,
+    deleteCliente
+});
+
+// Datos filtrados
 const filteredData = computed(() => {
     if (!searchQuery.value) return clientes.value;
 
@@ -449,11 +253,13 @@ const filteredData = computed(() => {
     });
 });
 
+// Total de páginas
 const totalPageCount = computed(() => {
     if (!filteredData.value.length) return 0;
     return Math.ceil(filteredData.value.length / pageSize.value);
 });
 
+// Inicialización de la tabla
 const table = useVueTable({
     get data() {
         return filteredData.value;
@@ -504,6 +310,7 @@ const table = useVueTable({
     manualPagination: false,
 });
 
+// Watchers y manejadores de eventos
 watch([searchQuery, clientes], () => {
     table.resetPageIndex(true);
 }, { deep: true });
@@ -514,7 +321,7 @@ const fetchClientes = async () => {
         const response = await fetch('/cliente');
         const result = await response.json();
         if (result && result.data) {
-            clientes.value = result.data.map(cliente => ({
+            clientes.value = result.data.map((cliente: any) => ({
                 ...cliente,
                 nombres: cliente.nombres || '',
                 apellidos: cliente.apellidos || '',
@@ -557,68 +364,29 @@ const refreshData = () => {
     });
 };
 
-const getInitials = (firstName: string = '', lastName: string = '') => {
-    return `${firstName.charAt(0) || ''}${lastName.charAt(0) || ''}`.toUpperCase() || 'NA';
-};
-
-const getEstadoBadgeVariant = (estado: string | null) => {
-    if (!estado) return 'outline';
-
-    const estadoLower = estado.toLowerCase();
-    if (estadoLower.includes('activ')) return 'success';
-    if (estadoLower.includes('pendiente')) return 'warning';
-    if (estadoLower.includes('moroso')) return 'destructive';
-    if (estadoLower.includes('complet')) return 'default';
-    return 'secondary';
-};
-
-const openClienteDetails = (cliente: Cliente) => {
-    selectedCliente.value = cliente;
-    isClienteDetailsOpen.value = true;
-};
-
-const viewClienteDetails = (cliente: Cliente) => {
-    selectedCliente.value = cliente;
-    isClienteDetailsOpen.value = true;
-};
-
-const editCliente = (cliente: Cliente) => {
-    toast({
-        title: "Función en desarrollo",
-        description: `Editar cliente: ${cliente.nombres} ${cliente.apellidos}`,
-    });
-};
-
-const deleteCliente = (cliente: Cliente) => {
-    toast({
-        title: "Función en desarrollo",
-        description: `Eliminar cliente: ${cliente.nombres} ${cliente.apellidos}`,
-        variant: "destructive",
-    });
-};
-
 const onSearchChange = () => {
     table.resetPageIndex(true);
 };
 
+// Inicialización
 onMounted(() => {
     fetchClientes();
 });
 </script>
 
 <style scoped>
-    :deep(.truncate) {
+:deep(.truncate) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    }
+}
 
-    :deep(th), :deep(td) {
+:deep(th), :deep(td) {
     padding: 0.5rem 0.75rem;
-    }
+}
 
-    :deep(.table-container) {
+:deep(.table-container) {
     width: 100%;
     overflow-x: auto;
-    }
+}
 </style>
