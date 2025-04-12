@@ -36,7 +36,7 @@ export function useAddPrestamo(emit: (event: 'prestamo-agregado', data: any) => 
     const isDateDisabled = (date: CalendarDate) => {
         const currentDate = new CalendarDate(
             today.getFullYear(),
-            today.getMonth() + 1,
+            today.getMonth() + 1, 
             today.getDate()
         );
         return date.compare(currentDate) < 0;
