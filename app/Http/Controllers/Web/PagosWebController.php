@@ -6,6 +6,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 class PagosWebController extends Controller{
     public function index(): Response{
-        return Inertia::render('Pagos/indexPagos');
+        return Inertia::render('panel/Pagos/indexPagos');
     }
 }

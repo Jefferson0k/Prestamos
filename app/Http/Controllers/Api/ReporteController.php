@@ -7,6 +7,6 @@ use Inertia\Inertia;
 
 class ReporteController extends Controller{
     public function vista(){
-        return inertia::render('Reporte/indexReporte');
+        return inertia::render('panel/Reporte/indexReporte');
     }
 }

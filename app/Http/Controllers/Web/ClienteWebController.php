@@ -6,6 +6,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 class ClienteWebController extends Controller{
     public function index(): Response{
-        return Inertia::render('Cliente/indexCliente');
+        return Inertia::render('panel/Cliente/indexCliente');
     }
 }
