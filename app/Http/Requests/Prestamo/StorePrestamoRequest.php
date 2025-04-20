@@ -10,15 +10,15 @@ class StorePrestamoRequest extends FormRequest{
     public function rules(){
         return [
             'cliente_id' => 'required|exists:clientes,id',
-            'fecha_inicio' => 'required|date',
-            'fecha_vencimiento' => 'required|date|after_or_equal:fecha_inicio',
+            'fecha_inicio' => 'required|date_format:Y-m-d H:i|before_or_equal:fecha_vencimiento',
+            'fecha_vencimiento' => 'required|date_format:Y-m-d H:i|after_or_equal:fecha_inicio',
             'capital' => 'required|numeric|min:0',
             'numero_cuotas' => 'required|integer|min:1',
             'estado_cliente' => 'required|integer',
             'recomendacion' => 'required|string|max:255',
             'tasa_interes_diario'=> 'required|numeric|min:0',
         ];
-    }
+    }    
     public function messages(){
         return [
             'cliente_id.required' => 'El cliente es obligatorio.',

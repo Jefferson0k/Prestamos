@@ -14,14 +14,10 @@ export function useAddPrestamo(emit: (event: 'prestamo-agregado', data: any) => 
     const today = new Date();
 
     const dateRange = ref<DateRange>({
-        start: new CalendarDate(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            today.getDate()
-        ),
+        start: null,
         end: null
-    });
-
+      });
+      
     const capital = ref<number | null>(null);
     const numeroCuotas = ref<number | null>(null);
     const tasaInteresDiario = ref<number | null>(null);
@@ -101,11 +97,7 @@ export function useAddPrestamo(emit: (event: 'prestamo-agregado', data: any) => 
     const resetForm = () => {
         selectedCliente.value = null;
         dateRange.value = {
-            start: new CalendarDate(
-                today.getFullYear(),
-                today.getMonth() + 1,
-                today.getDate()
-            ),
+            start: null,
             end: null
         };
         capital.value = null;
@@ -114,7 +106,7 @@ export function useAddPrestamo(emit: (event: 'prestamo-agregado', data: any) => 
         recomendacion.value = '';
         estadoCliente.value = 1;
         errors.value = {};
-    };
+    };   
 
     onMounted(() => {
         fetchClientes();

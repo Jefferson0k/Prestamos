@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ClienteController;
+use App\Http\Controllers\Api\ConsultasDni;
 use App\Http\Controllers\Api\PagosController;
 use App\Http\Controllers\Api\PrestamosController;
 use App\Http\Controllers\Api\ReporteController;
@@ -21,7 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pagos', [PagosWebController::class, 'index'])->name('clientes.index');
     Route::get('/prestamos', [PrestamosWebController::class, 'index'])->name('clientes.index');
     Route::get('/reportes', [ReporteWebController::class, 'index'])->name('clientes.index');
-
+    Route::get('/consulta/{dni}', [ConsultasDni::class, 'consultar'])->name('clientes.consultar');
     Route::prefix('cliente')->group(function () {
         Route::get('/', [ClienteController::class, 'index'])->name('api.cliente.index');
         Route::post('/', [ClienteController::class, 'store'])->name('api.clientes.store');

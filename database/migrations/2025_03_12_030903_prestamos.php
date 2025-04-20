@@ -10,12 +10,12 @@ return new class extends Migration{
         Schema::create('prestamos', function (Blueprint $table) {
             $table->increments('id');
             $table->foreignId('cliente_id')->constrained()->onDelete('cascade');
-            $table->date('fecha_inicio');
-            $table->date('fecha_vencimiento');
+            $table->datetime('fecha_inicio');
+            $table->datetime('fecha_vencimiento');
             $table->decimal('capital', 15, 2);
             $table->integer('numero_cuotas');
             $table->integer('estado_cliente');
-            $table->text('recomendacion');
+            $table->foreignId('idRecomendado');
             $table->decimal('tasa_interes_diario', 5, 2);
             $table->decimal('monto_total', 15, 2)->comment('Capital más intereses totales');
             $table->timestamps();

@@ -12,9 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import InputError from "@/components/InputError.vue";
-import { Plus } from 'lucide-vue-next';
+import { Plus, LoaderCircle } from 'lucide-vue-next';
 import { useAddCliente } from './typsClientes/useAddCliente';
 import { AddClienteEmits } from './typsClientes/AddCliente.types';
+import { Textarea } from '@/components/ui/textarea'
 
 const emit = defineEmits<AddClienteEmits>();
 const {
@@ -22,6 +23,8 @@ const {
     form,
     errors,
     loading,
+    loadingDni,
+    buscarPorDni,
     handleKeydown,
     handleFileChange,
     submitForm
@@ -44,36 +47,43 @@ const {
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submitForm">
-                <div class="grid grid-cols-2 gap-4 py-4 overflow-y-auto px-6 max-h-[60vh]">
+                <div class="grid grid-cols-1 gap-4 py-4 overflow-y-auto px-6 max-h-[60vh]">
                     <div class="grid gap-2">
                         <Label for="dni">DNI <span class="text-red-500 text-sm">*</span></Label>
-                        <Input id="dni" type="number" v-model="form.dni" placeholder="DNI"
-                            @keydown="(e: KeyboardEvent) => handleKeydown(e, 'nombre')" />
+                        <div class="relative">
+                            <Input  id="dni"  type="text"  inputmode="numeric"  pattern="[0-9]*"  maxlength="8" 
+                                v-model="form.dni"  placeholder="DNI"  @keydown="(e: KeyboardEvent) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        buscarPorDni();
+                                    }
+                                }"
+                            />
+                            <LoaderCircle v-if="loadingDni" class="absolute right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 animate-spin" />
+                        </div>
                         <InputError v-if="errors.dni" :message="errors.dni" />
                     </div>
                     <div class="grid gap-2">
                         <Label for="nombre">Nombre <span class="text-red-500 text-sm">*</span></Label>
-                        <Input id="nombre" type="text" v-model="form.nombre" placeholder="Nombre"
-                            @keydown="(e: KeyboardEvent) => handleKeydown(e, 'apellidos')" />
+                        <Input id="nombre" type="text" v-model="form.nombre" placeholder="Nombre" disabled />
                         <InputError v-if="errors.nombre" :message="errors.nombre" />
                     </div>
                     <div class="grid gap-2">
                         <Label for="apellidos">Apellidos <span class="text-red-500 text-sm">*</span></Label>
-                        <Input id="apellidos" type="text" v-model="form.apellidos" placeholder="Apellidos"
-                            @keydown="(e: KeyboardEvent) => handleKeydown(e, 'telefono')" />
+                        <Input id="apellidos" type="text" v-model="form.apellidos" placeholder="Apellidos" disabled />
                         <InputError v-if="errors.apellidos" :message="errors.apellidos" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="direccion">Dirección <span class="text-red-500 text-sm">*</span></Label>
+                        <Textarea placeholder="Dirección." id="direccion" v-model="form.direccion" disabled />
+                        <InputError v-if="errors.direccion" :message="errors.direccion" />
                     </div>
                     <div class="grid gap-2">
                         <Label for="telefono">Nº Teléfono <span class="text-red-500 text-sm">*</span></Label>
                         <Input id="telefono" type="number" v-model="form.telefono" placeholder="Teléfono"
-                            @keydown="(e: KeyboardEvent) => handleKeydown(e, 'direccion')" />
-                        <InputError v-if="errors.telefono" :message="errors.telefono" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="direccion">Dirección <span class="text-red-500 text-sm">*</span></Label>
-                        <Input id="direccion" type="text" v-model="form.direccion" placeholder="Dirección"
                             @keydown="(e: KeyboardEvent) => handleKeydown(e, 'correo')" />
-                        <InputError v-if="errors.direccion" :message="errors.direccion" />
+                        <InputError v-if="errors.telefono" :message="errors.telefono" />
                     </div>
                     <div class="grid gap-2">
                         <Label for="correo">Correo Electrónico <span class="text-red-500 text-sm">*</span></Label>

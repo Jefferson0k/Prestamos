@@ -10,6 +10,7 @@ use App\Models\ClienteModelo;
 use App\Models\PrestamosModelo;
 use App\Services\PagoService;
 use App\Services\PrestamoService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -73,7 +74,10 @@ class PrestamosController extends Controller{
         ]);
     }
     public function store(StorePrestamoRequest $request){
-        $prestamo = $this->prestamoService->crearPrestamo($request->validated());
+        $validatedData = $request->validated();
+        $validatedData['fecha_inicio'] = Carbon::parse($validatedData['fecha_inicio']);
+        $validatedData['fecha_vencimiento'] = Carbon::parse($validatedData['fecha_vencimiento']);    
+        $prestamo = $this->prestamoService->crearPrestamo($validatedData);
         return response()->json([
             'message' => 'Préstamo creado exitosamente',
             'prestamo' => $prestamo

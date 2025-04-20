@@ -1,5 +1,11 @@
 import { h } from 'vue';
-import { ColumnDef } from '@tanstack/vue-table';
+import type {
+    ColumnDef,
+    ColumnFiltersState,
+    ExpandedState,
+    SortingState,
+    VisibilityState,
+} from '@tanstack/vue-table'
 import { Cliente } from './typesCliente';
 import { getEstadoBadgeVariant, getInitials } from './columnUtils';
 
@@ -74,7 +80,7 @@ export const createColumns = (callbacks: ClienteCallbacks): ColumnDef<Cliente>[]
     {
         id: 'nombre_completo',
         accessorKey: 'nombre_completo',
-        header: () => 'Nombre completo',
+        header: () => 'Nombre y Apellido',
         cell: (info) => info.getValue(),
         enableSorting: true,
     },
@@ -97,7 +103,7 @@ export const createColumns = (callbacks: ClienteCallbacks): ColumnDef<Cliente>[]
     {
         id: 'centro_trabajo',
         accessorKey: 'centro_trabajo',
-        header: () => 'Centro de Trabajo',
+        header: () => 'Trabajo',
         cell: (info) => info.getValue(),
         enableSorting: true,
         enableHiding: true,
@@ -110,7 +116,7 @@ export const createColumns = (callbacks: ClienteCallbacks): ColumnDef<Cliente>[]
             variant: getEstadoBadgeVariant(Number(row.original.estado_cliente) || null)
         }, () => {
             const estado = Number(row.original.estado_cliente);
-            return estado === 1 ? 'Paga' : estado === 2 ? 'Moroso' : 'Sin estado';
+            return estado === 1 ? 'Paga' : estado === 2 ? 'Moroso' : 'Pendiente';
         }),
         enableSorting: true,
     },    
@@ -118,70 +124,70 @@ export const createColumns = (callbacks: ClienteCallbacks): ColumnDef<Cliente>[]
         id: 'fecha_inicio',
         accessorKey: 'fecha_inicio',
         header: () => 'Inicio',
-        cell: ({ row }) => row.original.fecha_inicio || '11-11-2021',
+        cell: ({ row }) => row.original.fecha_inicio || '00-00-0000',
         enableSorting: true,
     },
     {
         id: 'fecha_vencimiento',
         accessorKey: 'fecha_vencimiento',
         header: () => 'Vencimiento',
-        cell: ({ row }) => row.original.fecha_vencimiento || '11-11-2021',
+        cell: ({ row }) => row.original.fecha_vencimiento || '00-00-0000',
         enableSorting: true,
     },
     {
         id: 'tasa_interes_diario',
         accessorKey: 'tasa_interes_diario',
-        header: () => 'Interés Diario',
-        cell: ({ row }) => row.original.tasa_interes_diario ? `${row.original.tasa_interes_diario}%` : 'N/A',
+        header: () => 'Diario',
+        cell: ({ row }) => row.original.tasa_interes_diario ? `${row.original.tasa_interes_diario}%` : '0.00',
         enableSorting: true,
     },
     {
         id: 'capital_inicial',
         accessorKey: 'capital_inicial',
-        header: () => 'Capital Inicial',
-        cell: ({ row }) => row.original.capital_inicial || 'N/A',
+        header: () => 'Inicial',
+        cell: ({ row }) => row.original.capital_inicial || '0.00',
         enableSorting: true,
     },
     {
         id: 'capital_del_mes',
         accessorKey: 'capital_del_mes',
-        header: () => 'Capital del Mes',
-        cell: ({ row }) => row.original.capital_del_mes || 'N/A',
+        header: () => 'Mes',
+        cell: ({ row }) => row.original.capital_del_mes || '0.00',
         enableSorting: true,
     },
     {
         id: 'capital_actual',
         accessorKey: 'capital_actual',
-        header: () => 'Capital Actual',
-        cell: ({ row }) => row.original.capital_actual || 'N/A',
+        header: () => 'Capital',
+        cell: ({ row }) => row.original.capital_actual || '0.00',
         enableSorting: true,
     },
     {
         id: 'interes_actual',
         accessorKey: 'interes_actual',
-        header: () => 'Interés Actual',
-        cell: ({ row }) => row.original.interes_actual || 'N/A',
+        header: () => 'Actual',
+        cell: ({ row }) => row.original.interes_actual || '0.00',
         enableSorting: true,
     },
     {
         id: 'interes_total',
         accessorKey: 'interes_total',
-        header: () => 'Interés Total',
-        cell: ({ row }) => row.original.interes_total || 'N/A',
+        header: () => 'Interés',
+        cell: ({ row }) => row.original.interes_total || '0.00',
         enableSorting: true,
     },
     {
         id: 'total',
         accessorKey: 'total',
         header: () => 'Total',
-        cell: ({ row }) => row.original.total || 'N/A',
+        cell: ({ row }) => row.original.total || '0.00',
         enableSorting: true,
     },
     {
         id: 'numero_cuotas',
         accessorKey: 'numero_cuotas',
-        header: () => 'Nº de Cuotas',
-        cell: ({ row }) => row.original.numero_cuotas || 'N/A',
+        header: () => 'Cuotas',
+        cell: ({ row }) => row.original.numero_cuotas || '0.00',
         enableSorting: true,
     },
     {

@@ -66,6 +66,70 @@ export function useAddCliente(emit: (event: 'cliente-added') => void) {
         });
     };
 
+    const loadingDni = ref(false);
+
+    const buscarPorDni = async () => {
+        errors.dni = "";
+        if (!form.dni) {
+            errors.dni = "Ingrese un DNI";
+            return;
+        }
+        if (form.dni.length !== 8) {
+            errors.dni = "El DNI debe tener 8 dígitos";
+            return;
+        }    
+        loadingDni.value = true;    
+        try {
+            console.log("Buscando DNI:", form.dni);
+            const { data } = await axios.get(`/consulta/${form.dni}`);
+            console.log("Respuesta:", data);
+            
+            if (data.success) {
+                const info = data.data;
+                form.nombre = info.nombres;
+                form.apellidos = `${info.apellido_paterno} ${info.apellido_materno}`;
+                form.direccion = info.direccion_completa;
+                setTimeout(() => {
+                    const telefonoInput = document.getElementById('telefono');
+                    if (telefonoInput) telefonoInput.focus();
+                }, 100);
+            } else {
+                toast({
+                    title: "DNI no encontrado",
+                    description: "No se encontraron datos para este DNI",
+                    variant: "destructive",
+                });
+            }
+        } catch (error: any) {
+            console.error("Error al buscar DNI:", error);
+            if (error.response) {
+                if (error.response.status === 404) {
+                    errors.dni = "DNI no encontrado";
+                } else {
+                    toast({
+                        title: "Error al consultar DNI",
+                        description: `Error ${error.response.status}: ${error.response.statusText}`,
+                        variant: "destructive",
+                    });
+                }
+            } else if (error.request) {
+                toast({
+                    title: "Error de conexión",
+                    description: "No se pudo conectar con el servidor",
+                    variant: "destructive",
+                });
+            } else {
+                toast({
+                    title: "Error al consultar DNI",
+                    description: error.message || "Error desconocido",
+                    variant: "destructive",
+                });
+            }
+        } finally {
+            loadingDni.value = false;
+        }
+    };
+
     const submitForm = async () => {
         loading.value = true;
         Object.keys(errors).forEach((key) => {
@@ -127,6 +191,8 @@ export function useAddCliente(emit: (event: 'cliente-added') => void) {
         form,
         errors,
         loading,
+        loadingDni,
+        buscarPorDni,
         handleKeydown,
         handleFileChange,
         resetForm,

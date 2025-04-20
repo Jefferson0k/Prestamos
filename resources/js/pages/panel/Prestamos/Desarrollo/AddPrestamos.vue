@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { Plus, ChevronsUpDown, Check, Info } from 'lucide-vue-next';
+import { Plus, Check, Info,Search } from 'lucide-vue-next';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Combobox, ComboboxAnchor, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -20,7 +18,13 @@ import {
 } from '@/components/ui/select';
 import { AddPrestamoEmits } from './typsPrestamos/AddPrestamos.types';
 import { useAddPrestamo } from './typsPrestamos/useAddPrestamo';
-
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from '@/components/ui/number-field'
 const emit = defineEmits<AddPrestamoEmits>();
 const {
     isOpen,
@@ -32,13 +36,7 @@ const {
     capital,
     numeroCuotas,
     tasaInteresDiario,
-    recomendacion,
     estadoCliente,
-    today,
-    recommendationCharLimit,
-    remainingChars,
-    isDateDisabled,
-    fetchClientes,
     handleSubmit
 } = useAddPrestamo(emit);
 </script>
@@ -62,28 +60,29 @@ const {
             <form @submit.prevent="handleSubmit" class="flex flex-col">
                 <div class="grid grid-cols-2 gap-4 py-4 overflow-y-auto px-6 max-h-[60vh]">
                     <!-- Cliente Selection -->
-                    <div class="grid gap-2 col-span-2">
+                    <div class="grid gap-2 col-span-2 w-full">
                         <Label for="cliente">Cliente <span class="text-red-500">*</span></Label>
-                        <Combobox v-model="selectedCliente" :items="clientes" by="value" class="w-full">
+                        <Combobox class="w-full" v-model="selectedCliente" :items="clientes" by="value">
                             <ComboboxAnchor class="w-full">
-                                <div class="relative w-full max-w-full items-center">
-                                    <ComboboxInput :display-value="(val) => val?.label ?? ''"
-                                        placeholder="Selecciona un cliente..."
-                                        @input="fetchClientes($event.target.value)" class="w-full" />
-                                    <ComboboxTrigger
-                                        class="absolute end-0 top-1/2 -translate-y-1/2 flex items-center justify-center px-3">
-                                        <ChevronsUpDown class="size-4 text-muted-foreground" />
-                                    </ComboboxTrigger>
+                                <div class="relative w-full items-center">
+                                    <ComboboxInput class="pl-9 w-full" :display-value="(val) => val?.label ?? ''" placeholder="Selecciona un cliente..." />
+                                    <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
+                                        <Search class="size-4 text-muted-foreground" />
+                                    </span>
                                 </div>
                             </ComboboxAnchor>
+
                             <ComboboxList class="w-full">
-                                <ComboboxEmpty class="w-full">No se encontraron clientes.</ComboboxEmpty>
+                                <ComboboxEmpty class="w-96">
+                                    No encontramos clientes.
+                                </ComboboxEmpty>
+
                                 <ComboboxGroup class="w-full">
-                                    <ComboboxItem v-for="cliente in clientes" :key="cliente.value" :value="cliente"
-                                        class="w-full">
+                                    <ComboboxItem v-for="cliente in clientes" :key="cliente.value" :value="cliente" class="w-full">
                                         {{ cliente.label }}
+
                                         <ComboboxItemIndicator>
-                                            <Check :class="cn('w-full')" />
+                                            <Check :class="cn('ml-auto h-4 w-4')" />
                                         </ComboboxItemIndicator>
                                     </ComboboxItem>
                                 </ComboboxGroup>
@@ -91,7 +90,6 @@ const {
                         </Combobox>
                         <InputError :message="errors['cliente_id']?.[0]" />
                     </div>
-
                     <!-- Fecha de Inicio y Vencimiento -->
                     <div class="grid gap-2">
                         <Label>Fechas de Préstamo <span class="text-red-500">*</span></Label>
@@ -113,9 +111,6 @@ const {
                             <PopoverContent class="w-auto p-0">
                                 <RangeCalendar
                                     v-model="dateRange"
-                                    :is-date-disabled="isDateDisabled"
-                                    :month="today.getMonth() + 1"
-                                    :year="today.getFullYear()"
                                 />
                             </PopoverContent>
                         </Popover>
@@ -127,26 +122,49 @@ const {
 
                     <!-- Capital -->
                     <div class="grid gap-2">
-                        <Label for="capital">Capital <span class="text-red-500">*</span></Label>
-                        <Input id="capital" type="number" v-model.number="capital" placeholder="Monto del préstamo"
-                            min="0" step="0.01" />
+                        <NumberField id="capital" v-model="capital" :min="0">
+                            <Label for="capital">Capital <span class="text-red-500">*</span></Label>
+                            <NumberFieldContent>
+                                <NumberFieldDecrement />
+                                    <NumberFieldInput />
+                                <NumberFieldIncrement />
+                            </NumberFieldContent>
+                        </NumberField>    
                         <InputError :message="errors['capital']?.[0]" />
                     </div>
 
                     <!-- Número de Cuotas -->
-                    <div class="grid gap-2">
-                        <Label for="numeroCuotas">Número de Cuotas <span class="text-red-500">*</span></Label>
-                        <Input id="numeroCuotas" type="number" v-model.number="numeroCuotas"
-                            placeholder="Número de cuotas" min="1" />
+                    <div class="grid gap-2">                        
+                        <NumberField id="numeroCuotas" v-model="numeroCuotas" :min="0">
+                            <Label for="numeroCuotas">Número de Cuotas <span class="text-red-500">*</span></Label>
+                            <NumberFieldContent>
+                                <NumberFieldDecrement />
+                                    <NumberFieldInput />
+                                <NumberFieldIncrement />
+                            </NumberFieldContent>
+                        </NumberField>
                         <InputError :message="errors['numero_cuotas']?.[0]" />
                     </div>
 
                     <!-- Tasa de Interés Diario -->
                     <div class="grid gap-2">
-                        <Label for="tasaInteresDiario">Tasa de Interés Diario (%) <span
+                            <NumberField
+                                id="tasaInteresDiario"
+                                v-model="tasaInteresDiario"
+                                :step="0.01"
+                                :min="0"
+                                :format-options="{
+                                style: 'percent',
+                                }"
+                            >
+                            <Label for="tasaInteresDiario">Tasa de Interés Diario (%) <span
                                 class="text-red-500">*</span></Label>
-                        <Input id="tasaInteresDiario" type="number" v-model.number="tasaInteresDiario"
-                            placeholder="Tasa de interés diaria" min="0" step="0.01" />
+                                <NumberFieldContent>
+                                <NumberFieldDecrement />
+                                <NumberFieldInput />
+                                <NumberFieldIncrement />
+                                </NumberFieldContent>
+                            </NumberField>
                         <InputError :message="errors['tasa_interes_diario']?.[0]" />
                     </div>
 
@@ -170,20 +188,34 @@ const {
 
                     <!-- Recomendación -->
                     <div class="grid gap-2 col-span-2">
-                        <Label for="recomendacion">Recomendación <span
+                        <Label for="recomendacion">Recomendo <span
                             class="text-red-500">*</span></Label>
-                        <div class="relative">
-                            <Textarea
-                                id="recomendacion"
-                                v-model="recomendacion"
-                                placeholder="Notas o recomendaciones adicionales"
-                                :maxlength="recommendationCharLimit"
-                            />
-                            <div class="text-xs text-muted-foreground absolute bottom-2 right-2 flex items-center">
-                                <Info class="w-4 h-4 mr-1" />
-                                {{ remainingChars }} caracteres restantes
-                            </div>
-                        </div>
+                            <Combobox class="w-full" v-model="selectedCliente" :items="clientes" by="value">
+                            <ComboboxAnchor class="w-full">
+                                <div class="relative w-full items-center">
+                                    <ComboboxInput class="pl-9 w-full" :display-value="(val) => val?.label ?? ''" placeholder="Selecciona un cliente que lo recomendo..." />
+                                    <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
+                                        <Search class="size-4 text-muted-foreground" />
+                                    </span>
+                                </div>
+                            </ComboboxAnchor>
+
+                            <ComboboxList class="w-full">
+                                <ComboboxEmpty class="w-96">
+                                    No encontramos clientes.
+                                </ComboboxEmpty>
+
+                                <ComboboxGroup class="w-full">
+                                    <ComboboxItem v-for="cliente in clientes" :key="cliente.value" :value="cliente" class="w-full">
+                                        {{ cliente.label }}
+
+                                        <ComboboxItemIndicator>
+                                            <Check :class="cn('ml-auto h-4 w-4')" />
+                                        </ComboboxItemIndicator>
+                                    </ComboboxItem>
+                                </ComboboxGroup>
+                            </ComboboxList>
+                        </Combobox>
                         <InputError :message="errors['recomendacion']?.[0]" />
                     </div>
                 </div>

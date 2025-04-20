@@ -19,12 +19,14 @@ class PrestamosModelo extends Model{
         'monto_total'
     ];
     protected $casts = [
-        'fecha_inicio' => 'date',
-        'fecha_vencimiento' => 'date',
         'capital' => 'decimal:2',
         'tasa_interes_diario' => 'decimal:2',
         'monto_total' => 'decimal:2',
     ];
+    protected $dates = [
+        'fecha_inicio',
+        'fecha_vencimiento',
+    ];    
     public function cliente(){
         return $this->belongsTo(ClienteModelo::class);
     }
