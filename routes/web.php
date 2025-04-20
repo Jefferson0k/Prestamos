@@ -5,10 +5,12 @@ use App\Http\Controllers\Api\ConsultasDni;
 use App\Http\Controllers\Api\PagosController;
 use App\Http\Controllers\Api\PrestamosController;
 use App\Http\Controllers\Api\ReporteController;
+use App\Http\Controllers\Api\UsuariosController;
 use App\Http\Controllers\Web\ClienteWebController;
 use App\Http\Controllers\Web\PagosWebController;
 use App\Http\Controllers\Web\PrestamosWebController;
 use App\Http\Controllers\Web\ReporteWebController;
+use App\Http\Controllers\Web\UsuarioWebController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -17,27 +19,30 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    
     Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
     Route::get('/clientes', [ClienteWebController::class, 'index'])->name('clientes.index');
-    Route::get('/pagos', [PagosWebController::class, 'index'])->name('clientes.index');
-    Route::get('/prestamos', [PrestamosWebController::class, 'index'])->name('clientes.index');
-    Route::get('/reportes', [ReporteWebController::class, 'index'])->name('clientes.index');
+    Route::get('/pagos', [PagosWebController::class, 'index'])->name('pagos.index');
+    Route::get('/prestamos', [PrestamosWebController::class, 'index'])->name('prestamos.index');
+    Route::get('/reportes', [ReporteWebController::class, 'index'])->name('reportes.index');
+    Route::get('/usuario', [UsuarioWebController::class,'index'])->name('usuario.index');
     Route::get('/consulta/{dni}', [ConsultasDni::class, 'consultar'])->name('clientes.consultar');
+
     Route::prefix('cliente')->group(function () {
-        Route::get('/', [ClienteController::class, 'index'])->name('api.cliente.index');
-        Route::post('/', [ClienteController::class, 'store'])->name('api.clientes.store');
-        Route::get('{id}', [ClienteController::class, 'show'])->name('api.clientes.show');
-        Route::put('{id}', [ClienteController::class, 'update'])->name('api.clientes.update');
-        Route::delete('{id}', [ClienteController::class, 'destroy'])->name('api.clientes.destroy');
+        Route::get('/', [ClienteController::class, 'index'])->name('cliente.index');
+        Route::post('/', [ClienteController::class, 'store'])->name('clientes.store');
+        Route::get('{id}', [ClienteController::class, 'show'])->name('clientes.show');
+        Route::put('{id}', [ClienteController::class, 'update'])->name('clientes.update');
+        Route::delete('{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
     });
 
     Route::prefix('prestamo')->group(function () {
         Route::get('/', action: [PrestamosController::class, 'index'])->name('api.prestamo.index');
         Route::get('/cliente', action: [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
-        Route::post('/', [PrestamosController::class, 'store'])->name('api.prestamo.store');
-        Route::get('{id}', [PrestamosController::class, 'show'])->name('api.prestamo.show');
-        Route::put('{id}', [PrestamosController::class, 'update'])->name('api.prestamo.update');
-        Route::delete('{id}', [PrestamosController::class, 'destroy'])->name('api.prestamo.destroy');
+        Route::post('/', [PrestamosController::class, 'store'])->name('prestamo.store');
+        Route::get('{id}', [PrestamosController::class, 'show'])->name('prestamo.show');
+        Route::put('{id}', [PrestamosController::class, 'update'])->name('prestamo.update');
+        Route::delete('{id}', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
         Route::get('/{prestamo}/simulacion', [PrestamosController::class, 'simulacion'])->name('prestamos.simulacion');
     });
 
@@ -52,8 +57,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });   
 
     Route::prefix('reporte')->group(function () {
-        Route::get('/', [ReporteController::class, 'index'])->name('api.reporte.index');
-        Route::get('{id}', [ReporteController::class, 'show'])->name('api.reporte.show');
+        Route::get('/', [ReporteController::class, 'index'])->name('reporte.index');
+        Route::get('{id}', [ReporteController::class, 'show'])->name('reporte.show');
+    }); 
+
+    Route::prefix('usuarios')->group(function(){
+        Route::get('/', [UsuariosController::class, 'index'])->name('usuarios.index');
+        Route::post('/',[UsuariosController::class, 'store'])->name('usuarios.store');
+        Route::get('/{id}',[UsuariosController::class, 'show'])->name('usuarios.show');
+        Route::put('/{id}',[UsuariosController::class, 'update'])->name('usuarios.update');
+        Route::delete('/{id}',[UsuariosController::class, 'destroy'])->name('usuarios.destroy');
     });
 }); 
 // Archivos de configuración adicionales

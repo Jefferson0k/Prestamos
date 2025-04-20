@@ -13,6 +13,7 @@ use App\Services\PrestamoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class PrestamosController extends Controller{
     protected $prestamoService;
@@ -22,6 +23,7 @@ class PrestamosController extends Controller{
         $this->pagoService = $pagoService;
     }
     public function index(Request $request){
+        Gate::authorize('viewAny', PrestamosModelo::class);
         $query = PrestamosModelo::with('cliente', 'pagos');
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;

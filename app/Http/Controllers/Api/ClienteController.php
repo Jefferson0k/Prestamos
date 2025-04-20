@@ -8,8 +8,11 @@ use App\Http\Resources\ClienteResource;
 use App\Models\ClienteModelo;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+
 class ClienteController extends Controller {
     public function index(Request $request){
+        Gate::authorize('viewAny', ClienteModelo::class);
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search', '');
         $estadoCliente = $request->input('estado_cliente');
@@ -45,19 +48,20 @@ class ClienteController extends Controller {
             });
         }
         
-        /*$today = date('Y-m-d');
+        $today = date('Y-m-d');
         $query->whereHas('prestamos', function($q) use ($today) {
             $q->where('created_at', 'ILIKE', "{$today}%")
             ->orWhereHas('pagos', function($subQ) use ($today) {
                 $subQ->where('created_at', 'ILIKE', "{$today}%");
             });
-        });*/
+        });
         
         $clientes = $query->paginate($perPage);
         
         return ClienteResource::collection($clientes);
     }
     public function store(StoreClienteRequest $request) {
+        Gate::authorize('create', ClienteModelo::class);
         $data = $request->validated();
         $data['foto'] = $this->handleFotoUpload($request);
         $cliente = ClienteModelo::create($data);
@@ -67,9 +71,11 @@ class ClienteController extends Controller {
         ], 201);
     }
     public function show(ClienteModelo $cliente) {
+        Gate::authorize('view', $cliente);
         return response()->json($cliente);
     }
     public function update(UpdateClienteRequest $request, ClienteModelo $cliente) {
+        Gate::authorize('update', $cliente);
         $data = $request->validated();
         $data['foto'] = $this->handleFotoUpload($request, $cliente);
         $cliente->update($data);
@@ -79,6 +85,7 @@ class ClienteController extends Controller {
         ]);
     }
     public function destroy(ClienteModelo $cliente) {
+        Gate::authorize('delete', $cliente);
         if ($cliente->foto) {
             Storage::delete('public/customers/' . $cliente->foto);
         }

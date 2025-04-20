@@ -36,7 +36,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Usuarios',
-        href: '/users',
+        href: '/usuario',
         icon: UserSquare,
     },
 ];
