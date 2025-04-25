@@ -9,22 +9,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
     {
-        title: 'Clientes',
-        href: '/clientes',
-    },
-    {
-        title: 'Prestamos',
-        href: '/prestamos',
-    },
-    {
-        title: 'Pagos',
-        href: '/pagos',
-    },
-    {
-        title: 'Reportes',
-        href: '/reportes',
-    },
-    {
         title: 'Usuario',
         href: '/usuario',
     },

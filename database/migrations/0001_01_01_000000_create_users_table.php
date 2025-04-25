@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('dni', 8)->unique();
+            $table->string('apellidos');
+            $table->date('nacimiento');
             $table->string('email')->unique();
             $table->string('username')->unique();
             $table->boolean('status')->default(true)->comment('0: Inactivo, 1: Activo');

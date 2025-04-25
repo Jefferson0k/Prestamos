@@ -37,14 +37,13 @@ class UsuariosController extends Controller{
             ], 500);
         }
     }
-    public function store(StoreUserRequest $storeUserRequest){
+    public function store(StoreUserRequest $request){
         Gate::authorize('create', User::class);
-        $validated = $storeUserRequest->validated();
+        $validated = $request->validated();
         $validated['password'] = Hash::make($validated['password']);
-        $validated = $storeUserRequest->safe()->except(['status']);
-        $user = User::create(Arr::except($validated, ['status']));
+        $user = User::create($validated);
         return response()->json($user);
-    }
+    }    
     public function show(User $user){
         Gate::authorize('view', User::class);
         return response()->json([
