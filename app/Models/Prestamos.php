@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-class PrestamosModelo extends Model{    
+class Prestamos extends Model{    
     use HasFactory;
     protected $table = 'prestamos';
     protected $fillable = [
@@ -28,12 +28,12 @@ class PrestamosModelo extends Model{
         'fecha_vencimiento',
     ];    
     public function cliente(){
-        return $this->belongsTo(ClienteModelo::class);
+        return $this->belongsTo(Cliente::class);
     }
     public function cuotas(){
-        return $this->hasMany(CuotasModelo::class, 'prestamo_id');
+        return $this->hasMany(Cliente::class, 'prestamo_id');
     }    
     public function pagos(){
-        return $this->hasMany(PagosModelo::class, 'prestamo_id'); 
+        return $this->hasMany(Pagos::class, 'prestamo_id'); 
     }
 }

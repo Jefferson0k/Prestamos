@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Prestamo\StorePrestamoRequest;
 use App\Http\Requests\Prestamo\UpdatePrestamoRequest;
 use App\Http\Resources\PrestamoResource;
-use App\Models\ClienteModelo;
-use App\Models\PrestamosModelo;
+use App\Models\Cliente;
+use App\Models\Prestamos;
 use App\Services\PagoService;
 use App\Services\PrestamoService;
 use Carbon\Carbon;
@@ -23,8 +23,8 @@ class PrestamosController extends Controller{
         $this->pagoService = $pagoService;
     }
     public function index(Request $request){
-        Gate::authorize('viewAny', PrestamosModelo::class);
-        $query = PrestamosModelo::with('cliente', 'pagos');
+        Gate::authorize('viewAny', Prestamos::class);
+        $query = Prestamos::with('cliente', 'pagos');
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -49,7 +49,7 @@ class PrestamosController extends Controller{
         ]);
     }
     public function indexCliente(Request $request){
-        $query = ClienteModelo::query();
+        $query = Cliente::query();
         if ($request->has('search') && !empty($request->input('search'))) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -85,7 +85,7 @@ class PrestamosController extends Controller{
             'prestamo' => $prestamo
         ], Response::HTTP_CREATED);
     }
-    public function show(PrestamosModelo $prestamo){
+    public function show(Prestamos $prestamo){
         $cuotas = $prestamo->cuotas()->orderBy('numero_cuota')->get();
         $pagos = $prestamo->pagos()->orderBy('created_at', 'desc')->get();
         $simulacion = $this->pagoService->simularCalendarioPagos($prestamo);
@@ -96,15 +96,15 @@ class PrestamosController extends Controller{
             'simulacion' => $simulacion,
         ]);
     }
-    public function edit(PrestamosModelo $prestamo){
-        $clientes = ClienteModelo::all();
+    public function edit(Prestamos $prestamo){
+        $clientes = Cliente::all();
 
         return response()->json([
             'prestamo' => $prestamo,
             'clientes' => $clientes,
         ]);
     }
-    public function update(UpdatePrestamoRequest $request, PrestamosModelo $prestamo){
+    public function update(UpdatePrestamoRequest $request, Prestamos $prestamo){
         $prestamo->update($request->validated());
 
         return response()->json([
@@ -112,13 +112,13 @@ class PrestamosController extends Controller{
             'prestamo' => $prestamo,
         ]);
     }
-    public function destroy(PrestamosModelo $prestamo){
+    public function destroy(Prestamos $prestamo){
         $prestamo->delete();
         return response()->json([
             'message' => 'Préstamo eliminado correctamente.',
         ]);
     }
-    public function simulacion(PrestamosModelo $prestamo){
+    public function simulacion(Prestamos $prestamo){
         $simulacion = $this->pagoService->simularCalendarioPagos($prestamo);
         return response()->json([
             'prestamo' => $prestamo,

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-class ClienteModelo extends Model{
+class Cliente extends Model{
 
     use HasFactory;
     protected $table = 'clientes';
@@ -12,6 +12,6 @@ class ClienteModelo extends Model{
         'dni', 'nombre', 'apellidos', 'telefono', 'direccion', 'correo', 'centro_trabajo', 'foto'
     ];
     public function prestamos(){
-        return $this->hasMany(PrestamosModelo::class, 'cliente_id');
+        return $this->hasMany(Prestamos::class, 'cliente_id');
     }
 }

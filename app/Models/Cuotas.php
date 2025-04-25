@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CuotasModelo extends Model{
+class Cuotas extends Model{
     use HasFactory;
     protected $table = 'cuotas';
     protected $fillable = [
@@ -24,10 +24,9 @@ class CuotasModelo extends Model{
         'monto_total' => 'decimal:2',
     ];
     public function prestamo(){
-        return $this->belongsTo(PrestamosModelo::class, 'prestamo_id');
-    }
-    
+        return $this->belongsTo(Prestamos::class, 'prestamo_id');
+    }    
     public function pagos(){
-        return $this->hasMany(PagosModelo::class);
+        return $this->hasMany(Pagos::class);
     }
 }

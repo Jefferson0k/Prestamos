@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\CuotasModelo;
-use App\Models\PagosModelo;
-use App\Models\PrestamosModelo;
+use App\Models\Cuotas;
+use App\Models\Pagos;
+use App\Models\Prestamos;
 use Carbon\Carbon;
 
 class PagoService{
-    public function registrarPago(CuotasModelo $cuota, $fechaPago){
+    public function registrarPago(Cuotas $cuota, $fechaPago){
         $prestamo = $cuota->prestamo;
         $fechaPago = Carbon::parse($fechaPago);
     
-        $pago = PagosModelo::create([
+        $pago = Pagos::create([
             'prestamo_id' => $prestamo->id,
             'cuota_id' => $cuota->id,
             'fecha_pago' => $fechaPago,
@@ -27,7 +27,7 @@ class PagoService{
     
         return $pago;
     }    
-    public function actualizarEstadoPrestamo(PrestamosModelo $prestamo){
+    public function actualizarEstadoPrestamo(Prestamos $prestamo){
         $cuotasPendientes = $prestamo->cuotas()->where('estado', '!=', 'Pagado')->count();
         $cuotasVencidas = $prestamo->cuotas()
             ->where('estado', '!=', 'Pagado')
@@ -40,7 +40,7 @@ class PagoService{
         }
     }
 
-public function simularCalendarioPagos(PrestamosModelo $prestamo)
+public function simularCalendarioPagos(Prestamos $prestamo)
 {
     $calendario = [];
     $saldoCapital = $prestamo->capital; // Capital inicial

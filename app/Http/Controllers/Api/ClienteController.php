@@ -5,21 +5,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cliente\StoreClienteRequest;
 use App\Http\Requests\Cliente\UpdateClienteRequest;
 use App\Http\Resources\ClienteResource;
-use App\Models\ClienteModelo;
+use App\Models\Cliente;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class ClienteController extends Controller {
     public function index(Request $request){
-        Gate::authorize('viewAny', ClienteModelo::class);
+        Gate::authorize('viewAny', Cliente::class);
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search', '');
         $estadoCliente = $request->input('estado_cliente');
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         
-        $query = ClienteModelo::query()
+        $query = Cliente::query()
             ->with(['prestamos' => function($query) {
                 $query->latest()->with('pagos');
             }]);
@@ -61,20 +61,20 @@ class ClienteController extends Controller {
         return ClienteResource::collection($clientes);
     }
     public function store(StoreClienteRequest $request) {
-        Gate::authorize('create', ClienteModelo::class);
+        Gate::authorize('create', Cliente::class);
         $data = $request->validated();
         $data['foto'] = $this->handleFotoUpload($request);
-        $cliente = ClienteModelo::create($data);
+        $cliente = Cliente::create($data);
         return response()->json([
             'message' => 'Cliente registrado exitosamente',
             'cliente' => $cliente
         ], 201);
     }
-    public function show(ClienteModelo $cliente) {
+    public function show(Cliente $cliente) {
         Gate::authorize('view', $cliente);
         return response()->json($cliente);
     }
-    public function update(UpdateClienteRequest $request, ClienteModelo $cliente) {
+    public function update(UpdateClienteRequest $request, Cliente $cliente) {
         Gate::authorize('update', $cliente);
         $data = $request->validated();
         $data['foto'] = $this->handleFotoUpload($request, $cliente);
@@ -84,7 +84,7 @@ class ClienteController extends Controller {
             'cliente' => $cliente
         ]);
     }
-    public function destroy(ClienteModelo $cliente) {
+    public function destroy(Cliente $cliente) {
         Gate::authorize('delete', $cliente);
         if ($cliente->foto) {
             Storage::delete('public/customers/' . $cliente->foto);
@@ -92,7 +92,7 @@ class ClienteController extends Controller {
         $cliente->delete();
         return response()->json(['message' => 'Cliente eliminado correctamente']);
     }
-    private function handleFotoUpload(Request $request, ClienteModelo $cliente = null) {
+    private function handleFotoUpload(Request $request, Cliente $cliente = null) {
         if (!$request->hasFile('foto')) return $cliente?->foto;
         if ($cliente && $cliente->foto) {
             if (file_exists(public_path('customers/' . $cliente->foto))) {

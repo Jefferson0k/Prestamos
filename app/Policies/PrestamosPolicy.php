@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\PrestamosModelo;
+use App\Models\Prestamos;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
@@ -19,7 +19,7 @@ class PrestamosPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, PrestamosModelo $prestamosModelo): bool
+    public function view(User $user, Prestamos $prestamos): bool
     {
         return $user->can('ver prestamos');
     }
@@ -35,7 +35,7 @@ class PrestamosPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, PrestamosModelo $prestamosModelo): bool
+    public function update(User $user, Prestamos $prestamos): bool
     {
         return $user->can('editar prestamos');
     }
@@ -43,7 +43,7 @@ class PrestamosPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, PrestamosModelo $prestamosModelo): bool
+    public function delete(User $user, Prestamos $prestamos): bool
     {
         return $user->can('eliminar prestamos');
     }
@@ -51,7 +51,7 @@ class PrestamosPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, PrestamosModelo $prestamosModelo): bool
+    public function restore(User $user, Prestamos $prestamos): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class PrestamosPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, PrestamosModelo $prestamosModelo): bool
+    public function forceDelete(User $user, Prestamos $prestamos): bool
     {
         return false;
     }

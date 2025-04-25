@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\CuotasModelo;
-use App\Models\PrestamosModelo;
+use App\Models\Cuotas;
+use App\Models\Prestamos;
 use Carbon\Carbon;
 
 class PrestamoService{
@@ -14,7 +14,7 @@ class PrestamoService{
             $data['numero_cuotas']
         );
         
-        $prestamo = PrestamosModelo::create([
+        $prestamo = Prestamos::create([
             'cliente_id' => $data['cliente_id'],
             'fecha_inicio' => $data['fecha_inicio'],
             'fecha_vencimiento' => $data['fecha_vencimiento'],
@@ -33,7 +33,7 @@ class PrestamoService{
         $interes = $capital * ($tasaInteresDiario / 100) * $diasTotales;
         return $capital + $interes;
     }
-    public function generarCuotas(PrestamosModelo $prestamo){
+    public function generarCuotas(Prestamos $prestamo){
         $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
         $capitalPorCuota = $prestamo->capital / $prestamo->numero_cuotas;
         $saldoCapital = $prestamo->capital;
@@ -41,7 +41,7 @@ class PrestamoService{
         for ($i = 1; $i <= $prestamo->numero_cuotas; $i++) {
             $fechaVencimiento = $fechaInicio->copy()->addMonths($i);
             $interes = $saldoCapital * ($prestamo->tasa_interes_diario / 100) * 30;
-            CuotasModelo::create([
+            Cuotas::create([
                 'prestamo_id' => $prestamo->id,
                 'numero_cuota' => $i,
                 'capital' => $capitalPorCuota,

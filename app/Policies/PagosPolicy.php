@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\PagosModelo;
+use App\Models\Pagos;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
@@ -19,7 +19,7 @@ class PagosPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, PagosModelo $pagosModelo): bool
+    public function view(User $user, Pagos $pagos): bool
     {
         return $user->can('ver pagos');
     }
@@ -35,7 +35,7 @@ class PagosPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, PagosModelo $pagosModelo): bool
+    public function update(User $user, Pagos $pagos): bool
     {
         return $user->can('editar pagos');
     }
@@ -43,7 +43,7 @@ class PagosPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, PagosModelo $pagosModelo): bool
+    public function delete(User $user, Pagos $pagos): bool
     {
         return $user->can('eliminar pagos');
     }
@@ -51,7 +51,7 @@ class PagosPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, PagosModelo $pagosModelo): bool
+    public function restore(User $user, Pagos $pagos): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class PagosPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, PagosModelo $pagosModelo): bool
+    public function forceDelete(User $user, Pagos $pagos): bool
     {
         return false;
     }
