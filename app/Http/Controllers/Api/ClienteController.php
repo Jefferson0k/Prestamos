@@ -48,13 +48,13 @@ class ClienteController extends Controller {
             });
         }
         
-        $today = date('Y-m-d');
+        /*$today = date('Y-m-d');
         $query->whereHas('prestamos', function($q) use ($today) {
             $q->where('created_at', 'ILIKE', "{$today}%")
             ->orWhereHas('pagos', function($subQ) use ($today) {
                 $subQ->where('created_at', 'ILIKE', "{$today}%");
             });
-        });
+        });*/
         
         $clientes = $query->paginate($perPage);
         

@@ -1,154 +1,169 @@
 <template>
+    <Toaster />
     <div class="grid grid-cols-1gap-6">
-        <Toaster />
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-                <Input 
-                    placeholder="Buscar clientes..." 
-                    class="h-8 w-[250px]" 
-                    v-model="searchQuery"
-                    @input="onSearchChange" 
-                />
-            </div>
-            <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" @click="refreshData">
-                    <RefreshCcw class="h-4 w-4" />
-                    Actualizar
-                </Button>
-                <DataTableViewOptions :table="table" />
-                <AddCliente @cliente-added="fetchClientes" />
-            </div>
-        </div>
-        <div class="rounded-md border overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                        <TableHead 
-                            v-for="header in headerGroup.headers" 
-                            :key="header.id"
-                            :class="[
-                                header.column.getCanSort() ? 'cursor-pointer select-none' : '',
-                                getColumnWidthClass(header.column.id)
-                            ]"
-                            @click="header.column.getCanSort() ? header.column.toggleSorting() : null"
-                        >
-                            <div class="flex items-center justify-between space-x-2" v-if="!header.isPlaceholder">
-                                <component
-                                    :is="() => h(FlexRender, {
-                                        render: header.column.columnDef.header,
-                                        props: header.getContext()
-                                    })"
-                                />
-                                <div v-if="header.column.getCanSort()">
-                                    <ArrowUpDown class="h-4 w-4" v-if="!header.column.getIsSorted()" />
-                                    <ArrowUp class="h-4 w-4" v-else-if="header.column.getIsSorted() === 'asc'" />
-                                    <ArrowDown class="h-4 w-4" v-else />
-                                </div>
-                            </div>
-                        </TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    <template v-if="table.getRowModel().rows?.length">
-                        <TableRow 
-                            v-for="row in table.getRowModel().rows"
-                            :key="row.id"
-                            :data-state="row.getIsSelected() && 'selected'"
-                            class="cursor-pointer hover:bg-muted/50"
-                            @click="openClienteDetails(row.original)"
-                        >
-                            <TableCell 
-                                v-for="cell in row.getVisibleCells()" 
-                                :key="cell.id"
-                                :class="getColumnWidthClass(cell.column.id)"
-                            >
-                                <div class="truncate">
-                                    <component
-                                        :is="() => h(FlexRender, {
-                                            render: cell.column.columnDef.cell,
-                                            props: cell.getContext()
-                                        })"
-                                    />
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    </template>
-                    <template v-else>
-                        <TableRow>
-                            <TableCell :colspan="columns.length" class="h-24 text-center">
-                                No hay resultados.
-                            </TableCell>
-                        </TableRow>
-                    </template>
-                </TableBody>
-            </Table>
-        </div>
-
-        <div class="flex items-center justify-between space-x-2 py-4">
-            <div class="flex-1 text-sm text-muted-foreground">
-                Mostrando <span class="font-medium">{{ table.getRowModel().rows.length }}</span> de <span class="font-medium">{{ filteredData.length }}</span> clientes
-            </div>
-            <div class="flex items-center space-x-4">
-                <!-- Selección de filas por página -->
-                <div class="flex items-center space-x-2">
-                    <p class="text-sm font-medium">Filas por página</p>
-                    <Select v-model="pageSize" @update:modelValue="table.setPageSize(Number($event))">
-                        <SelectTrigger class="h-8 w-[70px]">
-                            <SelectValue :placeholder="pageSizeString" />
-                        </SelectTrigger>
-                        <SelectContent side="top">
-                            <SelectItem v-for="size in [5, 10, 20, 50]" :key="size" :value="size">{{ size }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+    <!-- Botones principales en línea, uno a cada costado -->
+    <Card class="mb-4">
+        <CardContent class="pt-6 pb-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <AddCliente @cliente-added="fetchClientes" />
+                    <Button @click="refreshData" variant="secondary">
+                        <RefreshCcw class="h-4 w-4 mr-2" />
+                        Actualizar
+                    </Button>
                 </div>
 
-                <!-- No mostrar si no hay suficientes elementos para paginar -->
-                <template v-if="totalPageCount > 0">
-                    <!-- Indicador de página actual -->
-                    <p class="text-sm font-medium">
-                        Página {{ table.getState().pagination.pageIndex + 1 }} de {{ totalPageCount }}
-                    </p>
-
-                    <!-- Controles de paginación -->
-                    <div class="flex items-center space-x-2">
-                        <Button 
-                            variant="outline" 
-                            class="hidden h-8 w-8 p-0 lg:flex" 
-                            :disabled="!table.getCanPreviousPage()"
-                            @click="table.setPageIndex(0)"
-                        >
-                            <DoubleArrowLeftIcon class="h-4 w-4" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            class="h-8 w-8 p-0" 
-                            :disabled="!table.getCanPreviousPage()"
-                            @click="table.previousPage()"
-                        >
-                            <ChevronLeftIcon class="h-4 w-4" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            class="h-8 w-8 p-0" 
-                            :disabled="!table.getCanNextPage()"
-                            @click="table.nextPage()"
-                        >
-                            <ChevronRightIcon class="h-4 w-4" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            class="hidden h-8 w-8 p-0 lg:flex" 
-                            :disabled="!table.getCanNextPage()"
-                            @click="table.setPageIndex(table.getPageCount() - 1)"
-                        >
-                            <DoubleArrowRightIcon class="h-4 w-4" />
-                        </Button>
-                    </div>
-                </template>
+                <!-- Botón de exportar al lado derecho -->
+                <Button variant="destructive">
+                    <Download class="h-4 mr-2" />
+                    Exportar
+                </Button>
             </div>
-        </div>
-    </div>
+        </CardContent>
+    </Card>
+
+    <!-- Tabla principal de clientes -->
+    <Card class="rounded-md border overflow-x-auto">
+        <CardHeader class="pb-0">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <CardTitle>Clientes</CardTitle>
+                    <CardDescription>Gestiona tu cartera de clientes fácilmente</CardDescription>
+                </div>
+
+                <!-- Controles de la tabla a la derecha -->
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <!-- Buscador -->
+                    <div class="w-full sm:w-auto relative">
+                        <Input placeholder="Buscar clientes..." class="h-9 w-full sm:w-[250px] pl-8"
+                            v-model="searchQuery" @input="onSearchChange" />
+                    </div>
+
+                    <!-- Opciones de visualización -->
+                    <DataTableViewOptions :table="table" />
+                </div>
+            </div>
+        </CardHeader>
+
+        <CardContent class="pt-4">
+            <div class="rounded-md border overflow-hidden">
+                <div class="overflow-x-auto">
+                    <Table class="w-full">
+                        <TableHeader>
+                            <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                                <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="[
+                                    header.column.getCanSort() ? 'cursor-pointer select-none' : '',
+                                    getColumnWidthClass(header.column.id)
+                                ]" @click="header.column.getCanSort() ? header.column.toggleSorting() : null">
+                                    <div class="flex items-center justify-between space-x-2"
+                                        v-if="!header.isPlaceholder">
+                                        <component :is="() => h(FlexRender, {
+                                            render: header.column.columnDef.header,
+                                            props: header.getContext()
+                                        })" />
+                                        <div v-if="header.column.getCanSort()">
+                                            <ArrowUpDown class="h-4 w-4" v-if="!header.column.getIsSorted()" />
+                                            <ArrowUp class="h-4 w-4"
+                                                v-else-if="header.column.getIsSorted() === 'asc'" />
+                                            <ArrowDown class="h-4 w-4" v-else />
+                                        </div>
+                                    </div>
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                            <template v-if="table.getRowModel().rows?.length">
+                                <TableRow v-for="row in table.getRowModel().rows" :key="row.id"
+                                    :data-state="row.getIsSelected() && 'selected'"
+                                    class="cursor-pointer hover:bg-muted/50" @click="openClienteDetails(row.original)">
+                                    <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
+                                        :class="getColumnWidthClass(cell.column.id)">
+                                        <div class="truncate">
+                                            <component :is="() => h(FlexRender, {
+                                                render: cell.column.columnDef.cell,
+                                                props: cell.getContext()
+                                            })" />
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            </template>
+                            <template v-else>
+                                <TableRow>
+                                    <TableCell :colspan="columns.length" class="h-24 text-center">
+                                        <div class="flex flex-col items-center justify-center py-4">
+                                            <FileX class="h-10 w-10 text-muted-foreground mb-2" />
+                                            <p class="text-sm text-muted-foreground">No hay resultados</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            </template>
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        </CardContent>
+
+        <!-- Footer con información de paginación -->
+        <CardFooter>
+            <div class="w-full">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+                    <div class="text-sm text-muted-foreground">
+                        Mostrando
+                        <span class="font-medium">{{ table.getRowModel().rows.length }}</span>
+                        de
+                        <span class="font-medium">{{ filteredData.length }}</span> clientes
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 justify-center sm:justify-end">
+                        <!-- Filas por página -->
+                        <div class="flex items-center space-x-2">
+                            <p class="text-sm font-medium">Filas</p>
+                            <Select v-model="pageSize" @update:modelValue="table.setPageSize(Number($event))">
+                                <SelectTrigger class="h-8 w-16">
+                                    <SelectValue :placeholder="pageSizeString" />
+                                </SelectTrigger>
+                                <SelectContent side="top">
+                                    <SelectItem v-for="size in [5, 10, 20, 50]" :key="size" :value="size">{{ size }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <!-- Paginación -->
+                        <template v-if="totalPageCount > 0">
+                            <p class="text-sm font-medium whitespace-nowrap">
+                                Página {{ table.getState().pagination.pageIndex + 1 }} de {{ totalPageCount }}
+                            </p>
+
+                            <div class="flex items-center space-x-1">
+                                <Button variant="outline" class="hidden h-8 w-8 p-0 md:flex"
+                                    :disabled="!table.getCanPreviousPage()" @click="table.setPageIndex(0)"
+                                    aria-label="Primera página">
+                                    <DoubleArrowLeftIcon class="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanPreviousPage()"
+                                    @click="table.previousPage()" aria-label="Página anterior">
+                                    <ChevronLeftIcon class="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanNextPage()"
+                                    @click="table.nextPage()" aria-label="Página siguiente">
+                                    <ChevronRightIcon class="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" class="hidden h-8 w-8 p-0 md:flex"
+                                    :disabled="!table.getCanNextPage()"
+                                    @click="table.setPageIndex(table.getPageCount() - 1)" aria-label="Última página">
+                                    <DoubleArrowRightIcon class="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </CardFooter>
+    </Card>
+
+</div>
 </template>
 
 <script setup lang="ts">
@@ -161,7 +176,14 @@ import {
     getFilteredRowModel,
     FlexRender
 } from '@tanstack/vue-table';
-
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
 // Tipos y utilitarios
 import { Cliente, SortingState, VisibilityState, ColumnFiltersState } from './typsClientes/typesCliente';
 import { getColumnWidthClass } from './typsClientes/columnUtils';
@@ -178,7 +200,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DataTableViewOptions from './DataTableViewOptions.vue';
 
 // Iconos
-import { RefreshCcw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
+import { RefreshCcw, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-vue-next';
 import { ChevronRightIcon, ChevronLeftIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon } from "@radix-icons/vue";
 
 // Estado
@@ -381,7 +403,8 @@ onMounted(() => {
     text-overflow: ellipsis;
 }
 
-:deep(th), :deep(td) {
+:deep(th),
+:deep(td) {
     padding: 0.5rem 0.75rem;
 }
 

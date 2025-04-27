@@ -44,9 +44,9 @@ const {
 <template>
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
-            <Button variant="outline" size="sm">
+            <Button>
                 <Plus class="h-4 mr-2" />
-                Crear Nuevo Préstamo
+                Crear Préstamo
             </Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-[800px] grid-rows-[auto_1fr_auto] p-0 max-h-[90dvh]">

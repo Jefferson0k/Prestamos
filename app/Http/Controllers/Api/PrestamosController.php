@@ -49,6 +49,7 @@ class PrestamosController extends Controller{
         ]);
     }
     public function indexCliente(Request $request){
+        Gate::authorize('viewAny', Cliente::class);
         $query = Cliente::query();
         if ($request->has('search') && !empty($request->input('search'))) {
             $search = $request->input('search');

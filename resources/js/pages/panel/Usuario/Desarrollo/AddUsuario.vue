@@ -1,9 +1,9 @@
 <template>
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
-            <Button variant="outline" size="sm">
+            <Button>
                 <Plus class="h-4" />
-                Crear Nuevo
+                    Crear Usuario
             </Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-[700px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
