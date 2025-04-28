@@ -1,415 +1,140 @@
+<!-- src/components/clientes/ClientesPage.vue -->
 <template>
-    <Toaster />
-    <div class="grid grid-cols-1gap-6">
-    <!-- Botones principales en línea, uno a cada costado -->
+  <Toaster />
+  <div class="grid grid-cols-1 gap-6">
     <Card class="mb-4">
-        <CardContent class="pt-6 pb-4">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <AddCliente @cliente-added="fetchClientes" />
-                    <Button @click="refreshData" variant="secondary">
-                        <RefreshCcw class="h-4 w-4 mr-2" />
-                        Actualizar
-                    </Button>
-                </div>
-
-                <!-- Botón de exportar al lado derecho -->
-                <Button variant="destructive">
-                    <Download class="h-4 mr-2" />
-                    Exportar
-                </Button>
-            </div>
-        </CardContent>
+      <CardContent class="pt-6 pb-4">
+        <div class="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
+          <div class="flex items-center gap-2 flex-wrap">
+            <AddCliente @cliente-added="refreshData" />
+            <Button @click="refreshData" variant="secondary">
+              <RefreshCcw class="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+            <ClienteFilter @filter-change="onFilterChange" />
+          </div>
+          <Button variant="destructive" @click="exportClientes">
+            <Download class="h-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
+      </CardContent>
     </Card>
-
-    <!-- Tabla principal de clientes -->
-    <Card class="rounded-md border overflow-x-auto">
-        <CardHeader class="pb-0">
-            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div>
-                    <CardTitle>Clientes</CardTitle>
-                    <CardDescription>Gestiona tu cartera de clientes fácilmente</CardDescription>
-                </div>
-
-                <!-- Controles de la tabla a la derecha -->
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                    <!-- Buscador -->
-                    <div class="w-full sm:w-auto relative">
-                        <Input placeholder="Buscar clientes..." class="h-9 w-full sm:w-[250px] pl-8"
-                            v-model="searchQuery" @input="onSearchChange" />
-                    </div>
-
-                    <!-- Opciones de visualización -->
-                    <DataTableViewOptions :table="table" />
-                </div>
-            </div>
-        </CardHeader>
-
-        <CardContent class="pt-4">
-            <div class="rounded-md border overflow-hidden">
-                <div class="overflow-x-auto">
-                    <Table class="w-full">
-                        <TableHeader>
-                            <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                                <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="[
-                                    header.column.getCanSort() ? 'cursor-pointer select-none' : '',
-                                    getColumnWidthClass(header.column.id)
-                                ]" @click="header.column.getCanSort() ? header.column.toggleSorting() : null">
-                                    <div class="flex items-center justify-between space-x-2"
-                                        v-if="!header.isPlaceholder">
-                                        <component :is="() => h(FlexRender, {
-                                            render: header.column.columnDef.header,
-                                            props: header.getContext()
-                                        })" />
-                                        <div v-if="header.column.getCanSort()">
-                                            <ArrowUpDown class="h-4 w-4" v-if="!header.column.getIsSorted()" />
-                                            <ArrowUp class="h-4 w-4"
-                                                v-else-if="header.column.getIsSorted() === 'asc'" />
-                                            <ArrowDown class="h-4 w-4" v-else />
-                                        </div>
-                                    </div>
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-
-                        <TableBody>
-                            <template v-if="table.getRowModel().rows?.length">
-                                <TableRow v-for="row in table.getRowModel().rows" :key="row.id"
-                                    :data-state="row.getIsSelected() && 'selected'"
-                                    class="cursor-pointer hover:bg-muted/50" @click="openClienteDetails(row.original)">
-                                    <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
-                                        :class="getColumnWidthClass(cell.column.id)">
-                                        <div class="truncate">
-                                            <component :is="() => h(FlexRender, {
-                                                render: cell.column.columnDef.cell,
-                                                props: cell.getContext()
-                                            })" />
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            </template>
-                            <template v-else>
-                                <TableRow>
-                                    <TableCell :colspan="columns.length" class="h-24 text-center">
-                                        <div class="flex flex-col items-center justify-center py-4">
-                                            <FileX class="h-10 w-10 text-muted-foreground mb-2" />
-                                            <p class="text-sm text-muted-foreground">No hay resultados</p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            </template>
-                        </TableBody>
-                    </Table>
-                </div>
-            </div>
-        </CardContent>
-
-        <!-- Footer con información de paginación -->
-        <CardFooter>
-            <div class="w-full">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
-                    <div class="text-sm text-muted-foreground">
-                        Mostrando
-                        <span class="font-medium">{{ table.getRowModel().rows.length }}</span>
-                        de
-                        <span class="font-medium">{{ filteredData.length }}</span> clientes
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-4 justify-center sm:justify-end">
-                        <!-- Filas por página -->
-                        <div class="flex items-center space-x-2">
-                            <p class="text-sm font-medium">Filas</p>
-                            <Select v-model="pageSize" @update:modelValue="table.setPageSize(Number($event))">
-                                <SelectTrigger class="h-8 w-16">
-                                    <SelectValue :placeholder="pageSizeString" />
-                                </SelectTrigger>
-                                <SelectContent side="top">
-                                    <SelectItem v-for="size in [5, 10, 20, 50]" :key="size" :value="size">{{ size }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <!-- Paginación -->
-                        <template v-if="totalPageCount > 0">
-                            <p class="text-sm font-medium whitespace-nowrap">
-                                Página {{ table.getState().pagination.pageIndex + 1 }} de {{ totalPageCount }}
-                            </p>
-
-                            <div class="flex items-center space-x-1">
-                                <Button variant="outline" class="hidden h-8 w-8 p-0 md:flex"
-                                    :disabled="!table.getCanPreviousPage()" @click="table.setPageIndex(0)"
-                                    aria-label="Primera página">
-                                    <DoubleArrowLeftIcon class="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanPreviousPage()"
-                                    @click="table.previousPage()" aria-label="Página anterior">
-                                    <ChevronLeftIcon class="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanNextPage()"
-                                    @click="table.nextPage()" aria-label="Página siguiente">
-                                    <ChevronRightIcon class="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" class="hidden h-8 w-8 p-0 md:flex"
-                                    :disabled="!table.getCanNextPage()"
-                                    @click="table.setPageIndex(table.getPageCount() - 1)" aria-label="Última página">
-                                    <DoubleArrowRightIcon class="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </CardFooter>
-    </Card>
-
-</div>
+    
+    <ClienteTable 
+      ref="clienteTable" 
+      @cliente-selected="openClienteDetails"
+      @edit-cliente="editCliente"
+      @delete-cliente="confirmDelete"
+    />
+    
+    <!-- Diálogo de confirmación para eliminar cliente -->
+    <DeleteClienteDialog
+      v-model:show="showDeleteDialog"
+      :cliente="clienteToDelete"
+      @confirm="deleteCliente"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, h } from 'vue';
-import {
-    useVueTable,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    getFilteredRowModel,
-    FlexRender
-} from '@tanstack/vue-table';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
-// Tipos y utilitarios
-import { Cliente, SortingState, VisibilityState, ColumnFiltersState } from './typsClientes/typesCliente';
-import { getColumnWidthClass } from './typsClientes/columnUtils';
-import { createColumns } from './typsClientes/columns';
-
-// Componentes UI
+import { ref } from 'vue';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toast';
 import { useToast } from '@/components/ui/toast';
+import { RefreshCcw, Download } from 'lucide-vue-next';
 import AddCliente from './AddCliente.vue';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import DataTableViewOptions from './DataTableViewOptions.vue';
+import ClienteTable from './ClienteTable.vue';
+import ClienteFilter from './ClienteFilter.vue';
+import DeleteClienteDialog from './DeleteClienteDialog.vue';
+import { Cliente } from './typsClientes/typesCliente';
+import { clienteService } from './typsClientes/clienteService';
 
-// Iconos
-import { RefreshCcw, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-vue-next';
-import { ChevronRightIcon, ChevronLeftIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon } from "@radix-icons/vue";
-
-// Estado
 const { toast } = useToast();
-const clientes = ref<Cliente[]>([]);
-const isLoading = ref(true);
-const searchQuery = ref('');
+const clienteTable = ref<InstanceType<typeof ClienteTable> | null>(null);
 const selectedCliente = ref<Cliente | null>(null);
 const isClienteDetailsOpen = ref(false);
-const pageSize = ref(10);
-const currentPage = ref(0);
+const showDeleteDialog = ref(false);
+const clienteToDelete = ref<Cliente | null>(null);
 
-// Computed properties
-const pageSizeString = computed(() => String(pageSize.value));
-
-// Estados de la tabla
-const sorting = ref<SortingState>([]);
-const columnVisibility = ref<VisibilityState>({
-    'direccion': false,
-    'centro_trabajo': false,
-    'recomendacion': false,
-    'foto': false,
-    'celular': false,
-});
-const columnFilters = ref<ColumnFiltersState>([]);
-
-// Manejadores de clientes
-const viewClienteDetails = (cliente: Cliente) => {
-    selectedCliente.value = cliente;
-    isClienteDetailsOpen.value = true;
+const refreshData = () => {
+  clienteTable.value?.refreshData();
+  toast({
+    title: "Actualizado",
+    description: "Los datos de clientes han sido actualizados.",
+  });
 };
 
-const editCliente = (cliente: Cliente) => {
-    toast({
-        title: "Función en desarrollo",
-        description: `Editar cliente: ${cliente.nombres} ${cliente.apellidos}`,
-    });
-};
-
-const deleteCliente = (cliente: Cliente) => {
-    toast({
-        title: "Función en desarrollo",
-        description: `Eliminar cliente: ${cliente.nombres} ${cliente.apellidos}`,
-        variant: "destructive",
-    });
+const onFilterChange = (filter: string | null) => {
+  clienteTable.value?.setFilter(filter);
 };
 
 const openClienteDetails = (cliente: Cliente) => {
-    selectedCliente.value = cliente;
-    isClienteDetailsOpen.value = true;
+  selectedCliente.value = cliente;
+  isClienteDetailsOpen.value = true;
+  // Implement your modal display logic here
 };
 
-// Definición de columnas
-const columns = createColumns({
-    viewClienteDetails,
-    editCliente,
-    deleteCliente
-});
-
-// Datos filtrados
-const filteredData = computed(() => {
-    if (!searchQuery.value) return clientes.value;
-
-    return clientes.value.filter(cliente => {
-        const searchLower = searchQuery.value.toLowerCase();
-        return (
-            (cliente.nombres || '').toLowerCase().includes(searchLower) ||
-            (cliente.apellidos || '').toLowerCase().includes(searchLower) ||
-            (cliente.dni || '').includes(searchQuery.value) ||
-            (cliente.celular || '').includes(searchQuery.value)
-        );
-    });
-});
-
-// Total de páginas
-const totalPageCount = computed(() => {
-    if (!filteredData.value.length) return 0;
-    return Math.ceil(filteredData.value.length / pageSize.value);
-});
-
-// Inicialización de la tabla
-const table = useVueTable({
-    get data() {
-        return filteredData.value;
-    },
-    columns,
-    state: {
-        get sorting() {
-            return sorting.value;
-        },
-        get columnVisibility() {
-            return columnVisibility.value;
-        },
-        get columnFilters() {
-            return columnFilters.value;
-        },
-        get pagination() {
-            return {
-                pageIndex: currentPage.value,
-                pageSize: pageSize.value,
-            };
-        },
-    },
-    onSortingChange: (updater) => {
-        sorting.value = typeof updater === 'function' ? updater(sorting.value) : updater;
-    },
-    onColumnVisibilityChange: (updater) => {
-        columnVisibility.value = typeof updater === 'function' ? updater(columnVisibility.value) : updater;
-    },
-    onColumnFiltersChange: (updater) => {
-        columnFilters.value = typeof updater === 'function' ? updater(columnFilters.value) : updater;
-    },
-    onPaginationChange: (updater) => {
-        const pagination = {
-            pageIndex: currentPage.value,
-            pageSize: pageSize.value,
-        };
-        const updated = typeof updater === 'function' ? updater(pagination) : updater;
-        currentPage.value = updated.pageIndex;
-        pageSize.value = updated.pageSize;
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    enableColumnResizing: true,
-    enableRowSelection: true,
-    debugTable: false,
-    manualPagination: false,
-});
-
-// Watchers y manejadores de eventos
-watch([searchQuery, clientes], () => {
-    table.resetPageIndex(true);
-}, { deep: true });
-
-const fetchClientes = async () => {
-    isLoading.value = true;
-    try {
-        const response = await fetch('/cliente');
-        const result = await response.json();
-        if (result && result.data) {
-            clientes.value = result.data.map((cliente: any) => ({
-                ...cliente,
-                nombres: cliente.nombres || '',
-                apellidos: cliente.apellidos || '',
-                direccion: cliente.direccion || '',
-                centro_trabajo: cliente.centro_trabajo || '',
-                celular: cliente.celular || '',
-                dni: cliente.dni || '',
-                foto: cliente.foto || '',
-                capital_del_mes: Number(cliente.capital_del_mes || 0),
-                capital_actual: Number(cliente.capital_actual || 0),
-                interes_actual: Number(cliente.interes_actual || 0),
-                interes_total: Number(cliente.interes_total || 0),
-                total: Number(cliente.total || 0)
-            }));
-        } else {
-            console.error('Formato de respuesta inesperado:', result);
-            toast({
-                title: "Error",
-                description: "El formato de la respuesta no es el esperado.",
-                variant: "destructive",
-            });
-        }
-    } catch (error) {
-        console.error('Error al obtener clientes:', error);
-        toast({
-            title: "Error",
-            description: "No se pudieron cargar los clientes. Verifica la conexión.",
-            variant: "destructive",
-        });
-    } finally {
-        isLoading.value = false;
-    }
+const editCliente = (cliente: Cliente) => {
+  toast({
+    title: "Función en desarrollo",
+    description: `Editar cliente: ${cliente.nombres} ${cliente.apellidos}`,
+  });
+  // Implement your edit logic here
 };
 
-const refreshData = () => {
-    fetchClientes();
+const confirmDelete = (cliente: Cliente) => {
+  clienteToDelete.value = cliente;
+  showDeleteDialog.value = true;
+};
+
+const deleteCliente = async (id: number) => {
+  try {
+    await clienteService.deleteCliente(id);
+    
+    showDeleteDialog.value = false;
+    clienteToDelete.value = null;
+    
     toast({
-        title: "Actualizado",
-        description: "Los datos de clientes han sido actualizados.",
+      title: "Cliente eliminado",
+      description: "El cliente ha sido eliminado correctamente.",
     });
+    
+    refreshData();
+  } catch (error) {
+    console.error('Error al eliminar cliente:', error);
+    toast({
+      title: "Error",
+      description: "No se pudo eliminar el cliente. Verifica los permisos o inténtalo nuevamente.",
+      variant: "destructive",
+    });
+  }
 };
 
-const onSearchChange = () => {
-    table.resetPageIndex(true);
+const exportClientes = async () => {
+  try {
+    const blob = await clienteService.exportClientes();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clientes-export-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+    
+    toast({
+      title: "Exportación exitosa",
+      description: "Los datos han sido exportados correctamente.",
+    });
+  } catch (error) {
+    console.error('Error exporting clients:', error);
+    toast({
+      title: "Error",
+      description: "No se pudo exportar los datos. Intente nuevamente.",
+      variant: "destructive",
+    });
+  }
 };
-
-// Inicialización
-onMounted(() => {
-    fetchClientes();
-});
 </script>
-
-<style scoped>
-:deep(.truncate) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-:deep(th),
-:deep(td) {
-    padding: 0.5rem 0.75rem;
-}
-
-:deep(.table-container) {
-    width: 100%;
-    overflow-x: auto;
-}
-</style>

@@ -1,49 +1,50 @@
+// src/components/clientes/typsClientes/typesCliente.ts
+import { SortingState as TanstackSortingState } from '@tanstack/vue-table';
+import { VisibilityState as TanstackVisibilityState } from '@tanstack/vue-table';
+import { ColumnFiltersState as TanstackColumnFiltersState } from '@tanstack/vue-table';
+
 export interface Cliente {
-    id: number;
-    nombres: string;
-    apellidos: string;
-    direccion: string;
-    centro_trabajo: string;
-    celular: string;
-    dni: string;
-    fecha_inicio: string | null;
-    fecha_vencimiento: string | null;
-    tasa_interes_diario: number | null;
-    capital_inicial: number | null;
-    capital_del_mes: number;
-    capital_actual: number;
-    interes_actual: number;
-    interes_total: number;
-    total: number;
-    numero_cuotas: number | null;
-    estado_cliente: string | null;
-    recomendacion: string | null;
-    foto: string;
-    nombre_completo?: string;
+  id: number;
+  nombres: string;
+  apellidos: string;
+  direccion: string;
+  centro_trabajo: string;
+  celular: string;
+  dni: string;
+  foto: string;
+  correo?: string;
+  telefono?: string;
+  recomendacion?: string;
+  capital_del_mes: number;
+  capital_actual: number;
+  interes_actual: number;
+  interes_total: number;
+  total: number;
+  created_at?: string;
+  updated_at?: string;
+  estado_cliente?: string;
+  prestamos?: Prestamo[];
 }
 
-export type EstadoCliente = 1 | 2 | null;
-
-export interface TableState {
-    sorting: SortingState;
-    columnVisibility: VisibilityState;
-    columnFilters: ColumnFiltersState;
-    pagination: {
-        pageIndex: number;
-        pageSize: number;
-    };
+export interface Prestamo {
+  id: number;
+  cliente_id: number;
+  monto: number;
+  interes: number;
+  fecha_prestamo: string;
+  fecha_vencimiento: string;
+  estado: string;
+  pagos?: Pago[];
 }
 
-import type { 
-    SortingState, 
-    VisibilityState, 
-    ColumnFiltersState,
-    ColumnDef
-} from '@tanstack/vue-table';
+export interface Pago {
+  id: number;
+  prestamo_id: number;
+  monto: number;
+  fecha_pago: string;
+  tipo: string;
+}
 
-export type { 
-    SortingState, 
-    VisibilityState, 
-    ColumnFiltersState,
-    ColumnDef 
-};
+export type SortingState = TanstackSortingState;
+export type VisibilityState = TanstackVisibilityState;
+export type ColumnFiltersState = TanstackColumnFiltersState;

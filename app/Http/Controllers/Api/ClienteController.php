@@ -16,50 +16,42 @@ class ClienteController extends Controller {
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search', '');
         $estadoCliente = $request->input('estado_cliente');
-        $fechaInicio = $request->input('fecha_inicio');
-        $fechaFin = $request->input('fecha_fin');
+        
+        $normalizedSearch = strtolower($search);
+        $normalizedSearch = preg_replace('/\s+/', ' ', $normalizedSearch);
+        $normalizedSearch = trim($normalizedSearch);
+        $searchTerms = explode(' ', $normalizedSearch);
         
         $query = Cliente::query()
             ->with(['prestamos' => function($query) {
                 $query->latest()->with('pagos');
             }]);
-        
-        if (!empty($search)) {
-            $query->where(function($q) use ($search) {
-                $q->where('dni', 'ILIKE', "%{$search}%")
-                ->orWhere('nombre', 'ILIKE', "%{$search}%")
-                ->orWhere('apellidos', 'ILIKE', "%{$search}%")
-                ->orWhere('telefono', 'ILIKE', "%{$search}%")
-                ->orWhere('direccion', 'ILIKE', "%{$search}%")
-                ->orWhere('correo', 'ILIKE', "%{$search}%")
-                ->orWhere('centro_trabajo', 'ILIKE', "%{$search}%");
+    
+        if (!empty($searchTerms)) {
+            $query->where(function($q) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    $q->where(function($query) use ($term) {
+                        $query->whereRaw("LOWER(dni) LIKE ?", ["%{$term}%"])
+                              ->orWhereRaw("LOWER(nombre) LIKE ?", ["%{$term}%"])
+                              ->orWhereRaw("LOWER(apellidos) LIKE ?", ["%{$term}%"])
+                              ->orWhereRaw("LOWER(telefono) LIKE ?", ["%{$term}%"])
+                              ->orWhereRaw("LOWER(direccion) LIKE ?", ["%{$term}%"])
+                              ->orWhereRaw("LOWER(correo) LIKE ?", ["%{$term}%"])
+                              ->orWhereRaw("LOWER(centro_trabajo) LIKE ?", ["%{$term}%"]);
+                    });
+                }
             });
         }
-        
+    
         if (!is_null($estadoCliente)) {
             $query->whereHas('prestamos', function($q) use ($estadoCliente) {
                 $q->where('estado_cliente', $estadoCliente);
             });
         }
-        
-        if (!empty($fechaInicio) && !empty($fechaFin)) {
-            $query->whereHas('prestamos', function($q) use ($fechaInicio, $fechaFin) {
-                $q->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin]);
-            });
-        }
-        
-        /*$today = date('Y-m-d');
-        $query->whereHas('prestamos', function($q) use ($today) {
-            $q->where('created_at', 'ILIKE', "{$today}%")
-            ->orWhereHas('pagos', function($subQ) use ($today) {
-                $subQ->where('created_at', 'ILIKE', "{$today}%");
-            });
-        });*/
-        
+    
         $clientes = $query->paginate($perPage);
-        
         return ClienteResource::collection($clientes);
-    }
+    }        
     public function store(StoreClienteRequest $request) {
         Gate::authorize('create', Cliente::class);
         $data = $request->validated();

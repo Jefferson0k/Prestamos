@@ -1,74 +1,88 @@
-import { useToast } from '@/components/ui/toast';
+// src/services/clienteService.ts
+import axios from 'axios';
 import { Cliente } from './typesCliente';
 
-export const useClienteService = () => {
-    const { toast } = useToast();   
-    const fetchClientes = async (page = 1, pageSize = 10, search = ''): Promise<{ data: Cliente[], total: number;
-        pagination: { currentPage: number; lastPage: number; perPage: number; total: number; } }> => {
-        try {
-            const response = await fetch(`/cliente?page=${page}&per_page=${pageSize}&search=${encodeURIComponent(search)}`);
-            const result = await response.json();
-    
-            if (result && result.data && result.meta) {
-                return {
-                    data: result.data.map((cliente: any) => formatClienteData(cliente)),
-                    total: result.total || 0, // Asegúrate de 
-                    pagination: {
-                        currentPage: result.meta.current_page,
-                        lastPage: result.meta.last_page,
-                        perPage: result.meta.per_page,
-                        total: result.meta.total,
-                    },
-                };
-            } else {
-                handleApiError('Formato de respuesta inesperado');
-                return { data: [],total: 0 , pagination: { currentPage: 1, lastPage: 1, perPage: pageSize, total: 0 } };
-            }
-        } catch (error) {
-            handleApiError('Error al obtener clientes', error);
-            return { data: [], total: 0 , pagination: { currentPage: 1, lastPage: 1, perPage: pageSize, total: 0 } };
+interface PaginationParams {
+  page: number;
+  perPage: number;
+  search?: string;
+  estadoCliente?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
+interface ApiResponse<T> {
+  data: T[];
+  meta: {
+    current_page: number;
+    from: number;
+    last_page: number;
+    per_page: number;
+    to: number;
+    total: number;
+  };
+}
+
+export const clienteService = {
+  async getClientes(params: PaginationParams): Promise<ApiResponse<Cliente>> {
+    try {
+      const response = await axios.get('/cliente', {
+        params: {
+          page: params.page + 1, // API pagination is 1-based, but table is 0-based
+          per_page: params.perPage,
+          search: params.search,
+          estado_cliente: params.estadoCliente,
+          sort_by: params.sortBy,
+          sort_direction: params.sortDirection
         }
-    };
-    
-    const formatClienteData = (clienteData: any): Cliente => {
-        return {
-            ...clienteData,
-            nombres: clienteData.nombres || '',
-            apellidos: clienteData.apellidos || '',
-            direccion: clienteData.direccion || '',
-            centro_trabajo: clienteData.centro_trabajo || '',
-            celular: clienteData.celular || '',
-            dni: clienteData.dni || '',
-            foto: clienteData.foto || '',
-            recomendacion: clienteData.recomendacion || '',
-            capital_del_mes: Number(clienteData.capital_del_mes || 0),
-            capital_actual: Number(clienteData.capital_actual || 0),
-            interes_actual: Number(clienteData.interes_actual || 0),
-            interes_total: Number(clienteData.interes_total || 0),
-            total: Number(clienteData.total || 0),
-        };
-    };
-
-    const handleApiError = (message: string, error?: any) => {
-        console.error(message, error);
-        toast({
-            title: 'Error',
-            description: typeof error === 'string' ? error : message,
-            variant: 'destructive',
-        });
-    };
-
-    const notifySuccess = (title: string, description: string) => {
-        toast({
-            title,
-            description,
-        });
-    };
-
-    return {
-        fetchClientes,
-        formatClienteData,
-        handleApiError,
-        notifySuccess,
-    };
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      throw error;
+    }
+  },
+  
+  async createCliente(cliente: Partial<Cliente>): Promise<Cliente> {
+    try {
+      const response = await axios.post('/cliente', cliente);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error creating client:', error);
+      throw error;
+    }
+  },
+  
+  async updateCliente(id: number, cliente: Partial<Cliente>): Promise<Cliente> {
+    try {
+      const response = await axios.put(`/cliente/${id}`, cliente);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating client:', error);
+      throw error;
+    }
+  },
+  
+async deleteCliente(id: number): Promise<void> {
+  try {
+    await axios.delete(`/cliente/${id}`);
+  } catch (error) {
+    console.error('Error deleting client:', error);
+    throw error;
+  }
+},
+  
+  async exportClientes(params?: Partial<PaginationParams>): Promise<Blob> {
+    try {
+      const response = await axios.get('/cliente/export', {
+        params,
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting clients:', error);
+      throw error;
+    }
+  }
 };
