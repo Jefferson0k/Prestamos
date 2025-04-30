@@ -15,7 +15,7 @@ return new class extends Migration{
             $table->decimal('capital', 15, 2);
             $table->integer('numero_cuotas');
             $table->integer('estado_cliente');
-            $table->foreignId('idRecomendado');
+            $table->foreignId('recomendado_id')->constrained('clientes')->onDelete('cascade');
             $table->decimal('tasa_interes_diario', 5, 2);
             $table->decimal('monto_total', 15, 2)->comment('Capital más intereses totales');
             $table->timestamps();

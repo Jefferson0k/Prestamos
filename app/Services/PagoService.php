@@ -39,53 +39,35 @@ class PagoService{
             $prestamo->update(['estado_cliente' => 'Moroso']);
         }
     }
+    public function simularCalendarioPagos(Prestamos $prestamo){
+        $calendario = [];
+        $saldoCapital = $prestamo->capital;
+        $capitalPorCuota = $saldoCapital / $prestamo->numero_cuotas;
+        $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
 
-public function simularCalendarioPagos(Prestamos $prestamo)
-{
-    $calendario = [];
-    $saldoCapital = $prestamo->capital; // Capital inicial
-    $capitalPorCuota = $saldoCapital / $prestamo->numero_cuotas; // Pago de capital por cuota
-    $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
-    
-    for ($i = 1; $i <= $prestamo->numero_cuotas; $i++) {
-        $fechaVencimiento = $fechaInicio->copy()->addMonthsNoOverflow($i);
-
-        // Obtener los días del mes para calcular los intereses
-        $diasInteres = $fechaVencimiento->daysInMonth;
-
-        // Calcular la tasa de interés efectiva del mes
-        $tasaInteresMensual = ($prestamo->tasa_interes_diario / 100) * $diasInteres;
-
-        // Calcular el monto de interés
-        $montoInteresPagar = $saldoCapital * $tasaInteresMensual;
-
-        // Determinar el pago de capital (empieza en la mitad del préstamo)
-        $montoCapitalPagar = ($i < ceil($prestamo->numero_cuotas / 2)) ? 0 : $capitalPorCuota;
-
-        // Reducir saldo capital si hay pago de capital
-        if ($montoCapitalPagar > 0) {
+        for ($i = 1; $i <= $prestamo->numero_cuotas; $i++) {
+            $fechaCuotaInicio = $fechaInicio->copy()->addMonthsNoOverflow($i - 1);
+            $fechaVencimiento = $fechaInicio->copy()->addMonthsNoOverflow($i);
+            $diasInteres = $fechaCuotaInicio->diffInDays($fechaVencimiento);
+            $tasaDiaria = $prestamo->tasa_interes_diario / 100;
+            $montoInteresPagar = $saldoCapital * $tasaDiaria * $diasInteres;
+            $montoCapitalPagar = $capitalPorCuota;
             $saldoCapital -= $montoCapitalPagar;
-            if ($saldoCapital < 0) {
-                $saldoCapital = 0; // Evitar saldo negativo
-            }
+            if ($saldoCapital < 0) $saldoCapital = 0;
+            $calendario[] = [
+                'numero_cuota' => $i,
+                'capital' => round($montoCapitalPagar, 2),
+                'fecha_inicio' => $fechaCuotaInicio->format('d/m/Y'),
+                'fecha_pago' => $fechaVencimiento->format('d/m/Y'),
+                'dias_interes' => $diasInteres,
+                'tasa_interes_diario' => $prestamo->tasa_interes_diario,
+                'tasa_interes_mensual' => round($tasaDiaria * $diasInteres * 100, 2),
+                'monto_interes_pagar' => round($montoInteresPagar, 2),
+                'monto_capital_pagar' => round($montoCapitalPagar, 2),
+                'saldo_capital' => round($saldoCapital, 2),
+                'monto_capital_mas_interes' => round($montoInteresPagar + $montoCapitalPagar, 2)
+            ];
         }
-
-        $calendario[] = [
-            'numero_cuota' => $i,
-            'capital' => $saldoCapital + $montoCapitalPagar,
-            'fecha_inicio' => $fechaInicio->copy()->addMonthsNoOverflow($i - 1)->format('d/m/Y'),
-            'fecha_pago' => $fechaVencimiento->format('d/m/Y'),
-            'dias_interes' => $diasInteres,
-            'tasa_interes_diario' => $prestamo->tasa_interes_diario,
-            'tasa_interes_mensual' => round($tasaInteresMensual * 100, 2), // Convertido a porcentaje
-            'monto_interes_pagar' => round($montoInteresPagar, 2),
-            'monto_capital_pagar' => round($montoCapitalPagar, 2),
-            'saldo_capital' => round($saldoCapital, 2),
-            'monto_capital_mas_interes' => round($montoCapitalPagar + $montoInteresPagar, 2)
-        ];
+        return $calendario;
     }
-
-    return $calendario;
-}
-
 }

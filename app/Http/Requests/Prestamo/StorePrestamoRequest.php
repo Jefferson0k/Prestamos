@@ -10,12 +10,12 @@ class StorePrestamoRequest extends FormRequest{
     public function rules(){
         return [
             'cliente_id' => 'required|exists:clientes,id',
-            'fecha_inicio' => 'required|date_format:Y-m-d H:i|before_or_equal:fecha_vencimiento',
-            'fecha_vencimiento' => 'required|date_format:Y-m-d H:i|after_or_equal:fecha_inicio',
+            'fecha_inicio' => 'required|before_or_equal:fecha_vencimiento',
+            'fecha_vencimiento' => 'required|after_or_equal:fecha_inicio',
             'capital' => 'required|numeric|min:0',
             'numero_cuotas' => 'required|integer|min:1',
             'estado_cliente' => 'required|integer',
-            'recomendacion' => 'required|string|max:255',
+            'recomendado_id' => 'required|exists:clientes,id',
             'tasa_interes_diario'=> 'required|numeric|min:0',
         ];
     }    
@@ -42,9 +42,8 @@ class StorePrestamoRequest extends FormRequest{
             'estado_cliente.integer' => 'El estado del cliente debe ser numerico.',
             'estado_cliente.required' => 'El estado del cliente es obligatorio.',
 
-            'recomendacion.required' => 'La recomendación es obligatoria.',
-            'recomendacion.string' => 'La recomendación debe ser una cadena de texto.',
-            'recomendacion.max' => 'La recomendación no puede exceder los 255 caracteres.',
+            'recomendado_id.required' => 'El cliente es obligatorio.',
+            'recomendado_id.exists' => 'El cliente seleccionado no existe en el sistema.',
 
             'tasa_interes_diario.required' => 'La tasa de interés diario es obligatoria.',
             'tasa_interes_diario.numeric' => 'La tasa de interés diario debe ser un valor numérico.',

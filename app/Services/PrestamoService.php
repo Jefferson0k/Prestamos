@@ -21,7 +21,7 @@ class PrestamoService{
             'capital' => $data['capital'],
             'numero_cuotas' => $data['numero_cuotas'],
             'estado_cliente' => $data['estado_cliente'] ?? 'Paga',
-            'recomendacion' => $data['recomendacion'] ?? null,
+            'recomendado_id' => $data['recomendado_id'] ?? null,
             'tasa_interes_diario' => $data['tasa_interes_diario'],
             'monto_total' => $montoTotal
         ]);

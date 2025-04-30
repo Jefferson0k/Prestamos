@@ -31,8 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('cliente')->group(function () {
         Route::get('/', [ClienteController::class, 'index'])->name('cliente.index');
         Route::post('/', [ClienteController::class, 'store'])->name('clientes.store');
-        Route::get('{id}', [ClienteController::class, 'show'])->name('clientes.show');
-        Route::put('{id}', [ClienteController::class, 'update'])->name('clientes.update');
+        Route::get('{cliente}', [ClienteController::class, 'show'])->name('clientes.show');
+        Route::put('{cliente}', [ClienteController::class, 'update'])->name('clientes.update');
         Route::delete('{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
     });
 
@@ -40,9 +40,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', action: [PrestamosController::class, 'index'])->name('api.prestamo.index');
         Route::get('/cliente', action: [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
         Route::post('/', [PrestamosController::class, 'store'])->name('prestamo.store');
-        Route::get('{id}', [PrestamosController::class, 'show'])->name('prestamo.show');
-        Route::put('{id}', [PrestamosController::class, 'update'])->name('prestamo.update');
-        Route::delete('{id}', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
+        Route::get('{prestamo}', [PrestamosController::class, 'show'])->name('prestamo.show');
+        Route::put('{prestamo}', [PrestamosController::class, 'update'])->name('prestamo.update');
+        Route::delete('{prestamo}', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
         Route::get('/{prestamo}/simulacion', [PrestamosController::class, 'simulacion'])->name('prestamos.simulacion');
     });
 

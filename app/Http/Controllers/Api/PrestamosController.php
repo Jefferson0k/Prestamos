@@ -24,16 +24,17 @@ class PrestamosController extends Controller{
     }
     public function index(Request $request){
         Gate::authorize('viewAny', Prestamos::class);
+        $perPage = $request->input('per_page', 15);
+        $search = $request->input('search', '');
         $query = Prestamos::with('cliente', 'pagos');
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
+        if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'LIKE', "%{$search}%")
                 ->orWhere('cliente_id', 'LIKE', "%{$search}%")
                 ->orWhere('capital', 'LIKE', "%{$search}%")
                 ->orWhere('numero_cuotas', 'LIKE', "%{$search}%")
                 ->orWhere('estado_cliente', 'LIKE', "%{$search}%")
-                ->orWhere('recomendacion', 'LIKE', "%{$search}%")
+                ->orWhere('recomendado_id', 'LIKE', "%{$search}%")
                 ->orWhere('tasa_interes_diario', 'LIKE', "%{$search}%")
                 ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                     $clienteQuery->where('dni', 'LIKE', "%{$search}%")
@@ -42,11 +43,8 @@ class PrestamosController extends Controller{
                 });
             });
         }
-        $prestamos = $query->paginate(10);
-        return response()->json([
-            'total' => $prestamos->total(),
-            'data' => PrestamoResource::collection($prestamos),
-        ]);
+        $prestamos = $query->paginate($perPage);
+        return PrestamoResource::collection($prestamos);
     }
     public function indexCliente(Request $request){
         Gate::authorize('viewAny', Cliente::class);
@@ -78,8 +76,13 @@ class PrestamosController extends Controller{
     }
     public function store(StorePrestamoRequest $request){
         $validatedData = $request->validated();
-        $validatedData['fecha_inicio'] = Carbon::parse($validatedData['fecha_inicio']);
-        $validatedData['fecha_vencimiento'] = Carbon::parse($validatedData['fecha_vencimiento']);    
+        $horaActualPeru = Carbon::now('America/Lima')->format('H:i:s');
+        $validatedData['fecha_inicio'] = Carbon::createFromFormat('d-m-Y', $validatedData['fecha_inicio'], 'America/Lima')
+            ->startOfDay()
+            ->setTimeFromTimeString($horaActualPeru);
+        $validatedData['fecha_vencimiento'] = Carbon::createFromFormat('d-m-Y', $validatedData['fecha_vencimiento'], 'America/Lima')
+            ->startOfDay()
+            ->setTimeFromTimeString($horaActualPeru);
         $prestamo = $this->prestamoService->crearPrestamo($validatedData);
         return response()->json([
             'message' => 'Préstamo creado exitosamente',

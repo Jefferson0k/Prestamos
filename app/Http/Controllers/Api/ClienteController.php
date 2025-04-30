@@ -9,46 +9,48 @@ use App\Models\Cliente;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class ClienteController extends Controller {
     public function index(Request $request){
         Gate::authorize('viewAny', Cliente::class);
-        $perPage = $request->input('per_page', 10);
+        $perPage = $request->input('per_page', 15);
         $search = $request->input('search', '');
         $estadoCliente = $request->input('estado_cliente');
-        
-        $normalizedSearch = strtolower($search);
-        $normalizedSearch = preg_replace('/\s+/', ' ', $normalizedSearch);
-        $normalizedSearch = trim($normalizedSearch);
-        $searchTerms = explode(' ', $normalizedSearch);
-        
-        $query = Cliente::query()
-            ->with(['prestamos' => function($query) {
-                $query->latest()->with('pagos');
-            }]);
-    
-        if (!empty($searchTerms)) {
-            $query->where(function($q) use ($searchTerms) {
-                foreach ($searchTerms as $term) {
-                    $q->where(function($query) use ($term) {
-                        $query->whereRaw("LOWER(dni) LIKE ?", ["%{$term}%"])
-                              ->orWhereRaw("LOWER(nombre) LIKE ?", ["%{$term}%"])
-                              ->orWhereRaw("LOWER(apellidos) LIKE ?", ["%{$term}%"])
-                              ->orWhereRaw("LOWER(telefono) LIKE ?", ["%{$term}%"])
-                              ->orWhereRaw("LOWER(direccion) LIKE ?", ["%{$term}%"])
-                              ->orWhereRaw("LOWER(correo) LIKE ?", ["%{$term}%"])
-                              ->orWhereRaw("LOWER(centro_trabajo) LIKE ?", ["%{$term}%"]);
-                    });
-                }
-            });
+        $searchTerms = [];
+        if (!empty($search)) {
+            $normalizedSearch = strtolower(trim(preg_replace('/\s+/', ' ', $search)));
+            $searchTerms = explode(' ', $normalizedSearch);
         }
-    
+        $query = Cliente::query();
+        $query->with(['prestamos' => function($query) {
+            $query->latest()
+                ->take(1)
+                ->with(['pagos' => function($query) {
+                    $query->select('id', 'prestamo_id', 'monto_capital', 'monto_interes', 'monto_total');
+                }]);
+        }]);        
         if (!is_null($estadoCliente)) {
             $query->whereHas('prestamos', function($q) use ($estadoCliente) {
                 $q->where('estado_cliente', $estadoCliente);
             });
-        }
-    
+        }        
+        if (!empty($searchTerms)) {
+            $query->where(function($q) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    if (strlen($term) < 2) continue;
+                    $q->where(function($query) use ($term) {
+                        $query->whereRaw("LOWER(dni) LIKE ?", ["%{$term}%"])
+                            ->orWhereRaw("LOWER(nombre) LIKE ?", ["%{$term}%"])
+                            ->orWhereRaw("LOWER(apellidos) LIKE ?", ["%{$term}%"])
+                            ->orWhereRaw("LOWER(telefono) LIKE ?", ["%{$term}%"])
+                            ->orWhereRaw("LOWER(direccion) LIKE ?", ["%{$term}%"])
+                            ->orWhereRaw("LOWER(correo) LIKE ?", ["%{$term}%"])
+                            ->orWhereRaw("LOWER(centro_trabajo) LIKE ?", ["%{$term}%"]);
+                    });
+                }
+            });
+        }        
         $clientes = $query->paginate($perPage);
         return ClienteResource::collection($clientes);
     }        
@@ -66,17 +68,24 @@ class ClienteController extends Controller {
         Gate::authorize('view', $cliente);
         return response()->json($cliente);
     }
-    public function update(UpdateClienteRequest $request, Cliente $cliente) {
+    public function update(UpdateClienteRequest $request, Cliente $cliente){
         Gate::authorize('update', $cliente);
+
         $data = $request->validated();
-        $data['foto'] = $this->handleFotoUpload($request, $cliente);
+
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $this->handleFotoUpload($request, $cliente);
+        }
+
         $cliente->update($data);
+
         return response()->json([
             'message' => 'Cliente actualizado correctamente',
             'cliente' => $cliente
         ]);
     }
-    public function destroy(Cliente $cliente) {
+    public function destroy($id){
+        $cliente = Cliente::findOrFail($id);
         Gate::authorize('delete', $cliente);
         if ($cliente->foto) {
             Storage::delete('public/customers/' . $cliente->foto);

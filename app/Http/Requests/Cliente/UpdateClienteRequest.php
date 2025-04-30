@@ -18,9 +18,9 @@ class UpdateClienteRequest extends FormRequest {
             'direccion' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9\s\-,.#]+$/'],
             'correo' => "required|email|max:150|unique:clientes,correo,$id",
             'centro_trabajo' => 'required|string|max:150',
-            'foto' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
-    }
+    }    
 
     public function messages() {
         return [
@@ -56,7 +56,6 @@ class UpdateClienteRequest extends FormRequest {
             'centro_trabajo.string' => 'El centro de trabajo debe ser una cadena de texto.',
             'centro_trabajo.max' => 'El centro de trabajo no puede tener más de 150 caracteres.',
 
-            'foto.required' => 'La foto es obligatoria.',
             'foto.image' => 'El archivo debe ser una imagen.',
             'foto.mimes' => 'La foto debe estar en formato JPG, JPEG o PNG.',
             'foto.max' => 'La foto no puede ser mayor a 2MB.',

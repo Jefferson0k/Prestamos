@@ -4,27 +4,61 @@ namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 class ClienteResource extends JsonResource{
     public function toArray($request){
-        $prestamo = $this->prestamos()->latest()->first();
+        $prestamo = $this->whenLoaded('prestamos')->first();
+        
+        // Valores por defecto
+        $capitalDelMes = 0;
+        $capitalActual = 0;
+        $interesActual = 0;
+        $interesTotal = 0;
+        $total = 0;
+        
+        // Solo procesamos pagos si el préstamo existe y los pagos están cargados
+        if ($prestamo && $prestamo->relationLoaded('pagos')) {
+            $pagos = $prestamo->pagos;
+            
+            if ($pagos->isNotEmpty()) {
+                $capitalDelMes = $pagos->sum('monto_capital');
+                $capitalActual = $pagos->last()->saldo_capital ?? 0;
+                $interesActual = $pagos->last()->monto_interes ?? 0;
+                $interesTotal = $pagos->sum('monto_interes');
+                
+                // Calculamos la suma total una sola vez
+                $total = $pagos->reduce(function ($carry, $pago) {
+                    return $carry + ($pago->monto_capital + $pago->monto_interes);
+                }, 0);
+            }
+        }
+        
         return [
-            'id'                  => $this->id,
+            'id' => $this->id,
             'nombre_completo' => $this->nombre . ' ' . $this->apellidos,
-            'direccion'           => $this->direccion,
-            'centro_trabajo'      => $this->centro_trabajo,
-            'celular'             => $this->telefono,
-            'dni'                 => $this->dni,
-            'fecha_inicio'        => $prestamo ? $prestamo->fecha_inicio : null,
-            'fecha_vencimiento'   => $prestamo ? $prestamo->fecha_vencimiento : null,
+            'direccion' => $this->direccion,
+            'centro_trabajo' => $this->centro_trabajo,
+            'celular' => $this->telefono,
+            'dni' => $this->dni,
+            'fecha_inicio' => $prestamo && $prestamo->fecha_inicio
+                ? \Carbon\Carbon::parse($prestamo->fecha_inicio)->format('d-m-Y H:i:s')
+                : null,
+            'fecha_vencimiento' => $prestamo && $prestamo->fecha_vencimiento
+                ? \Carbon\Carbon::parse($prestamo->fecha_vencimiento)->format('d-m-Y H:i:s')
+                : null,    
             'tasa_interes_diario' => $prestamo ? $prestamo->tasa_interes_diario : null,
-            'capital_inicial'     => $prestamo ? $prestamo->capital : null,
-            'capital_del_mes'     => $prestamo ? $prestamo->pagos->sum('monto_capital_pagar') : 0,
-            'capital_actual'      => $prestamo ? $prestamo->pagos->last()?->saldo_capital : 0,
-            'interes_actual'      => $prestamo ? $prestamo->pagos->last()?->monto_interes_pagar : 0,
-            'interes_total'       => $prestamo ? $prestamo->pagos->sum('monto_interes_pagar') : 0,
-            'total'               => $prestamo ? $prestamo->pagos->sum(fn($p) => $p->monto_capital_pagar + $p->monto_interes_pagar) : 0,
-            'numero_cuotas'       => $prestamo ? $prestamo->numero_cuotas : null,
-            'estado_cliente'      => $prestamo ? $prestamo->estado_cliente : null,
-            'recomendacion'      => $prestamo ? $prestamo->recomendacion : null,
-            'foto'                => $this->foto ? asset("customers/{$this->foto}") : null,
+            'capital_inicial' => $prestamo ? $prestamo->capital : null,
+            'capital_del_mes' => $capitalDelMes,
+            'capital_actual' => $capitalActual,
+            'interes_actual' => $interesActual,
+            'interes_total' => $interesTotal,
+            'total' => $total,
+            'numero_cuotas' => $prestamo ? $prestamo->numero_cuotas : null,
+            'estado_cliente' => $prestamo ? $prestamo->estado_cliente : null,
+            'recomendacion' => $prestamo ? $prestamo->recomendacion : null,
+            'fecha_Inicio_pago_mes' => '00-00-0000',
+            'fecha_vencimiento_pago_mes' => '00-00-0000',
+            'Interes_total' => $interesTotal, // Nota: parece duplicado con 'interes_total'
+            'foto' => $this->foto
+                ? asset("customers/{$this->foto}")
+                : asset("customers/1745897030_6810464697d95.jpg"),
         ];
     }
 }

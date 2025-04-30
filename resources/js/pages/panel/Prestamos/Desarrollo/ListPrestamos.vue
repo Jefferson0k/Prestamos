@@ -1,243 +1,166 @@
-<template>
-    <Toaster />
+<script setup>
+import { ref, onMounted, watch, computed } from 'vue';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
+import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
+import MultiSelect from 'primevue/multiselect';
+import Tag from 'primevue/tag';
+import Button from 'primevue/button';
+import axios from 'axios';
 
-    <!-- Tarjeta de controles principales -->
-    <Card class="mb-4">
-        <CardContent class="pt-6 pb-4">
-            <div class="flex flex-wrap justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <AddPrestamos @click="agregarNuevoCliente" />
-                    <Button variant="secondary" @click="refreshData">
-                        <RefreshCcw class="h-4 w-4 mr-2" />
-                        Actualizar
-                    </Button>
-                </div>
+// Estados reactivos
+const dt = ref();
+const prestamos = ref([]);
+const selectedPrestamos = ref();
+const searchTerm = ref('');
+const debouncedSearchTerm = ref('');
+const searchTimeout = ref(null);
+const loading = ref(false);
+const totalRecords = ref(0);
+const perPage = ref(15);
+const currentPage = ref(1);
+const selectedEstado = ref('');
+const estadoOptions = ref([
+    { label: 'Todos', value: '' },
+    { label: 'PAGA', value: 1 },
+    { label: 'MOROSO', value: 2 },
+]);
 
-                <!-- Botón de exportar al lado derecho -->
-                <Button variant="destructive" class="mt-2 sm:mt-0">
-                    <Download class="h-4 mr-2" />
-                    Exportar
-                </Button>
-            </div>
-        </CardContent>
-    </Card>
+const optionalColumns = ref([
+    { field: 'recomendacion', header: 'Recomendación', width: '30rem' }
+]);
+const selectedColumns = ref([]);
 
-    <!-- Tarjeta principal con la tabla -->
-    <Card>
-        <CardHeader class="pb-0">
-            <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <div>
-                    <CardTitle>Préstamos</CardTitle>
-                    <CardDescription>Gestión de préstamos y financiamientos</CardDescription>
-                </div>
 
-                <!-- Controles de búsqueda y visualización -->
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Buscar préstamos..." class="h-9 w-full sm:w-[250px] pl-8"
-                            v-model="searchQuery" @input="onSearchChange" />
-                    </div>
-                    <DataTableViewOptions :table="table" />
-                </div>
-            </div>
-        </CardHeader>
+const loadPrestamos = async (page = 1, itemsPerPage = perPage.value, search = debouncedSearchTerm.value, estado = selectedEstado.value) => {
+    try {
+        loading.value = true;
+        const response = await axios.get('/prestamo', {
+            params: {
+                page: page,
+                per_page: itemsPerPage,
+                search: search,
+                estado: estado
+            }
+        });
 
-        <CardContent class="pt-4">
-            <div class="rounded-md border overflow-hidden">
-                <div class="overflow-x-auto">
-                    <Table class="w-full">
-                        <TableHeader>
-                            <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                                <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="[
-                                    header.column.getCanSort() ? 'cursor-pointer select-none' : '',
-                                    getColumnWidthClass(header.column.id)
-                                ]" @click="header.column.getCanSort() ? header.column.toggleSorting() : null">
-                                    <div class="flex items-center justify-between space-x-2"
-                                        v-if="!header.isPlaceholder">
-                                        <component :is="() => h(FlexRender, {
-                                            render: header.column.columnDef.header,
-                                            props: header.getContext()
-                                        })" />
-                                        <div v-if="header.column.getCanSort()">
-                                            <ArrowUpDown class="h-4 w-4" v-if="!header.column.getIsSorted()" />
-                                            <ArrowUp class="h-4 w-4"
-                                                v-else-if="header.column.getIsSorted() === 'asc'" />
-                                            <ArrowDown class="h-4 w-4" v-else />
-                                        </div>
-                                    </div>
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
+        prestamos.value = response.data.data;
+        totalRecords.value = response.data.meta.total;
+        currentPage.value = response.data.meta.current_page;
+    } catch (error) {
+        console.error('Error al cargar préstamos:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+const refreshData = () => {
+    loadPrestamos(currentPage.value, perPage.value, debouncedSearchTerm.value, selectedEstado.value);
+};
 
-                        <TableBody>
-                            <template v-if="table.getRowModel().rows?.length">
-                                <TableRow v-for="row in table.getRowModel().rows" :key="row.id"
-                                    :data-state="row.getIsSelected() && 'selected'"
-                                    class="cursor-pointer hover:bg-muted/50" @click="verDetalleCliente(row.original)">
-                                    <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
-                                        :class="getColumnWidthClass(cell.column.id)">
-                                        <div class="truncate">
-                                            <component :is="() => h(FlexRender, {
-                                                render: cell.column.columnDef.cell,
-                                                props: cell.getContext()
-                                            })" />
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            </template>
-                            <template v-else>
-                                <TableRow>
-                                    <TableCell :colspan="columns.length" class="h-24 text-center">
-                                        <div class="flex flex-col items-center justify-center py-4">
-                                            <FileX class="h-10 w-10 text-muted-foreground mb-2" />
-                                            <p class="text-sm text-muted-foreground">No hay préstamos disponibles
-                                            </p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            </template>
-                        </TableBody>
-                    </Table>
-                </div>
-            </div>
-        </CardContent>
+watch(searchTerm, (newValue) => {
+    if (searchTimeout.value) {
+        clearTimeout(searchTimeout.value);
+    }
 
-        <CardFooter>
-            <div class="w-full">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
-                    <div class="text-sm text-muted-foreground">
-                        Mostrando
-                        <span class="font-medium">{{ table.getRowModel().rows.length }}</span>
-                        de
-                        <span class="font-medium">{{ filteredData.length }}</span> préstamos
-                    </div>
+    searchTimeout.value = setTimeout(() => {
+        debouncedSearchTerm.value = newValue;
+        currentPage.value = 1;
+        loadPrestamos(1, perPage.value, newValue, selectedEstado.value);
+    }, 600);
+});
 
-                    <div class="flex flex-wrap items-center gap-4 justify-center sm:justify-end">
-                        <!-- Filas por página -->
-                        <div class="flex items-center space-x-2">
-                            <p class="text-sm font-medium">Filas</p>
-                            <Select v-model="pageSize"
-                                @update:modelValue="(value) => table.setPageSize(Number(value) || 10)">
-                                <SelectTrigger class="h-8 w-16">
-                                    <SelectValue :placeholder="pageSizeString" />
-                                </SelectTrigger>
-                                <SelectContent side="top">
-                                    <SelectItem v-for="size in [5, 10, 20, 50]" :key="size" :value="size">
-                                        {{ size }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+watch(selectedEstado, (newValue) => {
+    currentPage.value = 1;
+    loadPrestamos(1, perPage.value, debouncedSearchTerm.value, newValue);
+});
 
-                        <!-- Paginación -->
-                        <template v-if="totalPageCount > 0">
-                            <p class="text-sm font-medium whitespace-nowrap">
-                                Página {{ table.getState().pagination.pageIndex + 1 }} de {{ totalPageCount }}
-                            </p>
+function getStatusLabel(estado_cliente) {
+    switch (estado_cliente) {
+        case 'PAGA':
+            return 'success';
+        case 'MOROSO':
+            return 'danger';
+        default:
+            return null;
+    }
+}
 
-                            <div class="flex items-center space-x-1">
-                                <Button variant="outline" class="hidden h-8 w-8 p-0 md:flex"
-                                    :disabled="!table.getCanPreviousPage()" @click="table.setPageIndex(0)"
-                                    aria-label="Primera página">
-                                    <DoubleArrowLeftIcon class="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanPreviousPage()"
-                                    @click="table.previousPage()" aria-label="Página anterior">
-                                    <ChevronLeftIcon class="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" class="h-8 w-8 p-0" :disabled="!table.getCanNextPage()"
-                                    @click="table.nextPage()" aria-label="Página siguiente">
-                                    <ChevronRightIcon class="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" class="hidden h-8 w-8 p-0 md:flex"
-                                    :disabled="!table.getCanNextPage()"
-                                    @click="table.setPageIndex(table.getPageCount() - 1)" aria-label="Última página">
-                                    <DoubleArrowRightIcon class="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </CardFooter>
-    </Card>
-</template>
-<script setup lang="ts">
-import { h } from 'vue';
-import { FlexRender } from '@tanstack/vue-table';
-import { useClienteTable } from './typsPrestamos/listcliente';
-import { columns } from './typsPrestamos/columns';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
-import { Toaster } from '@/components/ui/toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from '@/components/ui/table';
-import DataTableViewOptions from './DataTableViewOptions.vue';
+const onPage = (event) => {
+    currentPage.value = event.page + 1;
+    loadPrestamos(currentPage.value, event.rows, debouncedSearchTerm.value, selectedEstado.value);
+};
 
-import {
-    RefreshCcw,
-    ArrowUpDown,
-    ArrowUp,
-    ArrowDown,
-    Download
-} from 'lucide-vue-next';
-import {
-    ChevronRightIcon,
-    ChevronLeftIcon,
-    DoubleArrowLeftIcon,
-    DoubleArrowRightIcon
-} from "@radix-icons/vue";
+const clearFilters = () => {
+    searchTerm.value = '';
+    debouncedSearchTerm.value = '';
+    selectedEstado.value = '';
+    currentPage.value = 1;
+    loadPrestamos();
+};
 
-import AddPrestamos from './AddPrestamos.vue';
-
-// Initialize the client table logic
-const {
-    table,
-    searchQuery,
-    pageSize,
-    pageSizeString,
-    totalPageCount,
-    refreshData,
-    onSearchChange,
-    verDetalleCliente,
-    editarCliente,
-    eliminarCliente,
-    agregarNuevoCliente,
-    getColumnWidthClass,
-    filteredData
-} = useClienteTable();
+onMounted(() => {
+    loadPrestamos();
+});
+defineExpose({ loadPrestamos });
 </script>
 
-<style scoped>
-:deep(.truncate) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+<template>
+    <DataTable ref="dt" v-model:selection="selectedPrestamos" :value="prestamos" dataKey="id" :paginator="true"
+        :loading="loading" responsiveLayout="scroll" :rows="perPage" :rowsPerPageOptions="[5, 10, 15, 25]"
+        :totalRecords="totalRecords" :lazy="true" @page="onPage"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} Préstamos" class="p-datatable-sm">
 
-:deep(th),
-:deep(td) {
-    padding: 0.5rem 0.75rem;
-}
+        <template #header>
+            <div class="flex flex-wrap gap-2 items-center justify-between">
+                <div class="flex align-items-center gap-2">
+                    <h4 class="m-0">Préstamos</h4>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <IconField>
+                        <InputIcon>
+                            <i class="pi pi-search" />
+                        </InputIcon>
+                        <InputText v-model="searchTerm" placeholder="Buscar..." />
+                    </IconField>
+                    <Select v-model="selectedEstado" :options="estadoOptions" optionLabel="label" optionValue="value"
+                        placeholder="Filtrar por estado" class="w-48" />
+                    <MultiSelect v-model="selectedColumns" :options="optionalColumns" optionLabel="header"
+                        display="chip" placeholder="Seleccionar Columnas" />
+                    <Button icon="pi pi-filter-slash" label="Limpiar" severity="secondary" text @click="clearFilters" />
+                    <Button icon="pi pi-refresh" outlined rounded aria-label="Refresh" @click="refreshData" />
+                </div>
+            </div>
+        </template>
+        <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
+        <Column field="dni" header="DNI" sortable style="min-width: 4rem"></Column>
+        <Column field="NombreCompleto" header="Nombre y Apellido" sortable style="min-width: 25rem">
+        </Column>
+        <Column field="fecha_inicio" header="Fecha de inicio" sortable style="min-width: 14rem"></Column>
+        <Column field="fecha_vencimiento" header="Fecha de vencimiento" sortable style="min-width: 14rem">
+        </Column>
+        <Column field="capital" header="Capital" sortable style="min-width: 5rem"></Column>
+        <Column field="numero_cuotas" header="N° Cuotas" sortable style="min-width: 8rem"></Column>
+        <Column field="estado_cliente" header="Estado" sortable style="min-width: 8rem">
+            <template #body="slotProps">
+                <Tag :value="slotProps.data.estado_cliente" :severity="getStatusLabel(slotProps.data.estado_cliente)" />
+            </template>
+        </Column>
+        <Column field="tasa_interes_diario" header="Tasa de interés diario" sortable style="min-width: 13em"></Column>
+        <Column v-for="col of selectedColumns" :key="col.field" :field="col.field" :header="col.header"
+            :style="{ 'min-width': col.width }" sortable></Column>
+        <Column :exportable="false" style="min-width: 12rem">
+            <template #body="slotProps">
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editProduct(slotProps.data)" />
+                <Button icon="pi pi-trash" outlined rounded severity="danger" class="mr-2"
+                    @click="confirmDeleteProduct(slotProps.data)" />
+                <Button icon="pi pi-print" outlined rounded severity="help" class="rl-2"
+                    @click="printProduct(slotProps.data)" />
+            </template>
 
-:deep(.table-container) {
-    width: 100%;
-    overflow-x: auto;
-}
-</style>
+        </Column>
+    </DataTable>
+</template>

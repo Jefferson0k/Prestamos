@@ -1,12 +1,12 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-class Prestamos extends Model{    
+class Prestamos extends Model{
     use HasFactory;
     protected $table = 'prestamos';
+
     protected $fillable = [
         'cliente_id',
         'fecha_inicio',
@@ -14,7 +14,7 @@ class Prestamos extends Model{
         'capital',
         'numero_cuotas',
         'estado_cliente',
-        'recomendacion',
+        'recomendado_id',
         'tasa_interes_diario',
         'monto_total'
     ];
@@ -26,14 +26,17 @@ class Prestamos extends Model{
     protected $dates = [
         'fecha_inicio',
         'fecha_vencimiento',
-    ];    
+    ];
     public function cliente(){
         return $this->belongsTo(Cliente::class);
     }
+    public function recomendacion(){
+        return $this->belongsTo(Cliente::class, 'recomendado_id');
+    }
     public function cuotas(){
-        return $this->hasMany(Cliente::class, 'prestamo_id');
-    }    
+        return $this->hasMany(Cuotas::class, 'prestamo_id');
+    }
     public function pagos(){
-        return $this->hasMany(Pagos::class, 'prestamo_id'); 
+        return $this->hasMany(Pagos::class, 'prestamo_id');
     }
 }
