@@ -7,17 +7,19 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Faker\Factory as Faker;
 
-class UserSeeder extends Seeder{
-    public function run(): void{
+class UserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $faker = Faker::create();
+
         $adminRole = Role::findById(1);
         $personalRole = Role::findById(2);
-
-
-        // get the permissions 
         $permissions = Permission::all()->pluck('name')->toArray();
 
-        // create the admin user
+        // Crear usuarios principales
         $admin_1 = User::create([
             'name' => 'Jefferson Grabiel',
             'dni' => '76393671',
@@ -39,10 +41,37 @@ class UserSeeder extends Seeder{
             'password' => Hash::make('12345678'),
             'status' => 1,
         ]);
-      
-  
+
+        // Asignar permisos y roles a administradores
         $adminRole->syncPermissions($permissions);
         $admin_1->assignRole($adminRole);
         $admin_2->assignRole($adminRole);
+
+        // Crear 5000 usuarios adicionales
+        for ($i = 1; $i <= 10; $i++) {
+            $name = $faker->firstName();
+            $lastName1 = $faker->lastName();
+            $lastName2 = $faker->lastName();
+            $fullLastName = "$lastName1 $lastName2";
+            $birthdate = $faker->date('Y-m-d', '2005-01-01');
+
+            $dni = str_pad(70000000 + $i, 8, '0', STR_PAD_LEFT); // Asegura unicidad
+            $email = "usuario{$i}@example.com"; // Email único
+            $baseUsername = strtoupper(substr($name, 0, 1) . substr($lastName1, 0, 3) . substr($lastName2, 0, 2));
+            $username = $baseUsername . str_pad($i, 3, '0', STR_PAD_LEFT); // Username único
+
+            $user = User::create([
+                'name' => $name,
+                'dni' => $dni,
+                'apellidos' => $fullLastName,
+                'nacimiento' => $birthdate,
+                'email' => $email,
+                'username' => $username,
+                'password' => Hash::make('password'), // Contraseña genérica
+                'status' => 1,
+            ]);
+
+            $user->assignRole($personalRole);
+        }
     }
 }

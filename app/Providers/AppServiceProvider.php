@@ -2,24 +2,18 @@
 
 namespace App\Providers;
 
-use App\Models\User;
+use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
-{
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
+class AppServiceProvider extends ServiceProvider{
+    public function register(): void{
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //User::observe(UserObserver::class);
+    }
+    public function boot(): void{
+        Route::middleware('auth')->group(function () {
+            Route::middleware(TrackUserActivity::class)->group(function () {
+            });
+        });
     }
 }

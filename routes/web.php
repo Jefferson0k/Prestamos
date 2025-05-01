@@ -64,9 +64,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('usuarios')->group(function(){
         Route::get('/', [UsuariosController::class, 'index'])->name('usuarios.index');
         Route::post('/',[UsuariosController::class, 'store'])->name('usuarios.store');
-        Route::get('/{id}',[UsuariosController::class, 'show'])->name('usuarios.show');
+        Route::get('/{user}',[UsuariosController::class, 'show'])->name('usuarios.show');
         Route::put('/{id}',[UsuariosController::class, 'update'])->name('usuarios.update');
-        Route::delete('/{id}',[UsuariosController::class, 'destroy'])->name('usuarios.destroy');
+        Route::delete('/{user}',[UsuariosController::class, 'destroy'])->name('usuarios.destroy');
     });
 }); 
 // Archivos de configuración adicionales

@@ -163,7 +163,7 @@ const buscarclientesRecomendado = async (evento) => {
     clearTimeout(debounceTimeoutRecomendado);
     const textoIngresado = evento.target?.value?.trim() || "";
     if (!textoIngresado) {
-        clientes.value = [];
+        recomendos.value = [];
         return;
     }
     debounceTimeoutRecomendado = setTimeout(async () => {

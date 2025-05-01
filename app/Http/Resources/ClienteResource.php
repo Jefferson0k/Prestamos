@@ -52,7 +52,10 @@ class ClienteResource extends JsonResource{
             'total' => $total,
             'numero_cuotas' => $prestamo ? $prestamo->numero_cuotas : null,
             'estado_cliente' => $prestamo ? $prestamo->estado_cliente : null,
-            'recomendacion' => $prestamo ? $prestamo->recomendacion : null,
+            'recomendacion' => $prestamo && $prestamo->recomendacion
+            ? $prestamo->recomendacion->nombre . ' ' . $prestamo->recomendacion->apellidos . ' (' . $prestamo->recomendacion->dni . ')'
+            : null,
+
             'fecha_Inicio_pago_mes' => '00-00-0000',
             'fecha_vencimiento_pago_mes' => '00-00-0000',
             'Interes_total' => $interesTotal, // Nota: parece duplicado con 'interes_total'

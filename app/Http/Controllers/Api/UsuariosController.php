@@ -8,34 +8,50 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 
 class UsuariosController extends Controller{
     public function index(Request $request){
         Gate::authorize('viewAny', User::class);
-        try {
-            $name = $request->get('name');
-            $users = User::when($name, function ($query, $name) {
-                return $query->whereLike('name', "%$name%");
-            })->orderBy('id','asc')->paginate(12);
-            return response()->json([
-                'data' => UserResource::collection($users),
-                'pagination' => [
-                    'total' => $users->total(),
-                    'current_page' => $users->currentPage(),
-                    'per_page' => $users->perPage(),
-                    'last_page' => $users->lastPage(),
-                    'from' => $users->firstItem(),
-                    'to' => $users->lastItem()
-                ]
-                ]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'message' => 'Error al listar los usuarios',
-                'error' => $th->getMessage()
-            ], 500);
+        $perPage = $request->input('per_page', 15);
+        $search = $request->input('search', '');
+        $estado = $request->input('status');
+        $onlineStatus = $request->input('online');
+        $searchTerms = [];
+        if (!empty($search)) {
+            $normalizedSearch = strtolower(trim(preg_replace('/\s+/', ' ', $search)));
+            $searchTerms = explode(' ', $normalizedSearch);
         }
+
+        $query = User::query();
+
+        if (!empty($searchTerms)) {
+            foreach ($searchTerms as $term) {
+                $query->where(function ($query) use ($term) {
+                    $query->where('name', 'like', '%' . $term . '%')
+                        ->orWhere('email', 'like', '%' . $term . '%')
+                        ->orWhere('username', 'like', '%' . $term . '%');
+                });
+            }
+        }
+
+        if (isset($estado)) {
+            $query->where('status', $estado);
+        }
+
+        if (isset($onlineStatus)) {
+            if ($onlineStatus == '1') {
+                $query->whereIn('id', function ($query) {
+                    $query->select('id')->from('users')->whereRaw('cache()->has("user-is-online-" . id)');
+                });
+            } elseif ($onlineStatus == '0') {
+                $query->whereNotIn('id', function ($query) {
+                    $query->select('id')->from('users')->whereRaw('cache()->has("user-is-online-" . id)');
+                });
+            }
+        }
+        $users = $query->paginate($perPage);
+        return UserResource::collection($users);
     }
     public function store(StoreUserRequest $request){
         Gate::authorize('create', User::class);
@@ -45,7 +61,7 @@ class UsuariosController extends Controller{
         return response()->json($user);
     }    
     public function show(User $user){
-        Gate::authorize('view', User::class);
+        Gate::authorize('view', $user);
         return response()->json([
             'status' => true,
             'message' => 'Usuario encontrado',
@@ -55,7 +71,6 @@ class UsuariosController extends Controller{
     public function update(UpdateUserRequest $updateUserRequest, User $user){
         Gate::authorize('update', $user);
         $validated = $updateUserRequest->validated();
-        $validated['status'] = ($validated['status'] ?? 'inactivo') === 'activo';
         $user->update($validated);
         return response()->json([
             'status' => true,
@@ -64,11 +79,12 @@ class UsuariosController extends Controller{
         ]);
     }
     public function destroy(User $user){
-        Gate::authorize('dalete', $user);
+        Gate::authorize('delete', $user);
         $user->delete();
         return response()->json([
             'status' => true,
-            'messeger' => 'Usuario eliminado correctamente'
+            'message' => 'Usuario eliminado correctamente'
         ]);
     }
+
 }

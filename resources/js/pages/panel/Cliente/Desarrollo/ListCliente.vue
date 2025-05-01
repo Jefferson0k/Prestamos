@@ -110,7 +110,6 @@ function confirmDeleteProduct(cliente) {
 }
 
 function handleClientDeleted() {
-    console.log('Cliente eliminado');
     loadClientes();
 }
 watch(() => filters.value.global.value, (newValue) => {
@@ -182,7 +181,7 @@ function getStatusText(status) {
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rowsPerPageOptions="[15, 10, 5]" :rows="perPage" :totalRecords="totalRecords" :lazy="true" @page="onPage"
         @update:rows="onPerPageChange" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes"
-        responsiveLayout="scroll" scrollHeight="700px" selectionMode="multiple" :metaKeySelection="metaKey"
+        responsiveLayout="scroll" scrollHeight="800px" selectionMode="multiple"
         class="p-datatable-sm" scrollable>
         <template #header>
             <div class="flex flex-wrap gap-2 items-center justify-between">
@@ -208,8 +207,6 @@ function getStatusText(status) {
                 </div>
             </div>
         </template>
-
-        <Column selectionMode="multiple" style="width: 3rem" frozen :exportable="false"></Column>
         <Column field="dni" header="DNI" sortable style="min-width: 4rem" frozen class="font-bold"></Column>
         <Column field="nombre_completo" header="Nombre y Apellidos" sortable style="min-width: 20rem"></Column>
 
@@ -240,7 +237,7 @@ function getStatusText(status) {
             </template>
         </Column>
         <Column v-if="isColumnSelected('recomendacion')" field="recomendacion" header="Recomendación" sortable
-            style="min-width: 12rem"></Column>
+            style="min-width: 35rem"></Column>
 
         <Column field="fecha_Inicio_pago_mes" header="I. P. mes" sortable style="min-width: 10rem"></Column>
         <Column field="fecha_vencimiento_pago_mes" header="V. P. por mes" sortable style="min-width: 10rem"></Column>
