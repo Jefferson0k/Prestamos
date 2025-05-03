@@ -1,5 +1,4 @@
 <template>
-    
     <Dialog v-model:visible="localVisible" :style="{ width: '450px' }" header="Editar cliente" :modal="true">
         <div class="flex flex-col gap-6">
             <div v-if="cliente.foto" class="text-center">
@@ -165,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed} from 'vue';
 import axios from 'axios';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';

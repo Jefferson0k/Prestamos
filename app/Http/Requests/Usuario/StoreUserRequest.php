@@ -11,11 +11,11 @@ class StoreUserRequest extends FormRequest{
             'dni' => 'required|digits:8|unique:users,dni',
             'name' => 'required|string|max:100',
             'apellidos' => 'required|string|max:100',
-            'nacimiento' => 'required|date|before:today',
+            'nacimiento' => 'required|before:today',
             'email' => 'required|string|email|max:120|unique:users,email',
             'username' => 'required|string|max:30|unique:users,username',
             'password' => 'required|string|min:8',
-            'status' => 'required',
+            'status' => 'required|boolean',
         ];
     }
     public function messages(){
@@ -34,7 +34,6 @@ class StoreUserRequest extends FormRequest{
             'apellidos.max' => 'Los apellidos no deben exceder los 100 caracteres.',
 
             'nacimiento.required' => 'La fecha de nacimiento es obligatoria.',
-            'nacimiento.date' => 'La fecha de nacimiento debe ser válida.',
             'nacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
 
             'email.required' => 'El correo electrónico es obligatorio.',
@@ -50,6 +49,8 @@ class StoreUserRequest extends FormRequest{
             'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
 
             'status.required' => 'El estado es obligatorio.',
+            'status.boolean' => 'El estado debe ser verdadero o falso',
+
         ];
     }
 }

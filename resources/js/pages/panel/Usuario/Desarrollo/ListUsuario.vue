@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted,watch } from 'vue';
 import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -22,6 +22,16 @@ const product = ref({});
 const selectedUsuarioId = ref(null);
 
 const updateUsuarioDialog = ref(false);
+
+const props = defineProps({
+    refresh: {
+        type: Number,
+        required: true
+    }
+});
+watch(() => props.refresh, () => {
+    loadUsers();
+});
 function editusuario(usuario) {
     selectedUsuarioId.value = usuario.id;
     updateUsuarioDialog.value = true;
@@ -114,18 +124,18 @@ onMounted(() => {
             </div>
         </template>
 
-        <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
+        <Column selectionMode="multiple" style="width: 1rem" :exportable="false"></Column>
 
-        <Column field="online" header="Online" sortable style="min-width: 10rem">
+        <Column field="online" header="Online" sortable style="min-width: 9rem">
             <template #body="{ data }">
                 <Tag :value="data.online ? 'En línea' : 'Sin conexión'" :severity="getSeverity(data.online)" />
             </template>
         </Column>
-        <Column field="dni" header="DNI" sortable style="min-width: 8rem"></Column>
-        <Column field="name" header="Nombres y Apellidos" sortable style="min-width: 16rem"></Column>
-        <Column field="email" header="Email" sortable style="min-width: 16rem"></Column>
+        <Column field="dni" header="DNI" sortable style="min-width: 4rem"></Column>
+        <Column field="name1" header="Nombres y Apellidos" sortable style="min-width: 32rem"></Column>
+        <Column field="email" header="Email" sortable style="min-width: 25rem"></Column>
         <Column field="username" header="Usuario" sortable style="min-width: 12rem"></Column>
-        <Column field="status" header="Estado" sortable style="min-width: 10rem">
+        <Column field="status" header="Estado" sortable style="min-width: 4rem">
             <template #body="{ data }">
                 <Tag :value="data.status ? 'Activo' : 'Inactivo'" :severity="getSeverity(data.status)" />
             </template>

@@ -1,29 +1,43 @@
-<script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import PlaceholderPattern from '../../../components/PlaceholderPattern.vue';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-    },
-    {
-        title: 'Reportes',
-        href: '/reportes',
-    },
-];
-</script>
-
 <template>
     <Head title="Reportes" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-            <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min">
-                <PlaceholderPattern />
+    <AppLayout>
+        <div>
+            <div class="card">
+                <template v-if="isLoading">
+                    <div class="rounded border border-surface-200 dark:border-surface-700 p-10 bg-surface-0 dark:bg-surface-900">
+                        <div class="flex items-center mb-8">
+                            <Skeleton shape="circle" size="6rem" class="mr-6" />
+                            <div>
+                                <Skeleton width="15rem" height="2rem" class="mb-4" />
+                                <Skeleton width="8rem" height="1.5rem" class="mb-2" />
+                                <Skeleton width="12rem" height="0.75rem" />
+                            </div>
+                        </div>
+                        <Skeleton width="100%" height="500px" class="mb-8" />
+                        <div class="flex justify-between mt-6">
+                            <Skeleton width="6rem" height="3rem" />
+                            <Skeleton width="6rem" height="3rem" />
+                        </div>
+                    </div>
+                </template>
+                <template v-else>
+                </template>
             </div>
         </div>
     </AppLayout>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import AppLayout from '@/layout/AppLayout.vue';
+import { Head } from '@inertiajs/vue3';
+import Skeleton from 'primevue/skeleton';
+
+const isLoading = ref(true);
+
+onMounted(() => {
+    setTimeout(() => {
+        isLoading.value = false;
+    }, 1000);
+});
+</script>

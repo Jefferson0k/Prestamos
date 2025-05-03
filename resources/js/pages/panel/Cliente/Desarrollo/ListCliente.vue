@@ -36,7 +36,7 @@ const balanceFrozen = ref(false);
 const metaKey = ref(true);
 
 const estadoClienteOptions = ref([
-    { name: 'TODOS', value: ''},
+    { name: 'TODOS', value: '' },
     { name: 'PAGA', value: 1 },
     { name: 'MOROSOS', value: 2 },
     { name: 'PENDIENTE', value: 3 },
@@ -61,9 +61,8 @@ function editCliente(cliente) {
     editClienteDialog.value = true;
 }
 
-function handleClienteUpdated(updatedCliente) {
-    console.log('Cliente actualizado', updatedCliente);
-    loadClientes(); // Recargar la lista de clientes
+function handleClienteUpdated() {
+    loadClientes();
 }
 
 onMounted(() => {
@@ -181,8 +180,7 @@ function getStatusText(status) {
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rowsPerPageOptions="[15, 10, 5]" :rows="perPage" :totalRecords="totalRecords" :lazy="true" @page="onPage"
         @update:rows="onPerPageChange" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes"
-        responsiveLayout="scroll" scrollHeight="800px" selectionMode="multiple"
-        class="p-datatable-sm" scrollable>
+        responsiveLayout="scroll" scrollHeight="800px" selectionMode="multiple" class="p-datatable-sm" scrollable>
         <template #header>
             <div class="flex flex-wrap gap-2 items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -233,7 +231,8 @@ function getStatusText(status) {
         <Column field="numero_cuotas" header="N° Cuotas" sortable style="min-width: 8rem"></Column>
         <Column field="estado_cliente" header="Estado" sortable style="min-width: 10rem">
             <template #body="slotProps">
-                <Tag :value="getStatusText(slotProps.data.estado_cliente)" :severity="getStatusLabel(slotProps.data.estado_cliente)" />
+                <Tag :value="getStatusText(slotProps.data.estado_cliente)"
+                    :severity="getStatusLabel(slotProps.data.estado_cliente)" />
             </template>
         </Column>
         <Column v-if="isColumnSelected('recomendacion')" field="recomendacion" header="Recomendación" sortable
@@ -248,20 +247,13 @@ function getStatusText(status) {
         <Column field="total" header="Total" sortable style="min-width: 12rem" alignFrozen="right"
             :frozen="balanceFrozen" frozen class="font-bold"></Column>
         <Column :exportable="false" style="min-width: 8rem">
-        <template #body="slotProps">
-            <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editCliente(slotProps.data)" />
-            <Button icon="pi pi-trash" outlined rounded severity="danger" @click="confirmDeleteProduct(slotProps.data)" />
+            <template #body="slotProps">
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editCliente(slotProps.data)" />
+                <Button icon="pi pi-trash" outlined rounded severity="danger"
+                    @click="confirmDeleteProduct(slotProps.data)" />
             </template>
         </Column>
     </DataTable>
-    <DeleteCliente
-        v-model:visible="deleteProductDialog"
-        :product="product"
-        @deleted="handleClientDeleted"
-    />
-    <EditCliente
-        v-model:visible="editClienteDialog"
-        :clienteId="selectedClienteId"
-        @updated="handleClienteUpdated"
-    />
+    <DeleteCliente v-model:visible="deleteProductDialog" :product="product" @deleted="handleClientDeleted" />
+    <EditCliente v-model:visible="editClienteDialog" :clienteId="selectedClienteId" @updated="handleClienteUpdated" />
 </template>

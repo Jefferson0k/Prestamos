@@ -65,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [UsuariosController::class, 'index'])->name('usuarios.index');
         Route::post('/',[UsuariosController::class, 'store'])->name('usuarios.store');
         Route::get('/{user}',[UsuariosController::class, 'show'])->name('usuarios.show');
-        Route::put('/{id}',[UsuariosController::class, 'update'])->name('usuarios.update');
+        Route::put('/{user}',[UsuariosController::class, 'update'])->name('usuarios.update');
         Route::delete('/{user}',[UsuariosController::class, 'destroy'])->name('usuarios.destroy');
     });
 }); 

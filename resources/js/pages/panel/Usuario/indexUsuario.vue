@@ -24,8 +24,8 @@
 
                 <!-- Mostrar contenido real cuando ya esté listo -->
                 <template v-else>
-                    <AddUsuario/>
-                    <ListUsuario/>
+                    <AddUsuario @usuario-agregado="refrescarListado" />
+                    <ListUsuario :refresh="refreshKey"/>
                 </template>
             </div>
         </div>
@@ -41,6 +41,11 @@ import { Head } from '@inertiajs/vue3';
 import Skeleton from 'primevue/skeleton';
 
 const isLoading = ref(true);
+const refreshKey = ref(0);
+
+function refrescarListado() {
+    refreshKey.value++;
+}
 
 onMounted(() => {
     setTimeout(() => {

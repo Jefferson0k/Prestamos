@@ -48,7 +48,7 @@ class UserSeeder extends Seeder
         $admin_2->assignRole($adminRole);
 
         // Crear 5000 usuarios adicionales
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 2; $i++) {
             $name = $faker->firstName();
             $lastName1 = $faker->lastName();
             $lastName2 = $faker->lastName();

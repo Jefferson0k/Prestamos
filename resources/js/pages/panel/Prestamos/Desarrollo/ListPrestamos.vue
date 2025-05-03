@@ -110,7 +110,7 @@ defineExpose({ loadPrestamos });
 <template>
     <DataTable ref="dt" v-model:selection="selectedPrestamos" :value="prestamos" dataKey="id" :paginator="true"
         :loading="loading" responsiveLayout="scroll" :rows="perPage" :rowsPerPageOptions="[5, 10, 15, 25]"
-        :totalRecords="totalRecords" :lazy="true" @page="onPage"
+        :totalRecords="totalRecords" :lazy="true" @page="onPage" selectionMode="multiple"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} Préstamos" class="p-datatable-sm">
 
@@ -135,7 +135,6 @@ defineExpose({ loadPrestamos });
                 </div>
             </div>
         </template>
-        <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
         <Column field="dni" header="DNI" sortable style="min-width: 4rem"></Column>
         <Column field="NombreCompleto" header="Nombre y Apellido" sortable style="min-width: 25rem">
         </Column>

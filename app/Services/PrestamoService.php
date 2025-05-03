@@ -13,7 +13,7 @@ class PrestamoService{
             $data['tasa_interes_diario'],
             $data['numero_cuotas']
         );
-        
+
         $prestamo = Prestamos::create([
             'cliente_id' => $data['cliente_id'],
             'fecha_inicio' => $data['fecha_inicio'],
@@ -28,29 +28,40 @@ class PrestamoService{
         $this->generarCuotas($prestamo);
         return $prestamo;
     }
-    public function calcularMontoTotal($capital, $tasaInteresDiario, $numeroCuotas){
-        $diasTotales = $numeroCuotas * 30;
-        $interes = $capital * ($tasaInteresDiario / 100) * $diasTotales;
+    public function calcularMontoTotal($capital, $tasaInteresMensual, $numeroCuotas){
+        $interes = $capital * ($tasaInteresMensual / 100) * $numeroCuotas;
         return $capital + $interes;
     }
     public function generarCuotas(Prestamos $prestamo){
         $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
         $capitalPorCuota = $prestamo->capital / $prestamo->numero_cuotas;
         $saldoCapital = $prestamo->capital;
-        
+    
         for ($i = 1; $i <= $prestamo->numero_cuotas; $i++) {
             $fechaVencimiento = $fechaInicio->copy()->addMonths($i);
-            $interes = $saldoCapital * ($prestamo->tasa_interes_diario / 100) * 30;
+    
+            // Calcular el número de días en el mes actual
+            $diasEnMes = $fechaInicio->daysInMonth;
+    
+            // Calcular el interés para la cuota basándonos en los días exactos del mes
+            $interes = $saldoCapital * ($prestamo->tasa_interes_diario / 100) * $diasEnMes;
+    
+            // El monto total de la cuota es la suma de capital y el interés
+            $montoTotal = $capitalPorCuota + $interes;
+    
             Cuotas::create([
                 'prestamo_id' => $prestamo->id,
                 'numero_cuota' => $i,
                 'capital' => $capitalPorCuota,
                 'interes' => $interes,
-                'monto_total' => $capitalPorCuota + $interes,
+                'monto_total' => $montoTotal,
                 'fecha_vencimiento' => $fechaVencimiento,
                 'estado' => 'Pendiente'
             ]);
+    
+            // Restar el capital pagado de la deuda
             $saldoCapital -= $capitalPorCuota;
         }
     }
+    
 }
