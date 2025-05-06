@@ -40,10 +40,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', action: [PrestamosController::class, 'index'])->name('api.prestamo.index');
         Route::get('/cliente', action: [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
         Route::post('/', [PrestamosController::class, 'store'])->name('prestamo.store');
-        Route::get('{prestamo}', [PrestamosController::class, 'show'])->name('prestamo.show');
+        Route::get('{prestamo}', [PrestamosController::class, 'simularPago'])->name('prestamo.simularPago');
         Route::put('{prestamo}', [PrestamosController::class, 'update'])->name('prestamo.update');
         Route::delete('{prestamo}', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
-        Route::get('/{prestamo}/simulacion', [PrestamosController::class, 'simulacion'])->name('prestamos.simulacion');
+        Route::get('/{id}/Cuotas', [PrestamosController::class, 'ConsultarPrestamo'])->name('prestamos.ConsultarPrestamo');
     });
 
     Route::prefix('pago')->group(function () {
@@ -58,9 +58,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('reporte')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('reporte.index');
-        Route::get('{id}', [ReporteController::class, 'show'])->name('reporte.show');
-    }); 
-
+        Route::get('/total/{anio}', [ReporteController::class, 'clientesPorAnio'])->name('cliente.clientesPorAnio');    
+        Route::get('/capital/{anio}', [ReporteController::class, 'CantidadEmprestada'])->name('reporte.capitalPorAnio');
+    });
+    
     Route::prefix('usuarios')->group(function(){
         Route::get('/', [UsuariosController::class, 'index'])->name('usuarios.index');
         Route::post('/',[UsuariosController::class, 'store'])->name('usuarios.store');

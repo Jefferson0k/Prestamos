@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Prestamo\StorePrestamoRequest;
 use App\Http\Requests\Prestamo\UpdatePrestamoRequest;
 use App\Http\Resources\PrestamoResource;
+use App\Http\Resources\TalonarioResource;
 use App\Models\Cliente;
 use App\Models\Prestamos;
 use App\Services\PagoService;
@@ -122,12 +123,13 @@ class PrestamosController extends Controller{
             'message' => 'Préstamo eliminado correctamente.',
         ]);
     }
-    public function simulacion(Prestamos $prestamo){
-        $simulacion = $this->pagoService->simularCalendarioPagos($prestamo);
-        return response()->json([
-            'prestamo' => $prestamo,
-            'simulacion' => $simulacion,
-        ]);
+    public function consultarPrestamo($id){
+        $prestamo = Prestamos::with(['cliente', 'recomendacion', 'cuotas'])
+            ->where('cliente_id', $id)
+            ->first();
+        if (!$prestamo) {
+            return response()->json(['message' => 'Préstamo no encontrado'], 404);
+        }
+        return new TalonarioResource($prestamo);
     }
-
 }

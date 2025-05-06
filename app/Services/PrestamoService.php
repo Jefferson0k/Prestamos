@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\Cuotas;
@@ -8,60 +7,40 @@ use Carbon\Carbon;
 
 class PrestamoService{
     public function crearPrestamo(array $data){
-        $montoTotal = $this->calcularMontoTotal(
-            $data['capital'],
-            $data['tasa_interes_diario'],
-            $data['numero_cuotas']
-        );
-
         $prestamo = Prestamos::create([
             'cliente_id' => $data['cliente_id'],
             'fecha_inicio' => $data['fecha_inicio'],
             'fecha_vencimiento' => $data['fecha_vencimiento'],
             'capital' => $data['capital'],
             'numero_cuotas' => $data['numero_cuotas'],
-            'estado_cliente' => $data['estado_cliente'] ?? 'Paga',
-            'recomendado_id' => $data['recomendado_id'] ?? null,
+            'estado_cliente' => $data['estado_cliente'] ?? 1,
+            'recomendado_id' => $data['recomendado_id'],
             'tasa_interes_diario' => $data['tasa_interes_diario'],
-            'monto_total' => $montoTotal
+            'monto_total' => $data['capital'],
         ]);
+
         $this->generarCuotas($prestamo);
         return $prestamo;
     }
-    public function calcularMontoTotal($capital, $tasaInteresMensual, $numeroCuotas){
-        $interes = $capital * ($tasaInteresMensual / 100) * $numeroCuotas;
-        return $capital + $interes;
-    }
     public function generarCuotas(Prestamos $prestamo){
         $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
-        $capitalPorCuota = $prestamo->capital / $prestamo->numero_cuotas;
-        $saldoCapital = $prestamo->capital;
-    
+        $capital = $prestamo->capital;
         for ($i = 1; $i <= $prestamo->numero_cuotas; $i++) {
-            $fechaVencimiento = $fechaInicio->copy()->addMonths($i);
-    
-            // Calcular el número de días en el mes actual
-            $diasEnMes = $fechaInicio->daysInMonth;
-    
-            // Calcular el interés para la cuota basándonos en los días exactos del mes
-            $interes = $saldoCapital * ($prestamo->tasa_interes_diario / 100) * $diasEnMes;
-    
-            // El monto total de la cuota es la suma de capital y el interés
-            $montoTotal = $capitalPorCuota + $interes;
-    
             Cuotas::create([
                 'prestamo_id' => $prestamo->id,
                 'numero_cuota' => $i,
-                'capital' => $capitalPorCuota,
-                'interes' => $interes,
-                'monto_total' => $montoTotal,
-                'fecha_vencimiento' => $fechaVencimiento,
-                'estado' => 'Pendiente'
+                'capital' => $capital,
+                'interes' => 0.00,
+                'Dias' => 0,
+                'Tasa_Interes_Diario' => $prestamo->tasa_interes_diario,
+                'Monto_Interes_Pagar' => 0.00,
+                'Monto_Capital_Pagar' => null,
+                'Saldo_Capital' => $capital,
+                'Fecha_Inicio' => $i == 1 ? $fechaInicio : null,
+                'fecha_vencimiento' => null,
+                'MOnto_Capital_Mas_Interes_a_Pagar' => 0.00,
+                'estado' => 'Pendiente',
             ]);
-    
-            // Restar el capital pagado de la deuda
-            $saldoCapital -= $capitalPorCuota;
         }
     }
-    
 }

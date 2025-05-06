@@ -22,14 +22,6 @@ class PagosController extends Controller{
     public function create(){
         $prestamos = Prestamos::with('cliente')->get();
         return response()->json($prestamos);
-    }    
-    public function getCuotas(Request $request, Prestamos $prestamo){
-        $cuotas = $prestamo->cuotas()
-            ->where('estado', '!=', 'Pagado')
-            ->orderBy('numero_cuota')
-            ->get();
-            
-        return response()->json($cuotas);
     }
     public function store(Request $request){
         $validatedData = $request->validate([
