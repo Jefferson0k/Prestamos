@@ -10,7 +10,7 @@ import MultiSelect from 'primevue/multiselect';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 import axios from 'axios';
-
+import Talonario from './Talonario.vue';
 // Estados reactivos
 const dt = ref();
 const prestamos = ref([]);
@@ -23,6 +23,8 @@ const totalRecords = ref(0);
 const perPage = ref(15);
 const currentPage = ref(1);
 const selectedEstado = ref('');
+const showPrintDialog = ref(false);
+const prestamosId = ref(null);
 const estadoOptions = ref([
     { label: 'Todos', value: '' },
     { label: 'PAGA', value: 1 },
@@ -101,6 +103,26 @@ const clearFilters = () => {
     loadPrestamos();
 };
 
+const printprestamo = async (prestamo) => {
+    try {
+        prestamosId.value = prestamo.id_cliente;
+        showPrintDialog.value = true;
+    } catch (error) {
+        console.error('Error al preparar impresión A4:', error);
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo preparar la impresión A4',
+            life: 3000
+        });
+    }
+};
+
+const handleClosePrestamo = () => {
+    showPrintDialog.value = false;
+    prestamosId.value = null;
+};
+
 onMounted(() => {
     loadPrestamos();
 });
@@ -153,13 +175,13 @@ defineExpose({ loadPrestamos });
             :style="{ 'min-width': col.width }" sortable></Column>
         <Column :exportable="false" style="min-width: 12rem">
             <template #body="slotProps">
-                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editProduct(slotProps.data)" />
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editprestamo(slotProps.data)" />
                 <Button icon="pi pi-trash" outlined rounded severity="danger" class="mr-2"
-                    @click="confirmDeleteProduct(slotProps.data)" />
+                    @click="confirmDeleteprestamo(slotProps.data)" />
                 <Button icon="pi pi-print" outlined rounded severity="help" class="rl-2"
-                    @click="printProduct(slotProps.data)" />
+                    @click="printprestamo(slotProps.data)" />
             </template>
-
         </Column>
     </DataTable>
+    <Talonario v-if="showPrintDialog" :prestamosId="prestamosId" v-model:visible="showPrintDialog" @close="handleClosePrestamo" />
 </template>

@@ -6,15 +6,16 @@
         <template #center>
         </template>
     </Toolbar>
-    
-    <Dialog v-model:visible="clienteDialog" :style="{ width: '800px' }" header="Registro de Pagos" :modal="true">
+
+    <Dialog v-model:visible="clienteDialog" :style="{ width: '1500px' }" header="Registro de Pagos" :modal="true">
         <div class="flex flex-col gap-6">
             <div>
-                <label for="inventoryStatus" class="block font-bold mb-3">Cliente <span class="text-red-500">*</span></label>
+                <label for="inventoryStatus" class="block font-bold mb-3">Cliente <span
+                        class="text-red-500">*</span></label>
                 <div class="flex gap-2">
                     <Select v-model="clienteSeleccionado" :options="clientes" editable optionLabel="label"
-                            optionValue="value" showClear placeholder="Buscar clientes..." @input="buscarclientes"
-                            class="w-full">
+                        optionValue="value" showClear placeholder="Buscar clientes..." @input="buscarclientes"
+                        class="w-full">
                         <template #option="{ option }">
                             <div>
                                 <strong>{{ option.label }}</strong>
@@ -22,42 +23,51 @@
                         </template>
                         <template #empty>Clientes no encontrado.</template>
                     </Select>
-                    <Button icon="pi pi-search" severity="info"
-                            :disabled="!clienteSeleccionado" tooltip="Cargar cuotas" @click="cargarCuotas(clienteSeleccionado)"/>
-                </div>
-            </div>
-
-            <div v-if="prestamo" class="p-3 rounded">
-                <h3 class="text-lg font-bold mb-2">Información del Préstamo</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><strong>DNI:</strong> {{ prestamo.dni }}</div>
-                    <div><strong>Cliente:</strong> {{ prestamo.NombreCompleto }}</div>
-                    <div><strong>Capital:</strong> {{ prestamo.capital }}</div>
-                    <div><strong>N° Cuotas:</strong> {{ prestamo.numero_cuotas }}</div>
-                    <div><strong>Fecha Inicio:</strong> {{ prestamo.fecha_inicio }}</div>
-                    <div><strong>Fecha Vencimiento:</strong> {{ prestamo.fecha_vencimiento }}</div>
-                    <div><strong>Tasa Interés Diario:</strong> {{ prestamo.tasa_interes_diario }}%</div>
-                    <div><strong>Estado:</strong> {{ prestamo.estado_cliente }}</div>
+                    <Button icon="pi pi-search" severity="info" :disabled="!clienteSeleccionado" tooltip="Cargar cuotas"
+                        @click="cargarCuotas(clienteSeleccionado)" />
                 </div>
             </div>
         </div>
-        
-        <DataTable 
-            ref="dt" 
-            v-model:selection="selectedCuotas" 
-            :value="cuotas" 
-            dataKey="id" 
-            :paginator="true"
-            :rows="10" 
-            :filters="filters"
+        <br>
+        <Fieldset v-if="prestamo?.cliente">
+            <template #legend>
+                <div class="flex items-center pl-2">
+                    <Avatar :image="prestamo.cliente.foto" shape="circle" />
+                    <span class="font-bold p-2">{{ prestamo.cliente.nombre }}</span>
+                </div>
+            </template>
+            <div class="flex flex-wrap gap-6 py-4">
+                <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.cliente.nombre }}</div>
+                <div class="flex-1"><strong>DNI:</strong> {{ prestamo.cliente.dni }}</div>
+                <div class="flex-1"><strong>Capital:</strong>
+                    <Tag severity="success" value="Success">S/ {{ prestamo.cliente.capital }}</Tag>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-6">
+                <div class="flex-1"><strong>Inicio:</strong> {{ prestamo.cliente.Fecha_Inicio }}</div>
+                <div class="flex-1"><strong>Vencimiento:</strong> {{ prestamo.cliente.Fecha_Vencimiento }}</div>
+                <div class="flex-1"><strong>I. Diario:</strong>
+                    <Tag severity="info" value="Info">{{ prestamo.cliente.tasa_interes_diario }} %</Tag>
+                </div>
+            </div>
+            <h3 class="text-lg font-semibold mt-6 mb-2 border-b pb-1">Datos del recomendado</h3>
+            <div class="flex flex-wrap gap-6 py-4">
+                <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.cliente.recomendado }}</div>
+                <div class="flex-1"><strong>DNI:</strong> {{ prestamo.cliente.Dnirecomendado }}</div>
+                <div class="flex-1"></div>
+
+            </div>
+        </Fieldset>
+        <br>
+        <DataTable v-if="prestamo?.cliente" ref="dt" v-model:selection="selectedCuotas" :value="cuotas" dataKey="id"
+            :paginator="true" :rows="20" :filters="filters"
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            :rowsPerPageOptions="[5, 10, 25]"
-            :loading="loading"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} cuotas"
-            class="p-datatable-sm">
+            :rowsPerPageOptions="[20, 10, 5]" :loading="loading"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} cuotas" class="p-datatable-sm">
             <template #header>
                 <div class="flex flex-wrap gap-2 items-center justify-between">
-                    <h4 class="m-0">Pagos</h4>
+                    <h4 class="m-0">Pagos <Tag severity="success" value="Success">{{ prestamo.cantidad_cuotas }}</Tag>
+                    </h4>
                     <IconField>
                         <InputIcon>
                             <i class="pi pi-search" />
@@ -66,22 +76,27 @@
                     </IconField>
                 </div>
             </template>
-            <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
-            <Column field="numero_cuota" header="N° Cuota" sortable style="min-width: 8rem"></Column>
-            <Column field="monto_total" header="Monto" sortable style="min-width: 5rem"></Column>
-            <Column field="dias" header="Días" sortable style="min-width: 4rem"></Column>
-            <Column field="fecha_inicio" header="F. Inicio" sortable style="min-width: 13rem"></Column>
-            <Column field="fecha_vencimiento" header="F. Vencimiento" sortable style="min-width: 13rem"></Column>
-            <Column field="estado" header="Estado" sortable style="min-width: 8rem">
+            <Column selectionMode="multiple" style="width: 1rem" :exportable="false"></Column>
+            <Column field="numero_cuota" header="N° Cuota" sortable style="min-width: 6rem"></Column>
+            <Column field="capital" header="Capital" sortable style="min-width: 6rem"></Column>
+            <Column field="fecha_inicio" header="Inicio" sortable style="min-width: 4rem"></Column>
+            <Column field="fecha_vencimiento" header="Vencimiento" sortable style="min-width: 4rem"></Column>
+            <Column field="dias" header="Días Interes" sortable style="min-width: 4rem"></Column>
+            <Column field="interes" header="Tasa de Interes Diario" sortable style="min-width: 4rem"></Column>
+            <Column field="monto_interes_pagar" header="Monto Interes Pagar" sortable style="min-width: 4rem"></Column>
+            <Column field="monto_capital_pagar" header="Monto Capital Pagar" sortable style="min-width: 4rem"></Column>
+            <Column field="saldo_capital" header="Saldo Capital" sortable style="min-width: 4rem"></Column>
+            <Column field="monto_total_pagar" header="Capital mas Interes" sortable style="min-width: 4rem"></Column>
+            <Column field="estado" header="Estado" sortable style="min-width: 6rem">
                 <template #body="slotProps">
                     <Tag severity="warn">{{ slotProps.data.estado }}</Tag>
                 </template>
-                </Column>
+            </Column>
         </DataTable>
-        
+
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-            <Button label="Pagar" icon="pi pi-check"/>
+            <Button label="Pagar" icon="pi pi-check" :disabled="!selectedCuotas.length" />
         </template>
     </Dialog>
 </template>
@@ -101,6 +116,9 @@ import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import Tag from 'primevue/tag';
+import Fieldset from 'primevue/fieldset';
+import Avatar from 'primevue/avatar';
+import Image from 'primevue/image';
 
 const toast = useToast();
 const clienteSeleccionado = ref(null);
@@ -136,20 +154,18 @@ async function cargarCuotas(clienteId) {
         prestamo.value = null;
         return;
     }
-    
+
     loading.value = true;
     try {
         const url = `/prestamo/${clienteId}/Cuotas`;
-        console.log(`Realizando petición a: ${url}`);
-        
         const response = await axios.get(url);
-        console.log('Respuesta recibida:', response.data);
-        
-        if (response.data && response.data.data) {
-            prestamo.value = response.data.data;
-            cuotas.value = response.data.data.cuotas || [];
-            console.log(`Cuotas cargadas: ${cuotas.value.length}`);
-            
+
+        if (response.data) {
+            const data = response.data;
+
+            prestamo.value = data;
+            cuotas.value = data.cuotas || [];
+
             toast.add({
                 severity: "success",
                 summary: "Éxito",
@@ -159,8 +175,7 @@ async function cargarCuotas(clienteId) {
         } else {
             cuotas.value = [];
             prestamo.value = null;
-            console.log('No se encontraron datos de cuotas');
-            
+
             toast.add({
                 severity: "info",
                 summary: "Información",

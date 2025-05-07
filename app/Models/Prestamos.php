@@ -22,7 +22,9 @@ class Prestamos extends Model{
         'capital' => 'decimal:2',
         'tasa_interes_diario' => 'decimal:2',
         'monto_total' => 'decimal:2',
-    ];
+        'fecha_inicio' => 'datetime',
+        'fecha_vencimiento' => 'datetime',
+    ];    
     protected $dates = [
         'fecha_inicio',
         'fecha_vencimiento',

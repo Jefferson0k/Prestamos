@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Prestamo\StorePrestamoRequest;
 use App\Http\Requests\Prestamo\UpdatePrestamoRequest;
+use App\Http\Resources\ClientePrestamoResource;
+use App\Http\Resources\CuotaResource;
 use App\Http\Resources\PrestamoResource;
 use App\Http\Resources\TalonarioResource;
 use App\Models\Cliente;
@@ -124,12 +126,26 @@ class PrestamosController extends Controller{
         ]);
     }
     public function consultarPrestamo($id){
-        $prestamo = Prestamos::with(['cliente', 'recomendacion', 'cuotas'])
-            ->where('cliente_id', $id)
-            ->first();
-        if (!$prestamo) {
-            return response()->json(['message' => 'Préstamo no encontrado'], 404);
-        }
-        return new TalonarioResource($prestamo);
+        $cliente = Cliente::findOrFail($id);
+        $prestamos = $cliente->prestamos()->with('cuotas')->get();
+        $cantidadPrestamos = $prestamos->count();
+        
+        $todasLasCuotas = $prestamos->flatMap(function ($prestamo) {
+            return $prestamo->cuotas;
+        });
+        $totalMontoInteresPagar = $todasLasCuotas->sum('Monto_Interes_Pagar');
+        $totalMontoCapitalPagar = $todasLasCuotas->sum('Monto_Capital_Pagar');
+        $totalMontoCapitalMasInteres = $todasLasCuotas->sum('MOnto_Capital_Mas_Interes_a_Pagar');
+        return response()->json([
+            'cliente' => new ClientePrestamoResource($cliente),
+            'cantidad_prestamos' => $cantidadPrestamos,
+            'cantidad_cuotas' => $todasLasCuotas->count(),
+            'cuotas' => CuotaResource::collection($todasLasCuotas),
+            'totales' => [
+                'total_interes' => number_format($totalMontoInteresPagar, 2, '.', ''),
+                'total_capital' => number_format($totalMontoCapitalPagar, 2, '.', ''),
+                'total_pagar' => number_format($totalMontoCapitalMasInteres, 2, '.', '')
+            ]
+        ]);
     }
 }

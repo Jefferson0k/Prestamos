@@ -38,10 +38,10 @@ class ClienteResource extends JsonResource{
             'celular' => $this->telefono,
             'dni' => $this->dni,
             'fecha_inicio' => $prestamo && $prestamo->fecha_inicio
-                ? \Carbon\Carbon::parse($prestamo->fecha_inicio)->format('d-m-Y H:i:s')
+                ? \Carbon\Carbon::parse($prestamo->fecha_inicio)->format('d-m-Y H:i:s A')
                 : null,
             'fecha_vencimiento' => $prestamo && $prestamo->fecha_vencimiento
-                ? \Carbon\Carbon::parse($prestamo->fecha_vencimiento)->format('d-m-Y H:i:s')
+                ? \Carbon\Carbon::parse($prestamo->fecha_vencimiento)->format('d-m-Y H:i:s A')
                 : null,    
             'tasa_interes_diario' => $prestamo ? $prestamo->tasa_interes_diario : null,
             'capital_inicial' => $prestamo ? $prestamo->capital : null,
