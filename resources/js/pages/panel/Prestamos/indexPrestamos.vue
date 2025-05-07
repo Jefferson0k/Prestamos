@@ -3,7 +3,6 @@
     <AppLayout>
         <div>
             <div class="card">
-                <!-- Mostrar skeleton si está cargando -->
                 <template v-if="isLoading">
                     <div class="rounded border border-surface-200 dark:border-surface-700 p-10 bg-surface-0 dark:bg-surface-900">
                         <div class="flex items-center mb-8">
@@ -22,10 +21,9 @@
                     </div>
                 </template>
 
-                <!-- Mostrar contenido real cuando ya esté listo -->
                 <template v-else>
                     <AddPrestamos @prestamoAgregado="handlePrestamoAgregado" />
-                    <ListPrestamos ref="listRef" />
+                    <ListPrestamos ref="listRef" :refresh="refresh" />
                 </template>
             </div>
         </div>
@@ -41,10 +39,11 @@ import { Head } from '@inertiajs/vue3';
 import Skeleton from 'primevue/skeleton';
 
 const isLoading = ref(true);
+const refresh = ref(0);
 const listRef = ref();
 
 const handlePrestamoAgregado = () => {
-    listRef.value?.loadPrestamos?.();
+    refresh.value++; // Forzar recarga en ListPrestamos
 };
 
 onMounted(() => {
@@ -52,6 +51,4 @@ onMounted(() => {
         isLoading.value = false;
     }, 1000);
 });
-
-
 </script>

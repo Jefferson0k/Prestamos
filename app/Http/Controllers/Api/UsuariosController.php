@@ -78,6 +78,7 @@ class UsuariosController extends Controller{
         ], 200);
     }
     public function update(UpdateUserRequest $request, User $user){
+        Gate::authorize('update', $user);
         $data = $request->validated();
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);

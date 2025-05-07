@@ -27,9 +27,14 @@ class PrestamosController extends Controller{
     }
     public function index(Request $request){
         Gate::authorize('viewAny', Prestamos::class);
+        
         $perPage = $request->input('per_page', 15);
         $search = $request->input('search', '');
-        $query = Prestamos::with('cliente', 'pagos');
+        $estadoCliente = $request->input('estado_cliente');        
+        $query = Prestamos::with('cliente', 'pagos');        
+        if (!is_null($estadoCliente)) {
+            $query->where('estado_cliente', $estadoCliente);
+        }        
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'LIKE', "%{$search}%")
@@ -41,11 +46,12 @@ class PrestamosController extends Controller{
                 ->orWhere('tasa_interes_diario', 'LIKE', "%{$search}%")
                 ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                     $clienteQuery->where('dni', 'LIKE', "%{$search}%")
-                                ->orWhere('nombre', 'LIKE', "%{$search}%")
-                                ->orWhere('apellidos', 'LIKE', "%{$search}%");
+                        ->orWhere('nombre', 'LIKE', "%{$search}%")
+                        ->orWhere('apellidos', 'LIKE', "%{$search}%");
                 });
             });
         }
+        
         $prestamos = $query->paginate($perPage);
         return PrestamoResource::collection($prestamos);
     }
@@ -78,6 +84,7 @@ class PrestamosController extends Controller{
         ]);
     }
     public function store(StorePrestamoRequest $request){
+        Gate::authorize('create', Prestamos::class);
         $validatedData = $request->validated();
         $horaActualPeru = Carbon::now('America/Lima')->format('H:i:s');
         $validatedData['fecha_inicio'] = Carbon::createFromFormat('d-m-Y', $validatedData['fecha_inicio'], 'America/Lima')
@@ -92,34 +99,32 @@ class PrestamosController extends Controller{
             'prestamo' => $prestamo
         ], Response::HTTP_CREATED);
     }
-    public function show(Prestamos $prestamo){
-        $cuotas = $prestamo->cuotas()->orderBy('numero_cuota')->get();
-        $pagos = $prestamo->pagos()->orderBy('created_at', 'desc')->get();
-        $simulacion = $this->pagoService->simularCalendarioPagos($prestamo);
-        return response()->json([
-            'prestamo' => $prestamo,
-            'cuotas' => $cuotas,
-            'pagos' => $pagos,
-            'simulacion' => $simulacion,
-        ]);
+    public function show(Prestamos $prestamos){
+        Gate::authorize('view', $prestamos);
+        return new PrestamoResource($prestamos);
     }
-    public function edit(Prestamos $prestamo){
-        $clientes = Cliente::all();
-
-        return response()->json([
-            'prestamo' => $prestamo,
-            'clientes' => $clientes,
-        ]);
-    }
-    public function update(UpdatePrestamoRequest $request, Prestamos $prestamo){
-        $prestamo->update($request->validated());
-
+    public function update(UpdatePrestamoRequest $request, Prestamos $prestamo) {
+        Gate::authorize('update', $prestamo);
+        $validatedData = $request->validated();        
+        $horaActualPeru = Carbon::now('America/Lima')->format('H:i:s');       
+        if (isset($validatedData['fecha_inicio']) && !$validatedData['fecha_inicio'] instanceof \DateTime) {
+            $validatedData['fecha_inicio'] = Carbon::createFromFormat('d-m-Y', $validatedData['fecha_inicio'], 'America/Lima')
+                ->startOfDay()
+                ->setTimeFromTimeString($horaActualPeru);
+        }        
+        if (isset($validatedData['fecha_vencimiento']) && !$validatedData['fecha_vencimiento'] instanceof \DateTime) {
+            $validatedData['fecha_vencimiento'] = Carbon::createFromFormat('d-m-Y', $validatedData['fecha_vencimiento'], 'America/Lima')
+                ->startOfDay()
+                ->setTimeFromTimeString($horaActualPeru);
+        }
+        $prestamoActualizado = $this->prestamoService->actualizarPrestamo($prestamo, $validatedData);
         return response()->json([
             'message' => 'Préstamo actualizado correctamente.',
-            'prestamo' => $prestamo,
+            'prestamo' => $prestamoActualizado,
         ]);
     }
     public function destroy(Prestamos $prestamo){
+        Gate::authorize('delete', $prestamo);
         $prestamo->delete();
         return response()->json([
             'message' => 'Préstamo eliminado correctamente.',

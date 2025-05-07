@@ -40,9 +40,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', action: [PrestamosController::class, 'index'])->name('api.prestamo.index');
         Route::get('/cliente', action: [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
         Route::post('/', [PrestamosController::class, 'store'])->name('prestamo.store');
-        Route::get('{prestamo}', [PrestamosController::class, 'simularPago'])->name('prestamo.simularPago');
+        Route::get('{prestamos}', [PrestamosController::class, 'show'])->name('prestamo.show');
         Route::put('{prestamo}', [PrestamosController::class, 'update'])->name('prestamo.update');
-        Route::delete('{prestamo}', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
+        Route::delete('/{prestamo}/destroy', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
         Route::get('/{id}/Cuotas', [PrestamosController::class, 'ConsultarPrestamo'])->name('prestamos.ConsultarPrestamo');
     });
 

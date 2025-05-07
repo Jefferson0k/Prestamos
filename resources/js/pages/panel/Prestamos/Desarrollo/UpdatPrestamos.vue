@@ -1,19 +1,10 @@
 <template>
-    <Dialog v-model:visible="prestamoDialog" :style="{ width: '450px' }" header="Actualizar Préstamo" :modal="true">
+    <Dialog v-model:visible="dialogVisible" :style="{ width: '450px' }" header="Actualizar Préstamo" :modal="true">
         <div class="flex flex-col gap-6">
             <div>
                 <label for="inventoryStatus" class="block font-bold mb-3">Cliente <span
                         class="text-red-500">*</span></label>
-                <Select v-model="clienteSeleccionado" :options="clientes" editable optionLabel="label"
-                    optionValue="value" showClear placeholder="Buscar clientes..." @input="buscarclientes"
-                    class="w-full">
-                    <template #option="{ option }">
-                        <div>
-                            <strong>{{ option.label }}</strong>
-                        </div>
-                    </template>
-                    <template #empty>Clientes no encontrado.</template>
-                </Select>
+                        <InputText type="text" v-model="prestamo.NombreCompleto" fluid disabled/>
             </div>
             <div class="grid grid-cols-12 gap-4">
                 <div class="col-span-6">
@@ -43,68 +34,137 @@
             <div>
                 <label for="estado" class="block font-bold mb-3">Estado del cliente <span
                         class="text-red-500">*</span></label>
-                <Select v-model="prestamo.estado_cliente" :options="statuses" optionLabel="label"
-                    placeholder="Seleccione un estado" fluid></Select>
+                <Select v-model="prestamo.estado_cliente" 
+                        :options="statuses" 
+                        optionLabel="label" 
+                        :class="{ 'p-invalid': submitted && !prestamo.estado_cliente }"
+                        placeholder="Seleccione un estado" 
+                        fluid />
             </div>
             <div>
                 <label for="recoemdado" class="block font-bold mb-3">Recomendado <span
                         class="text-red-500">*</span></label>
-                <Select v-model="clienteRecomendado" :options="recomendos" editable optionLabel="label"
-                    optionValue="value" showClear placeholder="Buscar clientes que lo recomendo"
-                    @input="buscarclientesRecomendado" class="w-full">
-                    <template #option="{ option }">
-                        <div>
-                            <strong>{{ option.label }}</strong>
-                        </div>
-                    </template>
-                    <template #empty>Clientes no encontrado.</template>
-                </Select>
+                <InputText type="text" v-model="prestamo.recomendacion" fluid disabled/>
             </div>
         </div>
 
         <template #footer>
-            <Button label="Cancel" icon="pi pi-times" text @click="hideDialog" />
-            <Button label="Save" icon="pi pi-check" @click="saveProduct" />
+            <Button label="Cancelar" icon="pi pi-times" text @click="dialogVisible = false" />
+            <Button label="Save" icon="pi pi-check" :loading="loading" @click="saveUpdate" />
         </template>
     </Dialog>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref,watch } from 'vue';
 import Button from 'primevue/button';
-import Toolbar from 'primevue/toolbar';
 import Dialog from 'primevue/dialog';
 import Select from 'primevue/select';
 import InputNumber from 'primevue/inputnumber';
 import axios from 'axios';
 import DatePicker from 'primevue/datepicker';
+import InputText from 'primevue/inputtext';
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
-const prestamoDialog = ref(false);
-const product = ref({});
-const selectedProducts = ref();
 const submitted = ref(false);
-const clienteSeleccionado = ref(null);
-const clienteRecomendado = ref(null);
-const clientes = ref([]);
-const recomendos = ref([]);
+const loading = ref(false);
 const dates = ref();
 const prestamo = ref([]);
+
 const statuses = ref([
     { label: 'PAGA', value: 1 },
     { label: 'MOROSO', value: 2 },
 ]);
 
-const emit = defineEmits(['prestamoAgregado']);
+const props = defineProps({
+    visible: Boolean,
+    PrestamoId: Number
+});
 
-function openNew() {
-    product.value = {};
-    submitted.value = false;
-    prestamoDialog.value = true;
-}
+const emit = defineEmits(['update:visible', 'updated']);
 
-function hideDialog() {
-    prestamoDialog.value = false;
-    submitted.value = false;
-}
+const dialogVisible = ref(props.visible);
+watch(() => props.visible, (val) => dialogVisible.value = val);
+watch(dialogVisible, (val) => emit('update:visible', val));
+
+watch(() => props.visible, (newVal) => {
+    if (newVal && props.PrestamoId) {
+        fetchPrestamos();
+    }
+});
+
+const fetchPrestamos = async () => {
+    loading.value = true;
+    try {
+        const response = await axios.get(`/prestamo/${props.PrestamoId}`);
+        const data = response.data.data;
+        const fechaInicio = new Date(data.finicio);
+        const fechaVencimiento = new Date(data.fvencimiento);
+        const estadoObj = statuses.value.find(s => s.value === parseInt(data.estado));        
+        prestamo.value = {
+            ...data,
+            capital: parseFloat(data.capital),
+            cliente_id: data.cliente_id,
+            recomendado_id: data.recomendado_id,
+            tasa_interes_diario: parseFloat(data.tasa_interes_diario),
+            numero_cuotas: parseInt(data.numero_cuotas),
+            estado_cliente: estadoObj
+        };        
+        dates.value = [fechaInicio, fechaVencimiento];
+    } catch (error) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el préstamo', life: 3000 });
+        console.error(error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const saveUpdate = async () => {
+    submitted.value = true;
+    
+    loading.value = true;
+    
+    try {
+        // Formatear fechas a 'd-m-Y'
+        const fechaInicio = dates.value[0].toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).replace(/\//g, '-');
+        
+        const fechaVencimiento = dates.value[1].toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).replace(/\//g, '-');
+        
+        // Preparar datos para enviar
+        const updateData = {
+            cliente_id: prestamo.value.cliente_id,
+            fecha_inicio: fechaInicio,
+            fecha_vencimiento: fechaVencimiento,
+            capital: prestamo.value.capital,
+            numero_cuotas: prestamo.value.numero_cuotas,
+            tasa_interes_diario: prestamo.value.tasa_interes_diario,
+            recomendado_id: prestamo.value.recomendado_id,
+            estado_cliente: prestamo.value.estado_cliente.value || prestamo.value.estado_cliente,
+        };
+
+        
+        const response = await axios.put(`/prestamo/${props.PrestamoId}`, updateData);
+        
+        toast.add({ severity: 'success', summary: 'Éxito', detail: 'Préstamo actualizado correctamente', life: 3000 });
+        dialogVisible.value = false;
+        emit('updated');
+    } catch (error) {
+        let errorMessage = 'Error al actualizar el préstamo';
+        if (error.response && error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+        }
+        toast.add({ severity: 'error', summary: 'Error', detail: errorMessage, life: 3000 });
+        console.error(error);
+    } finally {
+        loading.value = false;
+    }
+};
 </script>

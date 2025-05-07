@@ -17,24 +17,32 @@ class ClienteController extends Controller {
         $perPage = $request->input('per_page', 15);
         $search = $request->input('search', '');
         $estadoCliente = $request->input('estado_cliente');
+        
         $searchTerms = [];
         if (!empty($search)) {
             $normalizedSearch = strtolower(trim(preg_replace('/\s+/', ' ', $search)));
             $searchTerms = explode(' ', $normalizedSearch);
         }
-        $query = Cliente::query();
-        $query->with(['prestamos' => function($query) {
-            $query->latest()
+        $query = Cliente::query();        
+        if (!is_null($estadoCliente)) {
+            $query->whereHas('prestamos', function($q) use ($estadoCliente) {
+                $q->where('estado_cliente', $estadoCliente)
+                ->orderBy('fecha_inicio', 'desc');
+            });
+        }
+        
+        $query->with(['prestamos' => function($query) use ($estadoCliente) {
+            $subQuery = $query->latest('fecha_inicio')
                 ->take(1)
                 ->with(['pagos' => function($query) {
                     $query->select('id', 'prestamo_id', 'monto_capital', 'monto_interes', 'monto_total');
                 }]);
-        }]);        
-        if (!is_null($estadoCliente)) {
-            $query->whereHas('prestamos', function($q) use ($estadoCliente) {
-                $q->where('estado_cliente', $estadoCliente);
-            });
-        }        
+            
+            if (!is_null($estadoCliente)) {
+                $subQuery->where('estado_cliente', $estadoCliente);
+            }
+        }]);
+        
         if (!empty($searchTerms)) {
             $query->where(function($q) use ($searchTerms) {
                 foreach ($searchTerms as $term) {
@@ -50,7 +58,8 @@ class ClienteController extends Controller {
                     });
                 }
             });
-        }        
+        }
+        
         $clientes = $query->paginate($perPage);
         return ClienteResource::collection($clientes);
     }        

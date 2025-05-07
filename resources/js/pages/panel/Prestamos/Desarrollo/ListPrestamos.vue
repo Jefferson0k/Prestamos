@@ -11,9 +11,12 @@ import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 import axios from 'axios';
 import Talonario from './Talonario.vue';
-// Estados reactivos
+import DeletePrestamo from './DeletePrestamo.vue';
+import UpdatPrestamos from './UpdatPrestamos.vue';
+
 const dt = ref();
 const prestamos = ref([]);
+const prestamo = ref ([]);
 const selectedPrestamos = ref();
 const searchTerm = ref('');
 const debouncedSearchTerm = ref('');
@@ -25,18 +28,36 @@ const currentPage = ref(1);
 const selectedEstado = ref('');
 const showPrintDialog = ref(false);
 const prestamosId = ref(null);
+const deletePrestamoDialog = ref(false);
+const updatePrestamoDialog = ref(false);
+const selectedPrestamoId = ref(null);
+
 const estadoOptions = ref([
     { label: 'Todos', value: '' },
     { label: 'PAGA', value: 1 },
     { label: 'MOROSO', value: 2 },
 ]);
-
+const props = defineProps({
+    refresh: {
+        type: Number,
+        required: true
+    }
+});
+watch(() => props.refresh, () => {
+    loadPrestamos();
+});
 const optionalColumns = ref([
     { field: 'recomendacion', header: 'Recomendación', width: '30rem' }
 ]);
 const selectedColumns = ref([]);
 
-
+function editPrestamo(prestamo) {
+    selectedPrestamoId.value = prestamo.id;
+    updatePrestamoDialog.value = true;
+}
+function handlePrestamoUpdated() {
+    loadPrestamos();
+}
 const loadPrestamos = async (page = 1, itemsPerPage = perPage.value, search = debouncedSearchTerm.value, estado = selectedEstado.value) => {
     try {
         loading.value = true;
@@ -45,7 +66,7 @@ const loadPrestamos = async (page = 1, itemsPerPage = perPage.value, search = de
                 page: page,
                 per_page: itemsPerPage,
                 search: search,
-                estado: estado
+                estado_cliente: estado
             }
         });
 
@@ -58,6 +79,15 @@ const loadPrestamos = async (page = 1, itemsPerPage = perPage.value, search = de
         loading.value = false;
     }
 };
+function handleUserDeleted() {
+    loadPrestamos();
+}
+
+function confirmDeletePrestamo(selectedPrestamo) {
+    prestamo.value = selectedPrestamo;
+    deletePrestamoDialog.value = true;
+}
+
 const refreshData = () => {
     loadPrestamos(currentPage.value, perPage.value, debouncedSearchTerm.value, selectedEstado.value);
 };
@@ -175,13 +205,23 @@ defineExpose({ loadPrestamos });
             :style="{ 'min-width': col.width }" sortable></Column>
         <Column :exportable="false" style="min-width: 12rem">
             <template #body="slotProps">
-                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editprestamo(slotProps.data)" />
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editPrestamo(slotProps.data)" />
                 <Button icon="pi pi-trash" outlined rounded severity="danger" class="mr-2"
-                    @click="confirmDeleteprestamo(slotProps.data)" />
+                    @click="confirmDeletePrestamo(slotProps.data)" />
                 <Button icon="pi pi-print" outlined rounded severity="help" class="rl-2"
                     @click="printprestamo(slotProps.data)" />
             </template>
         </Column>
     </DataTable>
     <Talonario v-if="showPrintDialog" :prestamosId="prestamosId" v-model:visible="showPrintDialog" @close="handleClosePrestamo" />
+    <DeletePrestamo
+        v-model:visible="deletePrestamoDialog"
+        :prestamo="prestamo"
+        @deleted="handleUserDeleted"
+    />
+    <UpdatPrestamos
+        v-model:visible="updatePrestamoDialog"
+        :PrestamoId="selectedPrestamoId"
+        @updated="handlePrestamoUpdated"
+    />
 </template>
