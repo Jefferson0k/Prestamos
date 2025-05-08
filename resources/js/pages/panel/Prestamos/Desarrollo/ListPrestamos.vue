@@ -135,7 +135,7 @@ const clearFilters = () => {
 
 const printprestamo = async (prestamo) => {
     try {
-        prestamosId.value = prestamo.id_cliente;
+        prestamosId.value = prestamo.id;
         showPrintDialog.value = true;
     } catch (error) {
         console.error('Error al preparar impresión A4:', error);

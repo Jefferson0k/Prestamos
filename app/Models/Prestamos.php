@@ -41,4 +41,5 @@ class Prestamos extends Model{
     public function pagos(){
         return $this->hasMany(Pagos::class, 'prestamo_id');
     }
+    
 }

@@ -4,14 +4,22 @@
             <Button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" @click="openNew" />
         </template>
         <template #center>
+            
+        </template>
+        <template #end>
+            <DialogPagos/>
+            <Button icon="pi pi-print" label="Imprimir" outlined severity="help" class="mr-2"/>
+            <Button icon="pi pi-sign-out" label="Salir" outlined severity="danger" class="mr-2" />
         </template>
     </Toolbar>
+    <Dialog v-model:visible="clienteDialog" :style="{ width: '1100px' }" header="Registro de Pagos" :modal="true"
+        @keydown.esc="handleCloseModal">
 
-    <Dialog v-model:visible="clienteDialog" :style="{ width: '1500px' }" header="Registro de Pagos" :modal="true">
         <div class="flex flex-col gap-6">
             <div>
-                <label for="inventoryStatus" class="block font-bold mb-3">Cliente <span
-                        class="text-red-500">*</span></label>
+                <label for="inventoryStatus" class="block font-bold mb-3">
+                    Cliente <span class="text-red-500">*</span>
+                </label>
                 <div class="flex gap-2">
                     <Select v-model="clienteSeleccionado" :options="clientes" editable optionLabel="label"
                         optionValue="value" showClear placeholder="Buscar clientes..." @input="buscarclientes"
@@ -28,75 +36,65 @@
                 </div>
             </div>
         </div>
-        <br>
-        <Fieldset v-if="prestamo?.cliente">
-            <template #legend>
-                <div class="flex items-center pl-2">
-                    <Avatar :image="prestamo.cliente.foto" shape="circle" />
-                    <span class="font-bold p-2">{{ prestamo.cliente.nombre }}</span>
-                </div>
-            </template>
-            <div class="flex flex-wrap gap-6 py-4">
-                <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.cliente.nombre }}</div>
-                <div class="flex-1"><strong>DNI:</strong> {{ prestamo.cliente.dni }}</div>
-                <div class="flex-1"><strong>Capital:</strong>
-                    <Tag severity="success" value="Success">S/ {{ prestamo.cliente.capital }}</Tag>
-                </div>
+        <br />
+        <div v-if="estaCargandoCuotas || prestamos.length === 0">
+            <div class="rounded border border-surface-200 dark:border-surface-700 p-6 bg-surface-0 dark:bg-surface-900">
+                <ul class="m-0 p-0 list-none">
+                    <li v-for="i in 4" :key="i" class="mb-4">
+                        <div class="flex">
+                            <Skeleton shape="circle" size="4rem" class="mr-2" />
+                            <div class="self-center flex-1">
+                                <Skeleton width="100%" class="mb-2" />
+                                <Skeleton width="75%" />
+                            </div>
+                        </div>
+                    </li>
+                </ul>
             </div>
-            <div class="flex flex-wrap gap-6">
-                <div class="flex-1"><strong>Inicio:</strong> {{ prestamo.cliente.Fecha_Inicio }}</div>
-                <div class="flex-1"><strong>Vencimiento:</strong> {{ prestamo.cliente.Fecha_Vencimiento }}</div>
-                <div class="flex-1"><strong>I. Diario:</strong>
-                    <Tag severity="info" value="Info">{{ prestamo.cliente.tasa_interes_diario }} %</Tag>
-                </div>
-            </div>
-            <h3 class="text-lg font-semibold mt-6 mb-2 border-b pb-1">Datos del recomendado</h3>
-            <div class="flex flex-wrap gap-6 py-4">
-                <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.cliente.recomendado }}</div>
-                <div class="flex-1"><strong>DNI:</strong> {{ prestamo.cliente.Dnirecomendado }}</div>
-                <div class="flex-1"></div>
-
-            </div>
-        </Fieldset>
-        <br>
-        <DataTable v-if="prestamo?.cliente" ref="dt" v-model:selection="selectedCuotas" :value="cuotas" dataKey="id"
-            :paginator="true" :rows="20" :filters="filters"
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            :rowsPerPageOptions="[20, 10, 5]" :loading="loading"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} cuotas" class="p-datatable-sm">
-            <template #header>
-                <div class="flex flex-wrap gap-2 items-center justify-between">
-                    <h4 class="m-0">Pagos <Tag severity="success" value="Success">{{ prestamo.cantidad_cuotas }}</Tag>
-                    </h4>
-                    <IconField>
-                        <InputIcon>
-                            <i class="pi pi-search" />
-                        </InputIcon>
-                        <InputText v-model="filters['global'].value" placeholder="Buscar..." />
-                    </IconField>
-                </div>
-            </template>
-            <Column selectionMode="multiple" style="width: 1rem" :exportable="false"></Column>
-            <Column field="numero_cuota" header="N° Cuota" sortable style="min-width: 6rem"></Column>
-            <Column field="capital" header="Capital" sortable style="min-width: 6rem"></Column>
-            <Column field="fecha_inicio" header="Inicio" sortable style="min-width: 4rem"></Column>
-            <Column field="fecha_vencimiento" header="Vencimiento" sortable style="min-width: 4rem"></Column>
-            <Column field="dias" header="Días Interes" sortable style="min-width: 4rem"></Column>
-            <Column field="interes" header="Tasa de Interes Diario" sortable style="min-width: 4rem"></Column>
-            <Column field="monto_interes_pagar" header="Monto Interes Pagar" sortable style="min-width: 4rem"></Column>
-            <Column field="monto_capital_pagar" header="Monto Capital Pagar" sortable style="min-width: 4rem"></Column>
-            <Column field="saldo_capital" header="Saldo Capital" sortable style="min-width: 4rem"></Column>
-            <Column field="monto_total_pagar" header="Capital mas Interes" sortable style="min-width: 4rem"></Column>
-            <Column field="estado" header="Estado" sortable style="min-width: 6rem">
-                <template #body="slotProps">
-                    <Tag severity="warn">{{ slotProps.data.estado }}</Tag>
+        </div>
+        <div v-else v-for="(prestamo, index) in prestamos" :key="index">
+            <Fieldset>
+                <template #legend>
+                    <div class="flex items-center pl-2">
+                        <Avatar :image="prestamo.foto" shape="circle" />
+                        <span class="font-bold p-2">{{ prestamo.nombre }}</span>
+                        <Tag :value="estadoTexto[prestamo.estado_cliente]"
+                            :severity="estadoColor[prestamo.estado_cliente]" />
+                    </div>
                 </template>
-            </Column>
-        </DataTable>
+
+                <div class="flex flex-wrap gap-6 py-4">
+                    <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.nombre }}</div>
+                    <div class="flex-1"><strong>DNI:</strong> {{ prestamo.dni }}</div>
+                    <div class="flex-1">
+                        <strong>Capital:</strong>
+                        <Tag severity="success" :value="'S/ ' + prestamo.capital"></Tag>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-6">
+                    <div class="flex-1"><strong>Inicio:</strong> {{ prestamo.Fecha_Inicio }}</div>
+                    <div class="flex-1"><strong>Vencimiento:</strong> {{ prestamo.Fecha_Vencimiento }}</div>
+                    <div class="flex-1">
+                        <strong>I. Diario:</strong>
+                        <Tag severity="info" :value="prestamo.tasa_interes_diario + '%'" />
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold mt-6 mb-2 border-b pb-1">Datos del recomendado</h3>
+                <div class="flex flex-wrap gap-6 py-4">
+                    <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.recomendado }}</div>
+                    <div class="flex-1"><strong>DNI:</strong> {{ prestamo.Dnirecomendado }}</div>
+                    <div class="flex-1">
+                        <SelectButton :options="['Pagar Aqui']" :disabled="prestamo.estado_cliente === 4"
+                            :modelValue="accionSeleccionada === prestamo.idPrestamo ? 'Pagar Aqui' : null"
+                            @change="() => pagarPrestamo(prestamo.idPrestamo)" />
+                    </div>
+                </div>
+            </Fieldset>
+        </div>
 
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-            <Button label="Pagar" icon="pi pi-check" :disabled="!selectedCuotas.length" />
         </template>
     </Dialog>
 </template>
@@ -109,36 +107,37 @@ import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import { FilterMatchMode } from '@primevue/core/api';
-import IconField from 'primevue/iconfield';
-import InputIcon from 'primevue/inputicon';
-import InputText from 'primevue/inputtext';
 import Tag from 'primevue/tag';
 import Fieldset from 'primevue/fieldset';
 import Avatar from 'primevue/avatar';
-import Image from 'primevue/image';
+import SelectButton from 'primevue/selectbutton';
+import Skeleton from 'primevue/skeleton';
+import DialogPagos from './DialogPagos.vue';
 
 const toast = useToast();
 const clienteSeleccionado = ref(null);
 const clienteDialog = ref(false);
-const pago = ref({});
 const submitted = ref(false);
 const clientes = ref([]);
-const cuotas = ref([]);
-const selectedCuotas = ref([]);
-const prestamo = ref(null);
-const loading = ref(false);
+const prestamos = ref([]);
+const estaCargandoCuotas = ref(false);
+const accionSeleccionada = ref(null);
 
-let debounceTimeout = null;
+const emit = defineEmits(['ver-cuotas']);
 
-const filters = ref({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-});
+const estadoTexto = {
+    1: 'Paga',
+    2: 'Mora',
+    4: 'Finalizado'
+};
+
+const estadoColor = {
+    1: 'info',
+    2: 'warning',
+    4: 'success'
+};
 
 function openNew() {
-    pago.value = {};
     submitted.value = false;
     clienteDialog.value = true;
 }
@@ -146,56 +145,21 @@ function openNew() {
 function hideDialog() {
     clienteDialog.value = false;
     submitted.value = false;
+    clienteSeleccionado.value = null;
+    accionSeleccionada.value = null;
 }
 
-async function cargarCuotas(clienteId) {
-    if (!clienteId) {
-        cuotas.value = [];
-        prestamo.value = null;
-        return;
-    }
+function handleCloseModal() {
+    clienteDialog.value = false;
+    submitted.value = false;
+    clienteSeleccionado.value = null;
+    accionSeleccionada.value = null;
+}
 
-    loading.value = true;
-    try {
-        const url = `/prestamo/${clienteId}/Cuotas`;
-        const response = await axios.get(url);
-
-        if (response.data) {
-            const data = response.data;
-
-            prestamo.value = data;
-            cuotas.value = data.cuotas || [];
-
-            toast.add({
-                severity: "success",
-                summary: "Éxito",
-                detail: `Cuotas del cliente cargadas (${cuotas.value.length})`,
-                life: 3000
-            });
-        } else {
-            cuotas.value = [];
-            prestamo.value = null;
-
-            toast.add({
-                severity: "info",
-                summary: "Información",
-                detail: "No se encontraron cuotas para este cliente",
-                life: 3000
-            });
-        }
-    } catch (error) {
-        console.error('Error al cargar cuotas:', error);
-        toast.add({
-            severity: "error",
-            summary: "Error",
-            detail: `Error al cargar las cuotas: ${error.message}`,
-            life: 3000
-        });
-        cuotas.value = [];
-        prestamo.value = null;
-    } finally {
-        loading.value = false;
-    }
+function pagarPrestamo(idPrestamo) {
+    if (accionSeleccionada.value === idPrestamo) return;
+    accionSeleccionada.value = idPrestamo;
+    emit('ver-cuotas', idPrestamo);
 }
 
 const buscarclientes = async (evento) => {
@@ -226,4 +190,27 @@ const buscarclientes = async (evento) => {
         }
     }, 500);
 };
+
+const cargarCuotas = async (clienteId) => {
+    if (!clienteId) return;
+
+    estaCargandoCuotas.value = true;
+    prestamos.value = [];
+
+    try {
+        const response = await axios.get(`/prestamo/${clienteId}/Cuotas`);
+        prestamos.value = response.data.clientes;
+    } catch (error) {
+        toast.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Error al cargar las cuotas",
+            life: 3000
+        });
+    } finally {
+        estaCargandoCuotas.value = false;
+    }
+};
+
+let debounceTimeout = null;
 </script>

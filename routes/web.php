@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\ConsultasDni;
+use App\Http\Controllers\Api\CuotasController;
 use App\Http\Controllers\Api\PagosController;
 use App\Http\Controllers\Api\PrestamosController;
 use App\Http\Controllers\Api\ReporteController;
@@ -37,13 +38,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::prefix('prestamo')->group(function () {
-        Route::get('/', action: [PrestamosController::class, 'index'])->name('api.prestamo.index');
-        Route::get('/cliente', action: [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
+        Route::get('/', [PrestamosController::class, 'index'])->name('api.prestamo.index');
+        Route::get('/cliente', [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
         Route::post('/', [PrestamosController::class, 'store'])->name('prestamo.store');
         Route::get('{prestamos}', [PrestamosController::class, 'show'])->name('prestamo.show');
         Route::put('{prestamo}', [PrestamosController::class, 'update'])->name('prestamo.update');
         Route::delete('/{prestamo}/destroy', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
         Route::get('/{id}/Cuotas', [PrestamosController::class, 'ConsultarPrestamo'])->name('prestamos.ConsultarPrestamo');
+        Route::get('/{id}/Talonario/cutas', [PrestamosController::class, 'consultaTalonario'])->name('prestamos.consultaTalonario');
     });
 
     Route::prefix('pago')->group(function () {
@@ -61,7 +63,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/total/{anio}', [ReporteController::class, 'clientesPorAnio'])->name('cliente.clientesPorAnio');    
         Route::get('/capital/{anio}', [ReporteController::class, 'CantidadEmprestada'])->name('reporte.capitalPorAnio');
     });
-    
+
+    Route::prefix('cuota')->group(function (): void {
+        Route::get('/{prestamo_id}', [CuotasController::class, 'list'])->name('cuota.list');
+        Route::post('/', [CuotasController::class, 'pagarCuota'])->name('cuota.pagarCuota');
+    });
+
     Route::prefix('usuarios')->group(function(){
         Route::get('/', [UsuariosController::class, 'index'])->name('usuarios.index');
         Route::post('/',[UsuariosController::class, 'store'])->name('usuarios.store');
@@ -70,6 +77,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{user}',[UsuariosController::class, 'destroy'])->name('usuarios.destroy');
     });
 }); 
+
 // Archivos de configuración adicionales
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

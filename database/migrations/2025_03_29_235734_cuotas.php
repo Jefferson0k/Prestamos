@@ -20,7 +20,7 @@ return new class extends Migration{
             $table->decimal('Monto_Capital_Pagar', 15, 2)->nullable();
             $table->decimal('Saldo_Capital', 15, 2);
             $table->decimal('MOnto_Capital_Mas_Interes_a_Pagar', 15, 2);
-            $table->enum('estado', ['Pendiente', 'Pagado', 'Vencido'])->default('Pendiente');
+            $table->enum('estado', ['Pendiente', 'Pagado', 'Vencido', 'Cancelado','Parcial'])->default('Pendiente');
             $table->foreignId('prestamo_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

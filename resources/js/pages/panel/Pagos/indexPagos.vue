@@ -23,10 +23,10 @@
         </template>
         <template v-else>
           <div class="mb-4">
-            <AddPago/>
+            <AddPago @ver-cuotas="mostrarCuotas" />
           </div>
           <div>
-            <ListPagos :cliente-id="clienteSeleccionado" />
+            <ListPagos :cuotas="cuotasSeleccionadas" />
           </div>
         </template>
       </div>
@@ -35,15 +35,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import AppLayout from '@/layout/AppLayout.vue';
 import AddPago from './Desarrollo/AddPago.vue';
 import ListPagos from './Desarrollo/ListPagos.vue';
 import { Head } from '@inertiajs/vue3';
 import Skeleton from 'primevue/skeleton';
+import axios from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 const isLoading = ref(true);
-const clienteSeleccionado = ref(null);
+const cuotasSeleccionadas = ref([]);
+const toast = useToast();
 
 onMounted(() => {
   setTimeout(() => {
@@ -51,6 +54,17 @@ onMounted(() => {
   }, 1000);
 });
 
-watch(() => clienteSeleccionado.value, () => {
-}, { immediate: true });
+const mostrarCuotas = async (idPrestamo: number) => {
+  try {
+    const response = await axios.get(`/cuota/${idPrestamo}`);
+    cuotasSeleccionadas.value = response.data.data;
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'No se pudieron cargar las cuotas',
+      life: 3000,
+    });
+  }
+};
 </script>

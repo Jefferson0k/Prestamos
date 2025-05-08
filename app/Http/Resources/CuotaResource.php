@@ -37,9 +37,12 @@ class CuotaResource extends JsonResource
             'monto_capital_pagar' => number_format($montoCapitalPagar, 2),
             'saldo_capital' => number_format($saldoCapital, 2),
             'fecha_inicio' => $fechaInicio ? $fechaInicio->format('d-m-Y') : '00-00-0000',
-            'fecha_vencimiento' => $this->fecha_vencimiento
-                ? Carbon::parse($this->fecha_vencimiento)->format('d-m-Y')
-                : '00-00-0000',
+            'fecha_vencimiento' => $montoCapitalPagar > 0
+                ? Carbon::now()->format('d-m-Y')
+                : ($this->fecha_vencimiento
+                    ? Carbon::parse($this->fecha_vencimiento)->format('d-m-Y')
+                    : '00-00-0000'),
+
             'monto_total_pagar' => number_format($montoTotalPagar, 2),
             'estado' => $this->estado,
         ];

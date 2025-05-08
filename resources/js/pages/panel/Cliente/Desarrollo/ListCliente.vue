@@ -238,8 +238,8 @@ function getStatusText(status) {
         <Column v-if="isColumnSelected('recomendacion')" field="recomendacion" header="Recomendación" sortable
             style="min-width: 35rem"></Column>
 
-        <Column field="fecha_Inicio_pago_mes" header="I. P. mes" sortable style="min-width: 10rem"></Column>
-        <Column field="fecha_vencimiento_pago_mes" header="V. P. por mes" sortable style="min-width: 10rem"></Column>
+        <Column field="fecha_Inicio_pago_mes" header="I. P. mes" sortable style="min-width: 12rem"></Column>
+        <Column field="fecha_vencimiento_pago_mes" header="V. P. por mes" sortable style="min-width: 12rem"></Column>
         <Column field="capital_del_mes" header="Capital del mes" sortable style="min-width: 12rem"></Column>
         <Column field="capital_actual" header="Capital Actual" sortable style="min-width: 12rem"></Column>
         <Column field="interes_actual" header="Interés Actual" sortable style="min-width: 12rem"></Column>

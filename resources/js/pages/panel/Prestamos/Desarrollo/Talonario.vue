@@ -52,7 +52,7 @@ const handleClose = () => {
 const cargarDatosPrestamo = async () => {
     try {
         loading.value = true;
-        const response = await axios.get(`/prestamo/${props.prestamosId}/Cuotas`);
+        const response = await axios.get(`/prestamo/${props.prestamosId}/Talonario/cutas`);
         prestamoData.value = response.data;
         await generatePDF();
     } catch (error) {

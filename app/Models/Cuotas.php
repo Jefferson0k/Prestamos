@@ -25,6 +25,7 @@ class Cuotas extends Model{
     ];
     protected $casts = [
         'fecha_vencimiento' => 'date',
+        'Fecha_Inicio' => 'date',
         'capital' => 'decimal:2',
         'interes' => 'decimal:2',
         'Monto_Interes_Pagar' => 'decimal:2',
@@ -33,6 +34,7 @@ class Cuotas extends Model{
         'Saldo_Capital' => 'decimal:2',
         'MOnto_Capital_Mas_Interes_a_Pagar' => 'decimal:2'
     ];
+    
     public function prestamo(){
         return $this->belongsTo(Prestamos::class, 'prestamo_id');
     }    

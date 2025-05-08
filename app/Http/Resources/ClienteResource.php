@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Resources;
+
+use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 class ClienteResource extends JsonResource{
     public function toArray($request){
@@ -38,10 +40,10 @@ class ClienteResource extends JsonResource{
             'celular' => $this->telefono,
             'dni' => $this->dni,
             'fecha_inicio' => $prestamo && $prestamo->fecha_inicio
-                ? \Carbon\Carbon::parse($prestamo->fecha_inicio)->format('d-m-Y H:i:s A')
+                ? Carbon::parse($prestamo->fecha_inicio)->format('d-m-Y H:i:s A')
                 : null,
             'fecha_vencimiento' => $prestamo && $prestamo->fecha_vencimiento
-                ? \Carbon\Carbon::parse($prestamo->fecha_vencimiento)->format('d-m-Y H:i:s A')
+                ? Carbon::parse($prestamo->fecha_vencimiento)->format('d-m-Y H:i:s A')
                 : null,    
             'tasa_interes_diario' => $prestamo ? $prestamo->tasa_interes_diario : null,
             'capital_inicial' => $prestamo ? $prestamo->capital : null,
@@ -56,7 +58,9 @@ class ClienteResource extends JsonResource{
             ? $prestamo->recomendacion->nombre . ' ' . $prestamo->recomendacion->apellidos . ' (' . $prestamo->recomendacion->dni . ')'
             : null,
 
-            'fecha_Inicio_pago_mes' => '00-00-0000',
+            'fecha_Inicio_pago_mes' => $prestamo && $prestamo->fecha_inicio
+            ? Carbon::parse($prestamo->fecha_inicio)->format('d-m-Y H:i:s A')
+            : null,
             'fecha_vencimiento_pago_mes' => '00-00-0000',
             'Interes_total' => $interesTotal, // Nota: parece duplicado con 'interes_total'
             'foto' => $this->foto

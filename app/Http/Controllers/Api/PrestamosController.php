@@ -7,11 +7,11 @@ use App\Http\Requests\Prestamo\StorePrestamoRequest;
 use App\Http\Requests\Prestamo\UpdatePrestamoRequest;
 use App\Http\Resources\ClientePrestamoResource;
 use App\Http\Resources\CuotaResource;
+use App\Http\Resources\PrestamoCollection;
 use App\Http\Resources\PrestamoResource;
 use App\Http\Resources\TalonarioResource;
 use App\Models\Cliente;
 use App\Models\Prestamos;
-use App\Services\PagoService;
 use App\Services\PrestamoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,10 +20,8 @@ use Illuminate\Support\Facades\Gate;
 
 class PrestamosController extends Controller{
     protected $prestamoService;
-    protected $pagoService;
-    public function __construct(PrestamoService $prestamoService, PagoService $pagoService){
+    public function __construct(PrestamoService $prestamoService){
         $this->prestamoService = $prestamoService;
-        $this->pagoService = $pagoService;
     }
     public function index(Request $request){
         Gate::authorize('viewAny', Prestamos::class);
@@ -130,27 +128,34 @@ class PrestamosController extends Controller{
             'message' => 'Préstamo eliminado correctamente.',
         ]);
     }
-    public function consultarPrestamo($id){
-        $cliente = Cliente::findOrFail($id);
-        $prestamos = $cliente->prestamos()->with('cuotas')->get();
-        $cantidadPrestamos = $prestamos->count();
-        
-        $todasLasCuotas = $prestamos->flatMap(function ($prestamo) {
-            return $prestamo->cuotas;
-        });
-        $totalMontoInteresPagar = $todasLasCuotas->sum('Monto_Interes_Pagar');
-        $totalMontoCapitalPagar = $todasLasCuotas->sum('Monto_Capital_Pagar');
-        $totalMontoCapitalMasInteres = $todasLasCuotas->sum('MOnto_Capital_Mas_Interes_a_Pagar');
+    public function consultarPrestamo($id) {
+        $cliente = Cliente::with('prestamos.recomendacion')->findOrFail($id);
+        $prestamos = $cliente->prestamos;
+    
+        $todosIds = $prestamos->pluck('id')->values();
+        $pendientes = $prestamos->where('estado_cliente', 1)->pluck('id')->values();
+        $enMora = $prestamos->where('estado_cliente', 2)->pluck('id')->values();
+        $finalizados = $prestamos->where('estado_cliente', 4)->pluck('id')->values();
+    
         return response()->json([
-            'cliente' => new ClientePrestamoResource($cliente),
-            'cantidad_prestamos' => $cantidadPrestamos,
-            'cantidad_cuotas' => $todasLasCuotas->count(),
-            'cuotas' => CuotaResource::collection($todasLasCuotas),
-            'totales' => [
-                'total_interes' => number_format($totalMontoInteresPagar, 2, '.', ''),
-                'total_capital' => number_format($totalMontoCapitalPagar, 2, '.', ''),
-                'total_pagar' => number_format($totalMontoCapitalMasInteres, 2, '.', '')
-            ]
+            'clientes' => ClientePrestamoResource::collection($prestamos),
+            'cantidad_prestamos' => $prestamos->count(),
+            'ids' => $todosIds,
+            'Pendiente' => $pendientes,
+            'Mora' => $enMora,
+            'Finalizado' => $finalizados,
         ]);
-    }
+    }    
+    public function consultaTalonario($id){
+        $prestamo = Prestamos::with('cuotas', 'cliente')->findOrFail($id);
+        $cliente = $prestamo->cliente;
+        $cuotas = $prestamo->cuotas->sortBy('numero_cuota')->values();
+    
+        return response()->json([
+            'cliente' => new PrestamoCollection($cliente),
+            'cantidad_prestamos' => 1,
+            'cantidad_cuotas' => $cuotas->count(),
+            'cuotas' => CuotaResource::collection($cuotas)
+        ]);
+    }    
 }

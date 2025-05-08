@@ -11,106 +11,54 @@ import Row from 'primevue/row';
 import Tag from 'primevue/tag';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
+import InputNumber from 'primevue/inputnumber';
+import Button from 'primevue/button';
 
 const toast = useToast();
 const dt = ref();
-const products = ref([]);
 const selectedProducts = ref();
 const isLoading = ref(false);
-
-const prestamoData = ref({
-    tasa_interes_diario: '',
-    capital: '',
-    numero_cuotas: '',
-    NombreCompleto: '',
-    fecha_inicio: '',
-    fecha_vencimiento: ''
-});
 
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
-
-const props = defineProps({
-    clienteId: {
-        type: [Number, String, null],
-        default: null
-    }
+defineProps({
+    cuotas: Array
 });
-watch(() => props.clienteId, async (id) => {
+const calcularCuota = async (cuota) => {
+    try {
+        // Enviar los datos al servidor para calcular el monto
+        const response = await axios.post(`/cuota/pagar/${cuota.prestamo_id}`, {
+            monto_capital_pagar: cuota.monto_capital_pagar
+        });
 
-    products.value = [];
-    resetPrestamoData();
+        // Aquí, se asume que el servidor devuelve los datos actualizados de la cuota
+        const updatedCuotas = response.data.data;
 
-    if (id && (Number.isInteger(Number(id)) || typeof id === 'string')) {
-        isLoading.value = true;
-        try {
-            const response = await axios.get(`/prestamo/${id}/Cuotas`);
+        // Actualizamos las cuotas en la tabla
+        cuotasSeleccionadas.value = updatedCuotas;
 
-            if (response.data && response.data.data) {
-                const data = response.data.data;
-
-                prestamoData.value = {
-                    tasa_interes_diario: data.tasa_interes_diario || '',
-                    capital: data.capital || '',
-                    numero_cuotas: data.numero_cuotas || '',
-                    NombreCompleto: data.NombreCompleto || '',
-                    fecha_inicio: data.fecha_inicio || '',
-                    fecha_vencimiento: data.fecha_vencimiento || ''
-                };
-
-                if (data.cuotas && Array.isArray(data.cuotas)) {
-                    products.value = data.cuotas.map(cuota => ({
-                        ...cuota,
-                        monto_interes: Number(cuota.monto_interes || 0),
-                        monto_capital: Number(cuota.monto_capital || 0),
-                        saldo_capital: Number(cuota.saldo_capital || 0),
-                        monto_total: Number(cuota.monto_total || 0),
-                        capital: Number(cuota.capital || 0)
-                    }));
-                } else {
-                    products.value = [];
-                }
-            } else {
-                products.value = [];
-            }
-
-            if (products.value.length === 0) {
-                toast.add({
-                    severity: 'info',
-                    summary: 'Información',
-                    detail: 'No hay cuotas disponibles para este cliente',
-                    life: 3000
-                });
-            }
-        } catch (error) {
-            console.error('Error al cargar las cuotas:', error);
-            toast.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'No se pudieron cargar las cuotas del cliente',
-                life: 3000
-            });
-        } finally {
-            isLoading.value = false;
-        }
+        toast.add({
+            severity: 'success',
+            summary: 'Cálculo Exitoso',
+            detail: 'Cuota calculada y datos actualizados',
+            life: 3000,
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo calcular la cuota',
+            life: 3000,
+        });
     }
-}, { immediate: true });
+};
 
-function resetPrestamoData() {
-    prestamoData.value = {
-        tasa_interes_diario: '',
-        capital: '',
-        numero_cuotas: '',
-        NombreCompleto: '',
-        fecha_inicio: '',
-        fecha_vencimiento: ''
-    };
-}
+
 </script>
 
 <template>
-    <DataTable ref="dt" v-model:selection="selectedProducts" :value="products" dataKey="id" :paginator="true" :rows="10"
+    <DataTable ref="dt" v-model:selection="selectedProducts" :value="cuotas" dataKey="id" :paginator="true" :rows="10"
         :filters="filters" :loading="isLoading"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rowsPerPageOptions="[5, 10, 25]"
@@ -127,27 +75,58 @@ function resetPrestamoData() {
                 </IconField>
             </div>
         </template>
-        <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
+        <Column selectionMode="multiple" style="width: 1rem" :exportable="false"></Column>
         <Column field="estado" header="Estado" sortable style="min-width: 6rem">
-            <template #body="{ data }">
-                <Tag :severity="data.estado === 'Pendiente' ? 'danger' : 'success'">{{ data.estado }}</Tag>
+            <template #body="slotProps">
+                <Tag :severity="slotProps.data.estado === 'Pendiente' ? 'warn' : 'success'">{{ slotProps.data.estado }}
+                </Tag>
             </template>
         </Column>
-        <Column field="numero_cuota" header="N°Cuotas" sortable style="min-width: 5rem"></Column>
-        <Column field="capital" header="Capital" sortable style="min-width: 5rem"></Column>
-        <Column field="fecha_inicio" header="F. Inicio" sortable style="min-width: 13rem"></Column>
-        <Column field="fecha_vencimiento" header="F. Pago" sortable style="min-width: 13rem"></Column>
-        <Column field="dias" header="D. Interes" sortable style="min-width: 8rem"></Column>
-        <Column field="monto_interes" header="M. I. Pagar" sortable style="min-width: 10rem"></Column>
-        <Column field="monto_capital" header="M. C. Pagar" sortable style="min-width: 10rem"></Column>
-        <Column field="saldo_capital" header="S. Capital" sortable style="min-width: 10rem"></Column>
-        <Column field="monto_total" header="M. C. MÁS I. A Pagar" sortable style="min-width: 15rem"></Column>
+        <Column field="numero_cuota" header="N° Cuota" sortable style="min-width: 8rem"></Column>
+        <Column field="capital" header="Capital" sortable style="min-width: 6rem"></Column>
+        <Column field="fecha_inicio" header="Inicio" sortable style="min-width: 7rem"></Column>
+        <Column field="fecha_vencimiento" header="Vencimiento" sortable style="min-width: 7rem"></Column>
+        <Column field="dias" header="Días Interes" sortable style="min-width: 8rem"></Column>
+        <Column field="interes" header="Tasa de Interes Diario" sortable style="min-width: 13rem"></Column>
+        <Column field="monto_interes_pagar" header="Monto Interes Pagar" sortable style="min-width: 12rem"></Column>
+        <Column header="Monto Capital Pagar" sortable style="min-width: 12rem">
+            <template #body="{ data }">
+                <InputNumber 
+                    v-model="data.monto_capital_pagar" 
+                    :disabled="!(
+                        data.fecha_inicio && data.fecha_inicio !== '00-00-0000' &&
+                        (!data.fecha_vencimiento || data.fecha_vencimiento === '00-00-0000')
+                    )"
+                    inputId="minmaxfraction" 
+                    :minFractionDigits="2"
+                    :maxFractionDigits="5" 
+                    fluid 
+                />
+            </template>
+        </Column>
+        <Column field="saldo_capital" header="Saldo Capital" sortable style="min-width: 9rem"></Column>
+        <Column field="monto_total_pagar" header="Capital mas Interes" sortable style="min-width: 12rem"></Column>
+        <Column header="" style="min-width: 4rem">
+            <template #body="slotProps">
+                <Button 
+                    icon="pi pi-calculator" 
+                    rounded 
+                    outlined 
+                    severity="info"
+                    :disabled="!(
+                        slotProps.data.fecha_inicio && slotProps.data.fecha_inicio !== '00-00-0000' &&
+                        (!slotProps.data.fecha_vencimiento || slotProps.data.fecha_vencimiento === '00-00-0000')
+                    )"
+                    @click="calcularCuota(slotProps.data)" 
+                />
+            </template>
+        </Column>
         <ColumnGroup type="footer">
             <Row>
-                <Column footer="Totales:" :colspan="7" footerStyle="text-align:right; font-weight: bold;" />
+                <Column footer="Totales:" :colspan="8" footerStyle="text-align:right; font-weight: bold;" />
                 <Column footer="00.00" footerStyle="font-weight: bold;" />
                 <Column footer="00.00" footerStyle="font-weight: bold;" />
-                <Column footer="00.00" footerStyle="font-weight: bold;" />
+                <Column footer="" footerStyle="font-weight: bold;" />
                 <Column footer="00.00" footerStyle="font-weight: bold;" />
             </Row>
         </ColumnGroup>

@@ -45,6 +45,7 @@ class PrestamoService{
     }
     public function actualizarPrestamo(Prestamos $prestamo, array $data) {
         $numeroCuotasAnterior = $prestamo->numero_cuotas;
+    
         $prestamo->fill([
             'fecha_inicio' => $data['fecha_inicio'] ?? $prestamo->fecha_inicio,
             'fecha_vencimiento' => $data['fecha_vencimiento'] ?? $prestamo->fecha_vencimiento,
@@ -55,15 +56,12 @@ class PrestamoService{
             'tasa_interes_diario' => $data['tasa_interes_diario'] ?? $prestamo->tasa_interes_diario,
             'monto_total' => $data['capital'] ?? $prestamo->capital,
         ]);
-        
-        $prestamo->save();
-        
-        if (isset($data['numero_cuotas']) && $numeroCuotasAnterior != $data['numero_cuotas']) {
-            $this->actualizarCuotas($prestamo, $numeroCuotasAnterior);
-        }
-        
+    
+        $prestamo->save();    
+        $this->actualizarCuotas($prestamo, $numeroCuotasAnterior);
         return $prestamo;
     }
+    
     public function actualizarCuotas(Prestamos $prestamo, int $numeroCuotasAnterior) {
         $cuotasExistentes = Cuotas::where('prestamo_id', $prestamo->id)->orderBy('numero_cuota')->get();
         if ($prestamo->numero_cuotas > $numeroCuotasAnterior) {
