@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CuotasController;
 use App\Http\Controllers\Api\PagosController;
 use App\Http\Controllers\Api\PrestamosController;
 use App\Http\Controllers\Api\ReporteController;
+use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\UsuariosController;
 use App\Http\Controllers\Web\ClienteWebController;
 use App\Http\Controllers\Web\PagosWebController;
@@ -21,7 +22,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-
+    #PARA QUE CUANDO SE CREA UN USUARIO O MODIFICA SU PASSWORD LO REDIRECCIONE PARA QUE PUEDA ACTUALIZAR
     Route::get('/dashboard', function () {
         $user = Auth::user();
         return Inertia::render('Dashboard', [
@@ -30,12 +31,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     #VISTAS DEL FRONTEND
-    Route::get('/clientes', [ClienteWebController::class, 'index'])->name('clientes.index');
-    Route::get('/pagos', [PagosWebController::class, 'index'])->name('pagos.index');
-    Route::get('/prestamos', [PrestamosWebController::class, 'index'])->name('prestamos.index');
-    Route::get('/reportes', [ReporteWebController::class, 'index'])->name('reportes.index');
-    Route::get('/usuario', [UsuarioWebController::class,'index'])->name('usuario.index');
-    Route::get('/consulta/{dni}', [ConsultasDni::class, 'consultar'])->name('clientes.consultar');
+    Route::get('/clientes', [ClienteWebController::class, 'index'])->name('index.view');
+    Route::get('/pagos', [PagosWebController::class, 'index'])->name('index.view');
+    Route::get('/prestamos', [PrestamosWebController::class, 'index'])->name('index.view');
+    Route::get('/reportes', [ReporteWebController::class, 'index'])->name('index.view');
+    Route::get('/usuario', [UsuarioWebController::class,'index'])->name('index.view');
+    Route::get('/consulta/{dni}', [ConsultasDni::class, 'consultar'])->name('consultar.view');
+    Route::get('/roles', [UsuarioWebController::class, 'roles'])->name('roles.view');
 
     #CLIENTE => BACKEND
     Route::prefix('cliente')->group(function () {
@@ -83,6 +85,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{user}',[UsuariosController::class, 'show'])->name('usuarios.show');
         Route::put('/{user}',[UsuariosController::class, 'update'])->name('usuarios.update');
         Route::delete('/{user}',[UsuariosController::class, 'destroy'])->name('usuarios.destroy');
+    });
+    #ROLES => BACKEND
+    Route::prefix('rol')->group(function () {
+        Route::get('/', [RolesController::class, 'index'])->name('roles.index');
+        Route::get('/Permisos', [RolesController::class, 'indexPermisos'])->name('roles.indexPermisos');
+        Route::post('/', [RolesController::class, 'store'])->name('roles.store');
+        Route::get('/{id}', [RolesController::class, 'show'])->name('roles.show');
+        Route::put('/{id}', [RolesController::class, 'update'])->name('roles.update');
+        Route::delete('/{id}', [RolesController::class, 'destroy'])->name('roles.destroy');
     });
 }); 
 

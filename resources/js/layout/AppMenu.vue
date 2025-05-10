@@ -21,7 +21,8 @@ const model = ref([
     {
         label: 'Usuarios',
         items: [
-            { label: 'Gestión de Usuarios', icon: 'pi pi-fw pi-user-edit', to: '/usuario' }
+            { label: 'Gestión de Usuarios', icon: 'pi pi-fw pi-user-edit', to: '/usuario' },
+            { label: 'Roles', icon: 'pi pi-fw pi-check-square', to: '/roles' },
         ]
     }
 ]);

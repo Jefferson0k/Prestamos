@@ -11,4 +11,7 @@ class UsuarioWebController extends Controller{
         Gate::authorize('viewAny', User::class);
         return Inertia::render('panel/Usuario/indexUsuario');
     }
+    public function roles(){
+        return Inertia::render('panel/Roles/indexRoles');
+    }
 }

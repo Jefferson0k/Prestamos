@@ -5,7 +5,6 @@ import Tooltip from "primevue/tooltip";
 import Aura from '@primeuix/themes/aura';
 import StyleClass from 'primevue/styleclass';
 import Toast from 'primevue/toast';
-
 export default (app) => {
     // Usar PrimeVue y sus servicios
     app.use(PrimeVue, {
