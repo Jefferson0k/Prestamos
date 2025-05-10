@@ -327,15 +327,17 @@ const generatePDF = async () => {
             pdf.setFont("helvetica", "normal");
             cellLines.forEach((lines, index) => {
                 lines.forEach((line, lineIndex) => {
-                    // Usar color destacado para estado "Pagado"
+                    // Usar colores destacados para los diferentes estados
                     if (index === 10 && line.toLowerCase() === "pagado") {
                         pdf.setTextColor(0, 100, 0); // Verde oscuro para "Pagado"
                     } else if (index === 10 && line.toLowerCase() === "pendiente") {
                         pdf.setTextColor(150, 0, 0); // Rojo para "Pendiente"
+                    } else if (index === 10 && line.toLowerCase() === "parcial") {
+                        pdf.setTextColor(255, 165, 0); // Naranja para "Parcial"
                     } else {
                         pdf.setTextColor(0, 0, 0); // Negro para el resto
                     }
-                    
+
                     pdf.text(line, margin + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + colWidths[index] / 2, y + lineIndex * 5, {
                         align: "center"
                     });

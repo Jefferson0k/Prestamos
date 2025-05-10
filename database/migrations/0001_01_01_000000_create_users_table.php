@@ -22,6 +22,7 @@ return new class extends Migration
             $table->boolean('status')->default(true)->comment('0: Inactivo, 1: Activo');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->integer('restablecimiento');
             $table->rememberToken();
             $table->timestamps();
         });

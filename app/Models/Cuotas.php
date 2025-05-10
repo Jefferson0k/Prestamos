@@ -9,19 +9,23 @@ class Cuotas extends Model{
     use HasFactory;
     protected $table = 'cuotas';
     protected $fillable = [
-        'prestamo_id',
         'numero_cuota',
         'capital',
-        'interes',
-        'Dias',
-        'Tasa_Interes_Diario',
-        'Monto_Interes_Pagar',
-        'Monto_Capital_Pagar',
-        'Saldo_Capital',
-        'Fecha_Inicio',
+        'fecha_inicio',
         'fecha_vencimiento',
-        'MOnto_Capital_Mas_Interes_a_Pagar',
-        'estado'
+        'dias',
+        'interes',
+        'tasa_interes_diario',
+        'monto_interes_pagar',
+        'monto_capital_pagar',
+        'saldo_capital',
+        'monto_capital_mas_interes_a_pagar',
+        'estado',
+        'prestamo_id',
+        'usuario_id',
+        'referencia',
+        'fecha_pago',
+        'observacion',
     ];
     protected $casts = [
         'fecha_vencimiento' => 'date',

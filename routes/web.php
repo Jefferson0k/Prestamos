@@ -14,14 +14,22 @@ use App\Http\Controllers\Web\ReporteWebController;
 use App\Http\Controllers\Web\UsuarioWebController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    
-    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
+
+    Route::get('/dashboard', function () {
+        $user = Auth::user();
+        return Inertia::render('Dashboard', [
+            'mustReset' => $user->restablecimiento == 0,
+        ]);
+    })->name('dashboard');
+
+    #VISTAS DEL FRONTEND
     Route::get('/clientes', [ClienteWebController::class, 'index'])->name('clientes.index');
     Route::get('/pagos', [PagosWebController::class, 'index'])->name('pagos.index');
     Route::get('/prestamos', [PrestamosWebController::class, 'index'])->name('prestamos.index');
@@ -29,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/usuario', [UsuarioWebController::class,'index'])->name('usuario.index');
     Route::get('/consulta/{dni}', [ConsultasDni::class, 'consultar'])->name('clientes.consultar');
 
+    #CLIENTE => BACKEND
     Route::prefix('cliente')->group(function () {
         Route::get('/', [ClienteController::class, 'index'])->name('cliente.index');
         Route::post('/', [ClienteController::class, 'store'])->name('clientes.store');
@@ -37,6 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
     });
 
+    #PRESTAMOS => BACKEND
     Route::prefix('prestamo')->group(function () {
         Route::get('/', [PrestamosController::class, 'index'])->name('api.prestamo.index');
         Route::get('/cliente', [PrestamosController::class, 'indexcliente'])->name('api.prestamo.indexcliente');
@@ -48,27 +58,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{id}/Talonario/cutas', [PrestamosController::class, 'consultaTalonario'])->name('prestamos.consultaTalonario');
     });
 
+    #PAGO => BACKEND
     Route::prefix('pago')->group(function () {
-        Route::get('/', [PagosController::class, 'index'])->name('pago.index');
-        Route::post('/', [PagosController::class, 'store'])->name('pago.store');
-        Route::get('/{id}', [PagosController::class, 'show'])->name('pago.show');
-        Route::put('/{id}', [PagosController::class, 'update'])->name('pago.update'); 
-        Route::delete('/{id}', [PagosController::class, 'destroy'])->name('pago.destroy');
-        Route::get('/{prestamo}/cuotas', [PagosController::class, 'getCuotas'])->name('pago.getCuotas'); 
-        Route::get('/create', [PagosController::class, 'create'])->name('pago.create'); 
-    });   
+        Route::get('/cuota/{cuotaId}', [PagosController::class, 'pagosPorCuota']);
+    });
 
+    #REPORTE => PAGO
     Route::prefix('reporte')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('reporte.index');
-        Route::get('/total/{anio}', [ReporteController::class, 'clientesPorAnio'])->name('cliente.clientesPorAnio');    
+        Route::get('/total/{anio}', [ReporteController::class, 'clientesPorAnio'])->name('cliente.clientesPorAnio');
         Route::get('/capital/{anio}', [ReporteController::class, 'CantidadEmprestada'])->name('reporte.capitalPorAnio');
     });
 
+    #CUOTA => BACKNED
     Route::prefix('cuota')->group(function (): void {
         Route::get('/{prestamo_id}', [CuotasController::class, 'list'])->name('cuota.list');
         Route::post('/', [CuotasController::class, 'pagarCuota'])->name('cuota.pagarCuota');
     });
 
+    #USUARIOS -> BACKEND
     Route::prefix('usuarios')->group(function(){
         Route::get('/', [UsuariosController::class, 'index'])->name('usuarios.index');
         Route::post('/',[UsuariosController::class, 'store'])->name('usuarios.store');

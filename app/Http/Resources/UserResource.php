@@ -20,6 +20,7 @@ class UserResource extends JsonResource{
             'status' => $this->status,
             'online' => cache()->has('user-is-online-' . $this->id),
             'creacion' => Carbon::parse($this->created_at)->format('d-m-Y H:i:s'),
+            'role' => $this->getRoleNames()->first(),   
         ];
     }
 }

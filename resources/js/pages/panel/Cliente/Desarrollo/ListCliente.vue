@@ -149,6 +149,8 @@ function getStatusLabel(status) {
             return 'success';
         case 2:
             return 'danger';
+        case 4:
+            return 'contrast';    
         case '':
         case null:
         case undefined:
@@ -164,6 +166,8 @@ function getStatusText(status) {
             return 'PAGA';
         case 2:
             return 'MOROSO';
+        case 4:
+            return 'FINALIZADO';    
         case '':
         case null:
         case undefined:

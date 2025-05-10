@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Hash;
 class UsuariosController extends Controller{
     public function index(Request $request){
         Gate::authorize('viewAny', User::class);
-
         $perPage = $request->input('per_page', 15);
         $search = $request->input('search', '');
         $estado = $request->input('status');
@@ -62,13 +61,16 @@ class UsuariosController extends Controller{
         return UserResource::collection($users);
     }
     public function store(StoreUserRequest $request){
-        Gate::authorize('create', User::class);
+        Gate::authorize('create', User::class);    
         $validated = $request->validated();
         $validated['nacimiento'] = Carbon::createFromFormat('d/m/Y', $validated['nacimiento'])->format('Y-m-d');
-        $validated['password'] = Hash::make($validated['password']);
+        $validated['password'] = Hash::make($validated['password']);    
         $user = User::create($validated);
+        if ($request->has('role')) {
+            $user->assignRole($request->input('role'));
+        }    
         return response()->json($user);
-    }   
+    }       
     public function show(User $user){
         Gate::authorize('view', $user);
         return response()->json([
@@ -82,6 +84,7 @@ class UsuariosController extends Controller{
         $data = $request->validated();
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
+            $data['restablecimiento'] = 0;
         } else {
             unset($data['password']);
         }

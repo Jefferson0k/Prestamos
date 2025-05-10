@@ -165,10 +165,10 @@ function consultarusuarioPorDNI() {
 function generarUsername(nombre, apellidoPaterno, apellidoMaterno, nacimiento) {
     const normalizar = (texto) => {
         return texto
-            ?.replace(/ñ/g, 'n')              // Reemplaza ñ primero
-            .replace(/Ñ/g, 'n')               // Reemplaza Ñ primero
-            .normalize('NFD')                 // Luego elimina acentos
-            .replace(/[\u0300-\u036f]/g, '')  // Elimina acentos
+            ?.replace(/ñ/g, 'n')
+            .replace(/Ñ/g, 'n')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
             .toLowerCase() || '';
     };
 

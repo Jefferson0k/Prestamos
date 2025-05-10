@@ -1,20 +1,17 @@
 <template>
     <Toolbar>
         <template #start>
-            <Button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" @click="openNew" />
+            <Button :label="botonClienteLabel" :icon="botonClienteIcono" :severity="botonClienteSeverity"
+                :variant="botonClienteVariant" class="mr-2" @click="openNew" />
         </template>
         <template #center>
-            
+
         </template>
         <template #end>
-            <DialogPagos/>
-            <Button icon="pi pi-print" label="Imprimir" outlined severity="help" class="mr-2"/>
             <Button icon="pi pi-sign-out" label="Salir" outlined severity="danger" class="mr-2" />
         </template>
     </Toolbar>
-    <Dialog v-model:visible="clienteDialog" :style="{ width: '1100px' }" header="Registro de Pagos" :modal="true"
-        @keydown.esc="handleCloseModal">
-
+    <Dialog v-model:visible="clienteDialog" :style="{ width: '1100px' }" header="Registro de Pagos" :modal="true">
         <div class="flex flex-col gap-6">
             <div>
                 <label for="inventoryStatus" class="block font-bold mb-3">
@@ -23,7 +20,7 @@
                 <div class="flex gap-2">
                     <Select v-model="clienteSeleccionado" :options="clientes" editable optionLabel="label"
                         optionValue="value" showClear placeholder="Buscar clientes..." @input="buscarclientes"
-                        class="w-full">
+                        class="w-full" :disabled="inputsDeshabilitados">
                         <template #option="{ option }">
                             <div>
                                 <strong>{{ option.label }}</strong>
@@ -31,13 +28,13 @@
                         </template>
                         <template #empty>Clientes no encontrado.</template>
                     </Select>
-                    <Button icon="pi pi-search" severity="info" :disabled="!clienteSeleccionado" tooltip="Cargar cuotas"
-                        @click="cargarCuotas(clienteSeleccionado)" />
+                    <Button icon="pi pi-search" severity="info" :disabled="!clienteSeleccionado || inputsDeshabilitados"
+                        tooltip="Cargar cuotas" @click="cargarCuotas(clienteSeleccionado)" />
                 </div>
             </div>
         </div>
         <br />
-        <div v-if="estaCargandoCuotas || prestamos.length === 0">
+        <div v-if="estaCargandoCuotas">
             <div class="rounded border border-surface-200 dark:border-surface-700 p-6 bg-surface-0 dark:bg-surface-900">
                 <ul class="m-0 p-0 list-none">
                     <li v-for="i in 4" :key="i" class="mb-4">
@@ -52,47 +49,61 @@
                 </ul>
             </div>
         </div>
-        <div v-else v-for="(prestamo, index) in prestamos" :key="index">
-            <Fieldset>
-                <template #legend>
-                    <div class="flex items-center pl-2">
-                        <Avatar :image="prestamo.foto" shape="circle" />
-                        <span class="font-bold p-2">{{ prestamo.nombre }}</span>
-                        <Tag :value="estadoTexto[prestamo.estado_cliente]"
-                            :severity="estadoColor[prestamo.estado_cliente]" />
-                    </div>
-                </template>
-
-                <div class="flex flex-wrap gap-6 py-4">
-                    <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.nombre }}</div>
-                    <div class="flex-1"><strong>DNI:</strong> {{ prestamo.dni }}</div>
-                    <div class="flex-1">
-                        <strong>Capital:</strong>
-                        <Tag severity="success" :value="'S/ ' + prestamo.capital"></Tag>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-6">
-                    <div class="flex-1"><strong>Inicio:</strong> {{ prestamo.Fecha_Inicio }}</div>
-                    <div class="flex-1"><strong>Vencimiento:</strong> {{ prestamo.Fecha_Vencimiento }}</div>
-                    <div class="flex-1">
-                        <strong>I. Diario:</strong>
-                        <Tag severity="info" :value="prestamo.tasa_interes_diario + '%'" />
-                    </div>
-                </div>
-
-                <h3 class="text-lg font-semibold mt-6 mb-2 border-b pb-1">Datos del recomendado</h3>
-                <div class="flex flex-wrap gap-6 py-4">
-                    <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.recomendado }}</div>
-                    <div class="flex-1"><strong>DNI:</strong> {{ prestamo.Dnirecomendado }}</div>
-                    <div class="flex-1">
-                        <SelectButton :options="['Pagar Aqui']" :disabled="prestamo.estado_cliente === 4"
-                            :modelValue="accionSeleccionada === prestamo.idPrestamo ? 'Pagar Aqui' : null"
-                            @change="() => pagarPrestamo(prestamo.idPrestamo)" />
-                    </div>
-                </div>
-            </Fieldset>
+        <div v-else-if="prestamos.length === 0">
+            <p class="text-center text-gray-500">No se encontraron cuotas para este cliente.</p>
         </div>
+        <div v-else>
+            <br>
+            <MultiSelect v-model="selectedCities" display="chip" :options="cities" optionLabel="name" filter
+                placeholder="Selecciona estados" :maxSelectedLabels="4" class="w-full md:w-80" fluid />
+            <br>
+            <div v-for="(prestamo, index) in prestamos" :key="index">
+                <Fieldset>
+                    <template #legend>
+                        <div class="flex items-center pl-2">
+                            <Avatar :image="prestamo.foto" shape="circle" />
+                            <span class="font-bold p-2">{{ prestamo.nombre }}</span>
+                            <Tag :value="estadoTexto[prestamo.estado_cliente]"
+                                :severity="estadoColor[prestamo.estado_cliente]" />
+                        </div>
+                    </template>
 
+                    <div class="flex flex-wrap gap-6 py-4">
+                        <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.nombre }}</div>
+                        <div class="flex-1"><strong>DNI:</strong> {{ prestamo.dni }}</div>
+                        <div class="flex-1">
+                            <strong>Capital:</strong>
+                            <Tag severity="success" :value="'S/ ' + prestamo.capital"></Tag>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-6">
+                        <div class="flex-1"><strong>Inicio:</strong> {{ prestamo.Fecha_Inicio }}</div>
+                        <div class="flex-1"><strong>Vencimiento:</strong> {{ prestamo.Fecha_Vencimiento }}</div>
+                        <div class="flex-1">
+                            <strong>I. Diario:</strong>
+                            <Tag severity="info" :value="prestamo.tasa_interes_diario + '%'" />
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold mt-6 mb-2 border-b pb-1">Datos del recomendado</h3>
+                    <div class="flex flex-wrap gap-6 py-4">
+                        <div class="flex-1"><strong>Nombre:</strong> {{ prestamo.recomendado }}</div>
+                        <div class="flex-1"><strong>DNI:</strong> {{ prestamo.Dnirecomendado }}</div>
+                        <div class="flex-1">
+                            <template v-if="prestamo.estado_cliente === 4">
+                                <span class="text-gray-500">Finalizado</span>
+                            </template>
+                            <template v-else>
+                                <SelectButton :options="['Pagar Aqui']"
+                                    :modelValue="accionSeleccionada === prestamo.idPrestamo ? 'Pagar Aqui' : null"
+                                    @change="() => pagarPrestamo(prestamo.idPrestamo)" />
+                            </template>
+                        </div>
+
+                    </div>
+                </Fieldset>
+            </div>
+        </div>
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
         </template>
@@ -100,7 +111,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Toolbar from 'primevue/toolbar';
 import Select from 'primevue/select';
 import { useToast } from 'primevue/usetoast';
@@ -112,7 +123,7 @@ import Fieldset from 'primevue/fieldset';
 import Avatar from 'primevue/avatar';
 import SelectButton from 'primevue/selectbutton';
 import Skeleton from 'primevue/skeleton';
-import DialogPagos from './DialogPagos.vue';
+import MultiSelect from 'primevue/multiselect';
 
 const toast = useToast();
 const clienteSeleccionado = ref(null);
@@ -122,8 +133,19 @@ const clientes = ref([]);
 const prestamos = ref([]);
 const estaCargandoCuotas = ref(false);
 const accionSeleccionada = ref(null);
+const inputsDeshabilitados = ref(false);
+const selectedCities = ref([
+    { name: 'TODOS', code: 0 }
+]);
 
 const emit = defineEmits(['ver-cuotas']);
+
+const cities = ref([
+    { name: 'TODOS', code: 0 },
+    { name: 'PAGA', code: 1 },
+    { name: 'MOROSO', code: 2 },
+    { name: 'FINALIZADO', code: 4 }
+]);
 
 const estadoTexto = {
     1: 'Paga',
@@ -132,9 +154,9 @@ const estadoTexto = {
 };
 
 const estadoColor = {
-    1: 'info',
-    2: 'warning',
-    4: 'success'
+    1: 'success',
+    2: 'danger',
+    4: 'contrast'
 };
 
 function openNew() {
@@ -145,20 +167,15 @@ function openNew() {
 function hideDialog() {
     clienteDialog.value = false;
     submitted.value = false;
-    clienteSeleccionado.value = null;
-    accionSeleccionada.value = null;
-}
-
-function handleCloseModal() {
-    clienteDialog.value = false;
-    submitted.value = false;
-    clienteSeleccionado.value = null;
-    accionSeleccionada.value = null;
 }
 
 function pagarPrestamo(idPrestamo) {
     if (accionSeleccionada.value === idPrestamo) return;
     accionSeleccionada.value = idPrestamo;
+
+    inputsDeshabilitados.value = true;
+    clienteDialog.value = false;
+
     emit('ver-cuotas', idPrestamo);
 }
 
@@ -191,6 +208,13 @@ const buscarclientes = async (evento) => {
     }, 500);
 };
 
+watch(selectedCities, async (newValues, oldValues) => {
+    prestamos.value = [];
+    if (clienteSeleccionado.value) {
+        await cargarCuotas(clienteSeleccionado.value);
+    }
+});
+
 const cargarCuotas = async (clienteId) => {
     if (!clienteId) return;
 
@@ -198,9 +222,15 @@ const cargarCuotas = async (clienteId) => {
     prestamos.value = [];
 
     try {
-        const response = await axios.get(`/prestamo/${clienteId}/Cuotas`);
+        const estadosSeleccionados = selectedCities.value.map(e => e.code);
+        const params = {};
+        if (estadosSeleccionados.length > 0 && !estadosSeleccionados.includes(0)) {
+            params.estado = estadosSeleccionados.join(','); 
+        }
+        const response = await axios.get(`/prestamo/${clienteId}/Cuotas`, { params });
         prestamos.value = response.data.clientes;
     } catch (error) {
+        console.error('Error al cargar las cuotas:', error);
         toast.add({
             severity: "error",
             summary: "Error",
@@ -213,4 +243,25 @@ const cargarCuotas = async (clienteId) => {
 };
 
 let debounceTimeout = null;
+
+const botonClienteLabel = computed(() => {
+    if (accionSeleccionada.value && clienteSeleccionado.value) {
+        const cliente = clientes.value.find(c => c.value === clienteSeleccionado.value);
+        return cliente ? cliente.label : 'Cliente seleccionado';
+    }
+    return 'Nuevo Pago';
+});
+
+const botonClienteIcono = computed(() => {
+    return (accionSeleccionada.value && clienteSeleccionado.value) ? 'pi pi-user' : 'pi pi-plus';
+});
+
+const botonClienteSeverity = computed(() => {
+    return (accionSeleccionada.value && clienteSeleccionado.value) ? 'contrast' : 'secondary';
+});
+
+const botonClienteVariant = computed(() => {
+    return (accionSeleccionada.value && clienteSeleccionado.value) ? 'text' : undefined;
+});
+
 </script>

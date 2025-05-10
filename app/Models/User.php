@@ -28,6 +28,7 @@ class User extends Authenticatable
         'username',
         'password',
         'status',
+        'restablecimiento',
     ];
 
     /**

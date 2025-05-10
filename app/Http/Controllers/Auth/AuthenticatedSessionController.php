@@ -30,11 +30,16 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse{
         $request->authenticate();
         $request->session()->regenerate();
-        cache()->put('user-is-online-' . Auth::id(), true);
+        $user = Auth::user();
+        if (!$user->status) {
+            Auth::logout();
+            return redirect()->route('login')->withErrors([
+                'status' => 'Tu cuenta está inactiva. Contacta al administrador.',
+            ]);
+        }
+        cache()->put('user-is-online-' . $user->id, true);
         return redirect()->intended(route('dashboard', absolute: false));
     }
-
-
     /**
      * Destroy an authenticated session.
      */

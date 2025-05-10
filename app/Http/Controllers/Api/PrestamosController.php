@@ -128,15 +128,23 @@ class PrestamosController extends Controller{
             'message' => 'Préstamo eliminado correctamente.',
         ]);
     }
-    public function consultarPrestamo($id) {
+    public function consultarPrestamo(Request $request, $id){
         $cliente = Cliente::with('prestamos.recomendacion')->findOrFail($id);
-        $prestamos = $cliente->prestamos;
-    
+        $prestamos = $cliente->prestamos();
+        $estado = $request->query('estado');
+        $estados = $estado ? explode(',', $estado) : null;
+        
+        if ($estados) {
+            $prestamos = $prestamos->whereIn('estado_cliente', $estados);
+        }
+
+        $prestamos = $prestamos->orderBy('estado_cliente', 'asc');
+        $prestamos = $prestamos->get();
         $todosIds = $prestamos->pluck('id')->values();
         $pendientes = $prestamos->where('estado_cliente', 1)->pluck('id')->values();
         $enMora = $prestamos->where('estado_cliente', 2)->pluck('id')->values();
         $finalizados = $prestamos->where('estado_cliente', 4)->pluck('id')->values();
-    
+
         return response()->json([
             'clientes' => ClientePrestamoResource::collection($prestamos),
             'cantidad_prestamos' => $prestamos->count(),
@@ -145,7 +153,8 @@ class PrestamosController extends Controller{
             'Mora' => $enMora,
             'Finalizado' => $finalizados,
         ]);
-    }    
+    }
+ 
     public function consultaTalonario($id){
         $prestamo = Prestamos::with('cuotas', 'cliente')->findOrFail($id);
         $cliente = $prestamo->cliente;

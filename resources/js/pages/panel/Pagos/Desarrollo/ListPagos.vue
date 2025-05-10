@@ -1,6 +1,6 @@
 <script setup>
 import { FilterMatchMode } from '@primevue/core/api';
-import { ref, watch } from 'vue';
+import { ref, watch, defineProps, defineEmits } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import IconField from 'primevue/iconfield';
@@ -9,52 +9,58 @@ import InputText from 'primevue/inputtext';
 import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import Tag from 'primevue/tag';
-import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
+import ComprobantePago from './ComprobantePago.vue';
 
 const toast = useToast();
 const dt = ref();
-const selectedProducts = ref();
+const selectedProducts = ref([]);
 const isLoading = ref(false);
 
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
-defineProps({
-    cuotas: Array
-});
-const calcularCuota = async (cuota) => {
-    try {
-        // Enviar los datos al servidor para calcular el monto
-        const response = await axios.post(`/cuota/pagar/${cuota.prestamo_id}`, {
-            monto_capital_pagar: cuota.monto_capital_pagar
-        });
 
-        // Aquí, se asume que el servidor devuelve los datos actualizados de la cuota
-        const updatedCuotas = response.data.data;
-
-        // Actualizamos las cuotas en la tabla
-        cuotasSeleccionadas.value = updatedCuotas;
-
-        toast.add({
-            severity: 'success',
-            summary: 'Cálculo Exitoso',
-            detail: 'Cuota calculada y datos actualizados',
-            life: 3000,
-        });
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'No se pudo calcular la cuota',
-            life: 3000,
-        });
+const props = defineProps({
+    cuotas: {
+        type: Array,
+        default: () => []
     }
+});
+
+const puedeEditar = (cuota) => {
+    const cuotasConFechasValidas = props.cuotas.filter(c =>
+        c.fecha_inicio !== '00-00-0000' &&
+        c.fecha_vencimiento !== '00-00-0000'
+    )
+
+    const ultima = cuotasConFechasValidas.at(-1)
+
+    return ultima?.id === cuota.id
+}
+
+const emit = defineEmits(['abrir-dialogo', 'monto-cambio', 'imprimir-comprobante']);
+
+const calcularTotales = () => {
+    if (!props.cuotas || props.cuotas.length === 0) return {
+        montoInteres: 0,
+        montoCapital: 0,
+        montoTotal: 0
+    };
+
+    return props.cuotas.reduce((totales, cuota) => {
+        totales.montoInteres += parseFloat(cuota.monto_interes_pagar?.toString() || '0');
+        totales.montoCapital += parseFloat(cuota.monto_capital_pagar?.toString() || '0');
+        totales.montoTotal += parseFloat(cuota.monto_total_pagar?.toString() || '0');
+        return totales;
+    }, { montoInteres: 0, montoCapital: 0, montoTotal: 0 });
 };
 
-
+const handleMontoChange = (cuotaId, newMonto) => {
+    emit('monto-cambio', { cuotaId, newMonto });
+};
 </script>
 
 <template>
@@ -66,7 +72,7 @@ const calcularCuota = async (cuota) => {
         class="p-datatable-sm">
         <template #header>
             <div class="flex flex-wrap gap-2 items-center justify-between">
-                <h4 class="m-0">Historial de Pagos</h4>
+                <h4 class="m-0">Cronograma</h4>
                 <IconField>
                     <InputIcon>
                         <i class="pi pi-search" />
@@ -78,7 +84,11 @@ const calcularCuota = async (cuota) => {
         <Column selectionMode="multiple" style="width: 1rem" :exportable="false"></Column>
         <Column field="estado" header="Estado" sortable style="min-width: 6rem">
             <template #body="slotProps">
-                <Tag :severity="slotProps.data.estado === 'Pendiente' ? 'warn' : 'success'">{{ slotProps.data.estado }}
+                <Tag :severity="slotProps.data.estado === 'Pendiente' ? 'warn' :
+                    slotProps.data.estado === 'Cancelado' ? 'info' :
+                        slotProps.data.estado === 'Pagado' ? 'success' :
+                            'danger'">
+                    {{ slotProps.data.estado }}
                 </Tag>
             </template>
         </Column>
@@ -91,43 +101,31 @@ const calcularCuota = async (cuota) => {
         <Column field="monto_interes_pagar" header="Monto Interes Pagar" sortable style="min-width: 12rem"></Column>
         <Column header="Monto Capital Pagar" sortable style="min-width: 12rem">
             <template #body="{ data }">
-                <InputNumber 
-                    v-model="data.monto_capital_pagar" 
-                    :disabled="!(
-                        data.fecha_inicio && data.fecha_inicio !== '00-00-0000' &&
-                        (!data.fecha_vencimiento || data.fecha_vencimiento === '00-00-0000')
-                    )"
-                    inputId="minmaxfraction" 
-                    :minFractionDigits="2"
-                    :maxFractionDigits="5" 
-                    fluid 
-                />
+                <InputNumber v-model="data.monto_capital_pagar" disabled inputId="minmaxfraction" :minFractionDigits="2"
+                    :maxFractionDigits="5" @blur="handleMontoChange(data.id, data.monto_capital_pagar)" />
             </template>
         </Column>
         <Column field="saldo_capital" header="Saldo Capital" sortable style="min-width: 9rem"></Column>
         <Column field="monto_total_pagar" header="Capital mas Interes" sortable style="min-width: 12rem"></Column>
-        <Column header="" style="min-width: 4rem">
+        <Column :exportable="false" style="min-width: 12rem">
             <template #body="slotProps">
-                <Button 
-                    icon="pi pi-calculator" 
-                    rounded 
-                    outlined 
-                    severity="info"
-                    :disabled="!(
-                        slotProps.data.fecha_inicio && slotProps.data.fecha_inicio !== '00-00-0000' &&
-                        (!slotProps.data.fecha_vencimiento || slotProps.data.fecha_vencimiento === '00-00-0000')
-                    )"
-                    @click="calcularCuota(slotProps.data)" 
-                />
+                <Button icon="pi pi-dollar" outlined rounded severity="success" class="mr-2"
+                    :disabled="slotProps.data.fecha_inicio === '00-00-0000' || slotProps.data.fecha_vencimiento !== '00-00-0000'"
+                    @click="$emit('abrir-dialogo', slotProps.data.id)" />
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2" :disabled="!puedeEditar(slotProps.data)" />
+                <Button icon="pi pi-print" outlined rounded severity="help" class="mr-2"
+                    :disabled="['Cancelado', 'Pendiente'].includes(slotProps.data.estado)"
+                    @click="$emit('imprimir-comprobante', slotProps.data.id)"/>
             </template>
         </Column>
+
         <ColumnGroup type="footer">
             <Row>
                 <Column footer="Totales:" :colspan="8" footerStyle="text-align:right; font-weight: bold;" />
-                <Column footer="00.00" footerStyle="font-weight: bold;" />
-                <Column footer="00.00" footerStyle="font-weight: bold;" />
+                <Column :footer="calcularTotales().montoInteres.toFixed(2)" footerStyle="font-weight: bold;" />
+                <Column :footer="calcularTotales().montoCapital.toFixed(2)" footerStyle="font-weight: bold;" />
                 <Column footer="" footerStyle="font-weight: bold;" />
-                <Column footer="00.00" footerStyle="font-weight: bold;" />
+                <Column :footer="calcularTotales().montoTotal.toFixed(2)" footerStyle="font-weight: bold;" />
             </Row>
         </ColumnGroup>
     </DataTable>

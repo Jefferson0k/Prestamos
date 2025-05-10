@@ -131,6 +131,7 @@ onMounted(() => {
                 <Tag :value="data.online ? 'En línea' : 'Sin conexión'" :severity="getSeverity(data.online)" />
             </template>
         </Column>
+        <Column field="role" header="Rol" sortable style="min-width: 4rem"></Column>
         <Column field="dni" header="DNI" sortable style="min-width: 4rem"></Column>
         <Column field="name1" header="Nombres y Apellidos" sortable style="min-width: 32rem"></Column>
         <Column field="email" header="Email" sortable style="min-width: 25rem"></Column>

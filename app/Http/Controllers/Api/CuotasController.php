@@ -9,17 +9,11 @@ use Illuminate\Http\Request;
 use App\Services\PagoService;
 
 class CuotasController extends Controller{
-    public function list($prestamo_id, Request $request) {
-        $montoCapitalPagar = $request->query('monto_capital_pagar', 0);
-
+    public function list($prestamo_id) {
         $cuotas = Cuotas::where('prestamo_id', $prestamo_id)
                         ->orderBy('numero_cuota', 'asc')
-                        ->get();
-
-        return CuotaResource::collection($cuotas->map(function ($cuota) use ($montoCapitalPagar) {
-            $cuota->Monto_Capital_Pagar = $montoCapitalPagar;
-            return $cuota;
-        }));
+                        ->get();    
+        return CuotaResource::collection($cuotas);
     }
     public function pagarCuota(Request $request){
         $validated = $request->validate([

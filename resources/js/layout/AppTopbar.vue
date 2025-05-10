@@ -2,8 +2,12 @@
 import { Link } from '@inertiajs/vue3';
 import { useLayout } from '@/layout/composables/layout';
 import AppConfigurator from './AppConfigurator.vue';
-
+import { router } from '@inertiajs/vue3';
 const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
+
+const logout = () => {
+    router.post(route('logout'));
+};
 </script>
 
 <template>
@@ -61,16 +65,12 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
                     <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-calendar"></i>
-                        <span>Calendar</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-inbox"></i>
-                        <span>Messages</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
                         <i class="pi pi-user"></i>
                         <span>Profile</span>
+                    </button>
+                    <button type="button" @click="logout" class="layout-topbar-action">
+                        <i class="pi pi-sign-out"></i>
+                        <span>Cerrar</span>
                     </button>
                 </div>
             </div>

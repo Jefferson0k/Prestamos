@@ -33,9 +33,11 @@ const updatePrestamoDialog = ref(false);
 const selectedPrestamoId = ref(null);
 
 const estadoOptions = ref([
-    { label: 'Todos', value: '' },
+    { label: 'TODOS', value: '' },
     { label: 'PAGA', value: 1 },
     { label: 'MOROSO', value: 2 },
+    { label: 'PENDIENTE', value: 3 },
+    { label: 'FINALIZADO', value: 4 },
 ]);
 const props = defineProps({
     refresh: {
@@ -115,6 +117,10 @@ function getStatusLabel(estado_cliente) {
             return 'success';
         case 'MOROSO':
             return 'danger';
+        case 'PENDIENTE':
+            return 'warn';    
+        case 'FINALIZADO':
+            return 'contrast'; 
         default:
             return null;
     }
@@ -203,15 +209,35 @@ defineExpose({ loadPrestamos });
         <Column field="tasa_interes_diario" header="Tasa de interés diario" sortable style="min-width: 13em"></Column>
         <Column v-for="col of selectedColumns" :key="col.field" :field="col.field" :header="col.header"
             :style="{ 'min-width': col.width }" sortable></Column>
-        <Column :exportable="false" style="min-width: 12rem">
-            <template #body="slotProps">
-                <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editPrestamo(slotProps.data)" />
-                <Button icon="pi pi-trash" outlined rounded severity="danger" class="mr-2"
-                    @click="confirmDeletePrestamo(slotProps.data)" />
-                <Button icon="pi pi-print" outlined rounded severity="help" class="rl-2"
-                    @click="printprestamo(slotProps.data)" />
-            </template>
-        </Column>
+            <Column :exportable="false" style="min-width: 12rem">
+                <template #body="slotProps">
+                    <Button
+                        icon="pi pi-pencil"
+                        outlined
+                        rounded
+                        class="mr-2"
+                        :disabled="slotProps.data.estado_cliente === 'FINALIZADO'"
+                        @click="editPrestamo(slotProps.data)"
+                    />
+                    <Button
+                        icon="pi pi-trash"
+                        outlined
+                        rounded
+                        severity="danger"
+                        class="mr-2"
+                        :disabled="slotProps.data.estado_cliente === 'FINALIZADO'"
+                        @click="confirmDeletePrestamo(slotProps.data)"
+                    />
+                    <Button
+                        icon="pi pi-print"
+                        outlined
+                        rounded
+                        severity="help"
+                        class="rl-2"
+                        @click="printprestamo(slotProps.data)"
+                    />
+                </template>
+            </Column>
     </DataTable>
     <Talonario v-if="showPrintDialog" :prestamosId="prestamosId" v-model:visible="showPrintDialog" @close="handleClosePrestamo" />
     <DeletePrestamo
