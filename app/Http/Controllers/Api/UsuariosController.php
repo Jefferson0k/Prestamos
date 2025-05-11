@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UsuariosController extends Controller{
     public function index(Request $request){
@@ -61,16 +62,20 @@ class UsuariosController extends Controller{
         return UserResource::collection($users);
     }
     public function store(StoreUserRequest $request){
-        Gate::authorize('create', User::class);    
+        Gate::authorize('create', User::class);
         $validated = $request->validated();
         $validated['nacimiento'] = Carbon::createFromFormat('d/m/Y', $validated['nacimiento'])->format('Y-m-d');
-        $validated['password'] = Hash::make($validated['password']);    
+        $validated['password'] = Hash::make($validated['password']);
+        $validated['restablecimiento'] = 0;
         $user = User::create($validated);
-        if ($request->has('role')) {
-            $user->assignRole($request->input('role'));
-        }    
+        if ($request->filled('role_id')) {
+            $role = Role::find($request->input('role_id'));
+            if ($role) {
+                $user->assignRole($role->name);
+            }
+        }
         return response()->json($user);
-    }       
+    }
     public function show(User $user){
         Gate::authorize('view', $user);
         return response()->json([
@@ -89,6 +94,12 @@ class UsuariosController extends Controller{
             unset($data['password']);
         }
         $user->update($data);
+        if ($request->filled('role_id')) {
+            $newRole = Role::find($request->input('role_id'));
+            if ($newRole) {
+                $user->syncRoles([$newRole->name]);
+            }
+        }
         return response()->json([
             'status' => true,
             'message' => 'Usuario actualizado correctamente',

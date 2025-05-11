@@ -8,6 +8,7 @@ import { useToast } from 'primevue/usetoast';
 import Tag from 'primevue/tag';
 import Checkbox from 'primevue/checkbox';
 import Password from 'primevue/password';
+import Select from 'primevue/select';
 
 const props = defineProps({
     visible: Boolean,
@@ -15,12 +16,15 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:visible', 'updated']);
 
+const serverErrors = ref({});
+const submitted = ref(false);
 const toast = useToast();
 const user = ref({});
 const password = ref('');
 const loading = ref(false);
 const originalEmail = ref('');
 const originalUsername = ref('');
+const roles = ref([]);
 
 const dialogVisible = ref(props.visible);
 watch(() => props.visible, (val) => dialogVisible.value = val);
@@ -42,6 +46,12 @@ const fetchUser = async () => {
         user.value.status = response.data.user.status === true ||
             response.data.user.status === 1 ||
             response.data.user.status === 'activo' ? true : false;
+        
+        // Ensure role_id is properly converted to number
+        if (user.value.role_id) {
+            user.value.role_id = Number(user.value.role_id);
+        }
+        
         password.value = '';
     } catch (error) {
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el usuario', life: 3000 });
@@ -52,6 +62,9 @@ const fetchUser = async () => {
 };
 
 const updateUser = async () => {
+    submitted.value = true;
+    serverErrors.value = {};
+
     try {
         const statusValue = user.value.status === true;
         const userData = {
@@ -61,31 +74,46 @@ const updateUser = async () => {
             nacimiento: user.value.nacimiento,
             email: user.value.email,
             username: user.value.username,
-            status: statusValue
+            status: statusValue,
+            role_id: user.value.role_id,
         };
+
         if (password.value && password.value.trim() !== '') {
             userData.password = password.value;
         }
+
         await axios.put(`/usuarios/${props.UsuarioId}`, userData);
-        toast.add({ severity: 'success', summary: 'Actualizado', detail: 'Usuario actualizado correctamente', life: 3000 });
+
+        toast.add({
+            severity: 'success',
+            summary: 'Actualizado',
+            detail: 'Usuario actualizado correctamente',
+            life: 3000
+        });
+
         dialogVisible.value = false;
         emit('updated');
     } catch (error) {
         if (error.response && error.response.data && error.response.data.errors) {
-            const errorsData = error.response.data.errors;
-            let errorMessage = '';
-            for (const field in errorsData) {
-                if (errorsData.hasOwnProperty(field)) {
-                    errorMessage += `${errorsData[field][0]}\n`;
-                }
-            }
-            toast.add({ severity: 'error', summary: 'Error de validación', detail: errorMessage, life: 5000 });
+            serverErrors.value = error.response.data.errors;
+            toast.add({
+                severity: 'error',
+                summary: 'Error de validación',
+                detail: 'Revisa los campos e intenta nuevamente.',
+                life: 5000
+            });
         } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el usuario', life: 3000 });
+            toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo actualizar el usuario',
+                life: 3000
+            });
         }
         console.error(error);
     }
 };
+
 
 const buscarPorDni = async () => {
     if (user.value.dni.length !== 8) {
@@ -150,6 +178,20 @@ const generarUsername = (nombres, apePat, apeMat, nacimiento) => {
 
     return `${inicialNombre}${apellido}${segundoApellido}${dia}`.toUpperCase();
 };
+
+onMounted(() => {
+    axios.get('/rol')
+        .then(response => {
+            roles.value = response.data.data;
+            // If we already have a user loaded, ensure role_id is a number
+            if (user.value && user.value.role_id) {
+                user.value.role_id = Number(user.value.role_id);
+            }
+        })
+        .catch(() => {
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los roles', life: 3000 });
+        });
+});
 </script>
 
 <template>
@@ -201,11 +243,20 @@ const generarUsername = (nombres, apePat, apeMat, nacimiento) => {
                 <InputText v-model="user.email" maxlength="150" fluid />
             </div>
 
-            <div>
-                <label for="password" class="block font-bold mb-3">Contraseña <small>(Dejar vacío para mantener la
-                        actual)</small></label>
-                <Password v-model="password" toggleMask placeholder="Nueva contraseña" :feedback="false"
-                    inputId="password" fluid />
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-6">
+                    <label for="password" class="block font-bold mb-3"><small>Dejar vacío para mantener la
+                            actual</small></label>
+                    <Password v-model="password" toggleMask placeholder="Nueva contraseña" :feedback="false"
+                        inputId="password" fluid />
+                </div>
+                <div class="col-span-6">
+                    <label for="role" class="block font-bold mb-3">Rol <span class="text-red-500">*</span></label>
+                    <Select v-model="user.role_id" :options="roles" optionLabel="name" optionValue="id"
+                        placeholder="Seleccione un rol" class="w-full" />
+                    <small v-if="submitted && !user.role_id" class="text-red-500">El rol es obligatorio.</small>
+                    <small v-else-if="serverErrors.role_id" class="text-red-500">{{ serverErrors.role_id[0] }}</small>
+                </div>
             </div>
         </div>
 

@@ -1,8 +1,13 @@
 <script setup>
-import { ref } from 'vue';
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AppMenuItem from './AppMenuItem.vue';
 
-const model = ref([
+const page = usePage();
+const permissions = computed(() => page.props.auth.user?.permissions ?? []);
+const hasPermission = (perm) => permissions.value.includes(perm);
+
+const model = computed(() => [
     {
         label: 'Home',
         items: [
@@ -12,31 +17,30 @@ const model = ref([
     {
         label: 'Gestión Administrativa',
         items: [
-            { label: 'Clientes', icon: 'pi pi-fw pi-users', to: '/clientes' },
-            { label: 'Préstamos', icon: 'pi pi-fw pi-briefcase', to: '/prestamos' },
-            { label: 'Pagos', icon: 'pi pi-fw pi-credit-card', to: '/pagos' },
-            { label: 'Reportes', icon: 'pi pi-fw pi-chart-line', to: '/reportes' }
-        ]
+            hasPermission('ver clientes') && { label: 'Clientes', icon: 'pi pi-fw pi-users', to: '/clientes' },
+            hasPermission('ver prestamos') && { label: 'Préstamos', icon: 'pi pi-fw pi-briefcase', to: '/prestamos' },
+            hasPermission('ver pagos') && { label: 'Pagos', icon: 'pi pi-fw pi-credit-card', to: '/pagos' },
+            hasPermission('ver reportes') && { label: 'Reportes', icon: 'pi pi-fw pi-chart-line', to: '/reportes' }
+        ].filter(Boolean),
     },
     {
         label: 'Usuarios',
         items: [
-            { label: 'Gestión de Usuarios', icon: 'pi pi-fw pi-user-edit', to: '/usuario' },
-            { label: 'Roles', icon: 'pi pi-fw pi-check-square', to: '/roles' },
-        ]
+            hasPermission('ver usuarios') && { label: 'Gestión de Usuarios', icon: 'pi pi-fw pi-user-edit', to: '/usuario' },
+            hasPermission('ver roles') && { label: 'Roles', icon: 'pi pi-fw pi-check-square', to: '/roles' },
+        ].filter(Boolean),
     }
-]);
+].filter(section => section.items.length > 0));
 </script>
 
 <template>
     <ul class="layout-menu">
         <template v-for="(item, i) in model" :key="i">
-            <app-menu-item v-if="!item.separator" :item="item" :index="i" />
-            <li v-if="item.separator" class="menu-separator"></li>
+            <app-menu-item :item="item" :index="i" />
         </template>
     </ul>
 </template>
 
-<style lang="scss" scoped>
-/* Puedes agregar estilos si quieres aquí */
+<style scoped lang="scss">
+/* Puedes agregar tus estilos aquí si lo deseas */
 </style>

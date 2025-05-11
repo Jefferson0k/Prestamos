@@ -65,7 +65,7 @@ class ClienteResource extends JsonResource{
             'Interes_total' => $interesTotal, // Nota: parece duplicado con 'interes_total'
             'foto' => $this->foto
                 ? asset("customers/{$this->foto}")
-                : asset("customers/1745897030_6810464697d95.jpg"),
+                : asset("customers/SinFoto.jpg"),
         ];
     }
 }

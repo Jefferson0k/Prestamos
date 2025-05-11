@@ -16,6 +16,7 @@ class StoreUserRequest extends FormRequest{
             'username' => 'required|string|max:30|unique:users,username',
             'password' => 'required|string|min:8',
             'status' => 'required|boolean',
+            'role_id' => ['required', 'exists:roles,id']
         ];
     }
     public function messages(){
