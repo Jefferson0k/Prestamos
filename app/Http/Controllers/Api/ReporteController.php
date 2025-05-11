@@ -5,13 +5,16 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class ReporteController extends Controller{
     public function vista(){
+        Gate::authorize('viewAny', 'reporte');
         return inertia::render('panel/Reporte/indexReporte');
     }
     public function clientesPorAnio($anio){
+        Gate::authorize('viewAny', 'reporte');
         $clientesPorMes = DB::table('clientes')
             ->selectRaw('EXTRACT(MONTH FROM created_at) as mes, COUNT(*) as cantidad')
             ->whereYear('created_at', $anio)
@@ -31,6 +34,7 @@ class ReporteController extends Controller{
         ]);
     }
     public function CantidadEmprestada($anio){
+        Gate::authorize('viewAny', 'reporte');
         $capitalTotal = DB::table('prestamos')
             ->whereYear('fecha_inicio', $anio)
             ->sum('capital');

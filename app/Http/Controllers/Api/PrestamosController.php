@@ -128,7 +128,8 @@ class PrestamosController extends Controller{
             'message' => 'Préstamo eliminado correctamente.',
         ]);
     }
-    public function consultarPrestamo(Request $request, $id){
+    public function consultarPrestamo(Request $request, $id, Prestamos $prestamos){
+        Gate::authorize('view', $prestamos);
         $cliente = Cliente::with('prestamos.recomendacion')->findOrFail($id);
         $prestamos = $cliente->prestamos();
         $estado = $request->query('estado');
@@ -155,7 +156,8 @@ class PrestamosController extends Controller{
         ]);
     }
  
-    public function consultaTalonario($id){
+    public function consultaTalonario($id, Prestamos $prestamos){
+        Gate::authorize('view', $prestamos);
         $prestamo = Prestamos::with('cuotas', 'cliente')->findOrFail($id);
         $cliente = $prestamo->cliente;
         $cuotas = $prestamo->cuotas->sortBy('numero_cuota')->values();

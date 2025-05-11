@@ -1,7 +1,7 @@
 <script setup>
 import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
 import Button from 'primevue/button';
-import { Head } from '@inertiajs/vue3';
+import { Head,Link } from '@inertiajs/vue3';
 
 </script>
 
@@ -20,7 +20,9 @@ import { Head } from '@inertiajs/vue3';
                         <span class="text-muted-color mb-8">No tienes los permisos necesarios. Póngase en contacto con los administradores.</span>
                         <img src="/imagenes/access/asset-access.svg" alt="Access denied" class="mb-8" width="80%" />
                         <div class="col-span-12 mt-8 text-center">
-                            <Button as="router-link" label="Ir al panel de control" to="/" severity="warn" />
+                            <Link href="/dashboard" class="no-underline">
+                                <Button label="Ir al panel de control" severity="warn" />
+                            </Link>
                         </div>
                     </div>
                 </div>

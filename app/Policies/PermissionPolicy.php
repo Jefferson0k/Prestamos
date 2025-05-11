@@ -1,27 +1,26 @@
 <?php
 
 namespace App\Policies;
-
-use App\Models\Pagos;
+use Spatie\Permission\Models\Permission;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class PagosPolicy
+class PermissionPolicy
 {
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('ver pagos');
+        return $user->can('ver permisos');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Pagos $pagos): bool
+    public function view(User $user, Permission $permission): bool
     {
-        return $user->can('ver pagos');
+        return $user->can('ver permisos');
     }
 
     /**
@@ -29,29 +28,29 @@ class PagosPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('crear pagos');
+        return $user->can('crear permisos');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Pagos $pagos): bool
+    public function update(User $user, Permission $permission): bool
     {
-        return $user->can('editar pagos');
+        return $user->can('editar permisos');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Pagos $pagos): bool
+    public function delete(User $user, Permission $permission): bool
     {
-        return $user->can('eliminar pagos');
+        return $user->can('eliminar permisos');
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Pagos $pagos): bool
+    public function restore(User $user, Permission $permission): bool
     {
         return false;
     }
@@ -59,7 +58,7 @@ class PagosPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Pagos $pagos): bool
+    public function forceDelete(User $user, Permission $permission): bool
     {
         return false;
     }
