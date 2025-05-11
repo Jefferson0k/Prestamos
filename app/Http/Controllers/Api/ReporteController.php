@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
+use App\Models\Prestamos;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,8 +34,8 @@ class ReporteController extends Controller{
             'clientes_por_mes' => $data,
         ]);
     }
-    public function CantidadEmprestada($anio){
-        Gate::authorize('viewAny', 'reporte');
+    public function CantidadEmprestada($anio, Prestamos $prestamos){
+        Gate::authorize('view', $prestamos);
         $capitalTotal = DB::table('prestamos')
             ->whereYear('fecha_inicio', $anio)
             ->sum('capital');
