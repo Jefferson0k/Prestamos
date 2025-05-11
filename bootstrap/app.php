@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance']);
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
@@ -25,21 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Manejar códigos de error específicos (403, 404, 500)
         $exceptions->render(function (HttpException $e) {
             $status = $e->getStatusCode();
-            if (in_array($status, [403, 404, 500])) {
+            if (in_array($status, [403, 404])) {
                 return Inertia::render("Errors/{$status}")
                     ->toResponse(request())
                     ->setStatusCode($status);
             }
             return null;
-        });
-        
-        // Capturar cualquier otra excepción y mostrar la página de error 500
-        $exceptions->render(function (\Throwable $e) {
-            return Inertia::render("Errors/500")
-                ->toResponse(request())
-                ->setStatusCode(500);
         });
     })->create();

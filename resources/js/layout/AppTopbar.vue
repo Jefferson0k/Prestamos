@@ -8,6 +8,10 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
 const logout = () => {
     router.post(route('logout'));
 };
+
+const goToProfile = () => {
+    router.get('/settings/profile');
+};
 </script>
 
 <template>
@@ -64,7 +68,7 @@ const logout = () => {
 
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
-                    <button type="button" class="layout-topbar-action">
+                    <button type="button" class="layout-topbar-action" @click="goToProfile">
                         <i class="pi pi-user"></i>
                         <span>Profile</span>
                     </button>
