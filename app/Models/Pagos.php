@@ -21,8 +21,9 @@ class Pagos extends Model{
         'Codigo_Comprobante',
         'referencia',
         'observacion',
-        'user_id',
+        'usuario_id',
         'estado',
+        'codigo_pago_id'
     ];
     protected $casts = [
         'fecha_pago' => 'date',

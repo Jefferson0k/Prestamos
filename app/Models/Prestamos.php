@@ -16,7 +16,9 @@ class Prestamos extends Model{
         'estado_cliente',
         'recomendado_id',
         'tasa_interes_diario',
-        'monto_total'
+        'monto_total',
+        'usuario_id',
+        'referencia'        
     ];
     protected $casts = [
         'capital' => 'decimal:2',
@@ -41,5 +43,7 @@ class Prestamos extends Model{
     public function pagos(){
         return $this->hasMany(Pagos::class, 'prestamo_id');
     }
-    
+    public function user() {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
 }

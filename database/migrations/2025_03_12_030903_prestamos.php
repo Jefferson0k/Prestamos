@@ -18,6 +18,7 @@ return new class extends Migration{
             $table->foreignId('recomendado_id')->constrained('clientes')->onDelete('cascade');
             $table->decimal('tasa_interes_diario', 5, 2);
             $table->decimal('monto_total', 15, 2)->comment('Capital más intereses totales');
+            $table->string('referencia')->unique()->nullable();
             $table->foreignId('usuario_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });

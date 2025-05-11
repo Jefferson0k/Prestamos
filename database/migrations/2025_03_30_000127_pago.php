@@ -18,9 +18,10 @@ return new class extends Migration{
             $table->decimal('monto_total', 15, 2);
             $table->string('metodo_pago')->nullable();            
             $table->string('moneda', 3)->default('PEN');            
-            $table->string('Codigo_Comprobante');            
-            $table->string('referencia')->nullable();            
+            $table->string('Codigo_Comprobante');
+            $table->string('referencia')->unique()->nullable();            
             $table->text('observacion')->nullable();          
+            $table->foreignId('codigo_pago_id')->nullable()->constrained('codigos_pagos')->onDelete('set null');
             $table->foreignId('usuario_id')->nullable()->constrained('users')->onDelete('set null');  
             $table->enum('estado', ['activo', 'anulado'])->default('activo');            
             $table->timestamps();

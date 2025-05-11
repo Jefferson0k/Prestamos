@@ -9,7 +9,7 @@ class ClientePrestamoResource extends JsonResource{
 
         $cliente = $this->cliente;
         $fotoPath = 'customers/' . ($cliente->foto ?? '');
-        $fotoPorDefecto = 'customers/1745896984_68104618995b7.jpg';
+        $fotoPorDefecto = 'customers/SinFoto.jpg';
         $fotoUrl = $cliente->foto && File::exists(public_path($fotoPath))
             ? asset($fotoPath)
             : asset($fotoPorDefecto);

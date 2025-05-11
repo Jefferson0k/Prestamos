@@ -86,7 +86,7 @@ const generatePDF = async () => {
         const horaActual = now.toLocaleTimeString("es-PE");
 
         // Generador de número de referencia único
-        const referenceNumber = `PREST-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const referenceNumber = cliente.referencia;
 
         // Función para agregar marca de agua
         const addWatermark = (text) => {
@@ -359,10 +359,13 @@ const generatePDF = async () => {
         y += 6;
         pdf.setFont("helvetica", "normal").setFontSize(8);
         const notas = [
-            "La fecha de vencimiento solo se pondrá cuando se realice el pago, y la fecha de inicio de la siguiente cuota será el día en que se termine de pagar.",
-            "El monto del préstamo va variando desde la solicitud.",
-            "Los pagos realizados después de la fecha de vencimiento pueden generar intereses moratorios adicionales.",
-            "Conserve este documento como comprobante de su préstamo y de los pagos realizados."
+            "La fecha de vencimiento se definirá al momento del pago. La nueva cuota inicia el mismo día en que se termina de pagar la anterior.",
+            "El monto del préstamo puede variar desde el momento de la solicitud.",
+            "Si han transcurrido menos de 15 días, el sistema considerará como si fueran 15 días.",
+            "Si han pasado entre 16 y 30 días, y se paga el total de la cuota (capital o solo intereses), se tomará como si hubieran transcurrido 30 días exactos.",
+            "Si pasan más de 35 días sin pago completo, se aplicarán intereses moratorios.",
+            "Los pagos después de la fecha límite pueden generar cargos adicionales.",
+            "Conserve este documento como comprobante de su préstamo y los pagos realizados."
         ];
         notas.forEach(n => {
             pdf.text(`• ${n}`, margin + 2, y);
@@ -380,51 +383,58 @@ const generatePDF = async () => {
         }
 
         // Sección de firmas mejorada
-        const lineWidth = 80;
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "bold");
+        // Ajustamos posición base
+const firmaBaseY = y + 10; // Base común
 
-        // Línea de firma del cliente
-        const leftStartX = centerX - lineWidth - 10;
-        const leftEndX = centerX - 10;
-        pdf.line(leftStartX, y + 20, leftEndX, y + 20);
-        
-        // Línea de firma del aval
-        const rightStartX = centerX + 10;
-        const rightEndX = centerX + lineWidth + 10;
-        pdf.line(rightStartX, y + 20, rightEndX, y + 20);
-        
-        // Línea de firma adicional
-        const middleLineWidth = 100;
-        const middleStartX = centerX - middleLineWidth / 2;
-        const middleEndX = centerX + middleLineWidth / 2;
-        pdf.line(middleStartX, y + 45, middleEndX, y + 45);
+// Sección de firmas (ajustada)
+const lineWidth = 80;
+pdf.setFontSize(9);
+pdf.setFont("helvetica", "bold");
 
-        // Etiquetas de firma
-        pdf.setFontSize(8);
-        pdf.setFont("helvetica", "normal");
-        
-        pdf.text("FIRMA DEL CLIENTE", leftStartX + (lineWidth - pdf.getTextWidth("FIRMA DEL CLIENTE")) / 2, y + 10);
-        const leftText = `${cliente.nombre || ""}`;
-        const leftDniText = `${cliente.dni || ""}`;
-        const leftTextWidth = pdf.getTextWidth(leftText);
-        const leftDniWidth = pdf.getTextWidth(leftDniText);
-        pdf.text(leftText, leftStartX + (lineWidth - leftTextWidth) / 2, y + 25);
-        pdf.text(leftDniText, leftStartX + (lineWidth - leftDniWidth) / 2, y + 30);
+// Línea firma cliente
+const leftStartX = centerX - lineWidth - 10;
+const leftEndX = centerX - 10;
+pdf.line(leftStartX, firmaBaseY + 10, leftEndX, firmaBaseY + 10);
 
-        pdf.text("FIRMA DEL AVAL", rightStartX + (lineWidth - pdf.getTextWidth("FIRMA DEL AVAL")) / 2, y + 10);
-        const rightText = `${cliente.recomendado || ""}`;
-        const rightDniText = `${cliente.Dnirecomendado || ""}`;
-        const rightTextWidth = pdf.getTextWidth(rightText);
-        const rightDniWidth = pdf.getTextWidth(rightDniText);
-        pdf.text(rightText, rightStartX + (lineWidth - rightTextWidth) / 2, y + 25);
-        pdf.text(rightDniText, rightStartX + (lineWidth - rightDniWidth) / 2, y + 30);
+// Línea firma aval
+const rightStartX = centerX + 10;
+const rightEndX = centerX + lineWidth + 10;
+pdf.line(rightStartX, firmaBaseY + 10, rightEndX, firmaBaseY + 10);
 
-        const middleText = "FIRMA ADICIONAL / AUTORIZACIÓN";
-        const middleTextWidth = pdf.getTextWidth(middleText);
-        pdf.text(middleText, centerX - middleTextWidth / 2, y + 50);
+// Texto firma cliente
+pdf.setFontSize(8);
+pdf.setFont("helvetica", "normal");
 
-        
+pdf.text("FIRMA DEL CLIENTE", leftStartX + (lineWidth - pdf.getTextWidth("FIRMA DEL CLIENTE")) / 2, firmaBaseY);
+pdf.text(`${cliente.nombre || ""}`, leftStartX + (lineWidth - pdf.getTextWidth(cliente.nombre || "")) / 2, firmaBaseY + 15);
+pdf.text(`${cliente.dni || ""}`, leftStartX + (lineWidth - pdf.getTextWidth(cliente.dni || "")) / 2, firmaBaseY + 20);
+
+// Texto firma aval
+pdf.text("FIRMA DEL AVAL", rightStartX + (lineWidth - pdf.getTextWidth("FIRMA DEL AVAL")) / 2, firmaBaseY);
+pdf.text(`${cliente.recomendado || ""}`, rightStartX + (lineWidth - pdf.getTextWidth(cliente.recomendado || "")) / 2, firmaBaseY + 15);
+pdf.text(`${cliente.Dnirecomendado || ""}`, rightStartX + (lineWidth - pdf.getTextWidth(cliente.Dnirecomendado || "")) / 2, firmaBaseY + 20);
+
+// Línea y texto de firma adicional
+const adicionalBaseY = firmaBaseY + 40; // MÁS ABAJO
+
+const middleLineWidth = 100;
+const middleStartX = centerX - middleLineWidth / 2;
+const middleEndX = centerX + middleLineWidth / 2;
+pdf.line(middleStartX, adicionalBaseY, middleEndX, adicionalBaseY);
+
+const middleText = "FIRMA ADICIONAL / AUTORIZACIÓN";
+pdf.text(middleText, centerX - pdf.getTextWidth(middleText) / 2, adicionalBaseY - 10);
+
+const middleText2 = cliente.usuario.username;
+pdf.text(middleText2, centerX - pdf.getTextWidth(middleText2) / 2, adicionalBaseY + 7);
+
+const middleText1 = cliente.usuario.name;
+pdf.text(middleText1, centerX - pdf.getTextWidth(middleText1) / 2, adicionalBaseY + 14);
+
+const dniText = cliente.usuario.dni;
+pdf.text(dniText, centerX - pdf.getTextWidth(dniText) / 2, adicionalBaseY + 21);
+
+
         // Añadir código QR con el número de referencia (si disponible la librería)
         try {
             if (typeof QRCode !== 'undefined') {

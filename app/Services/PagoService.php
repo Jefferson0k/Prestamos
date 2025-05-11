@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\Cuotas;
 use App\Models\Pagos;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class PagoService
@@ -38,13 +39,14 @@ class PagoService
 
             $cuota->update([
                 'fecha_vencimiento' => $hoy,
-                'Dias' => $dias,
+                'dias' => $dias,
                 'interes' => $interes,
-                'Monto_Interes_Pagar' => $montoInteresPagar,
-                'Monto_Capital_Pagar' => $montoCapitalPagado,
-                'Saldo_Capital' => $saldoCapital,
-                'MOnto_Capital_Mas_Interes_a_Pagar' => $montoTotalPagar,
-                'estado' => $estado
+                'monto_interes_pagar' => $montoInteresPagar,
+                'monto_capital_pagar' => $montoCapitalPagado,
+                'saldo_capital' => $saldoCapital,
+                'monto_capital_mas_interes_a_pagar' => $montoTotalPagar,
+                'estado' => $estado,
+                'usuario_id' => Auth::id(),
             ]);
 
             Pagos::create([
@@ -55,6 +57,7 @@ class PagoService
                 'monto_capital' => $montoCapitalPagado,
                 'monto_interes' => $montoInteresPagar,
                 'monto_total' => $montoTotalPagar,
+                'usuario_id' => Auth::id(),
             ]);
 
             if ($montoCapitalPagado >= $capital) {
@@ -62,9 +65,9 @@ class PagoService
                     ->where('numero_cuota', '>', $cuota->numero_cuota)
                     ->update([
                         'estado' => 'Cancelado',
-                        'Fecha_Inicio' => null,
+                        'fecha_inicio' => null,
                         'capital' => 0,
-                        'Saldo_Capital' => 0,
+                        'saldo_capital' => 0,
                     ]);
             } else {
                 $siguienteNumero = $cuota->numero_cuota + 1;
@@ -78,15 +81,15 @@ class PagoService
                     if ($index === 0) {
                         $cuotaPendiente->update([
                             'capital' => $saldoCapital,
-                            'Fecha_Inicio' => $hoy,
-                            'Saldo_Capital' => $saldoCapital,
+                            'fecha_inicio' => $hoy,
+                            'saldo_capital' => $saldoCapital,
                         ]);
                     } else {
                         $cuotaAnterior = $cuotasPendientes[$index - 1];
                         $nuevoCapital = $cuotaAnterior->capital;
                         $cuotaPendiente->update([
                             'capital' => $nuevoCapital,
-                            'Saldo_Capital' => $nuevoCapital,
+                            'saldo_capital' => $nuevoCapital,
                         ]);
                     }
                 }
@@ -96,10 +99,10 @@ class PagoService
                         'prestamo_id' => $prestamo->id,
                         'numero_cuota' => $siguienteNumero,
                         'capital' => $saldoCapital,
-                        'Fecha_Inicio' => $hoy,
+                        'fecha_inicio' => $hoy,
                         'fecha_vencimiento' => null,
-                        'Tasa_Interes_Diario' => $cuota->Tasa_Interes_Diario,
-                        'Saldo_Capital' => $saldoCapital,
+                        'tasa_interes_diario' => $cuota->Tasa_Interes_Diario,
+                        'saldo_capital' => $saldoCapital,
                         'estado' => 'Pendiente'
                     ]);
                 }
@@ -117,7 +120,7 @@ class PagoService
         try {
             $prestamo = Cuotas::where('prestamo_id', $prestamoId)->first()->prestamo;
             $cuotasConSaldo = Cuotas::where('prestamo_id', $prestamoId)
-                ->where('Saldo_Capital', '>', 0)
+                ->where('saldo_capital', '>', 0)
                 ->count();
 
             Log::info("Verificando estado préstamo {$prestamoId}: Cuotas con saldo > 0 = {$cuotasConSaldo}");
@@ -126,7 +129,7 @@ class PagoService
                 // Marcar cuotas 'Parcial' con saldo 0 como 'Pagado'
                 Cuotas::where('prestamo_id', $prestamoId)
                     ->where('estado', 'Parcial')
-                    ->where('Saldo_Capital', '<=', 0)
+                    ->where('saldo_capital', '<=', 0)
                     ->update(['estado' => 'Pagado']);
 
                 // Marcar préstamo como pagado

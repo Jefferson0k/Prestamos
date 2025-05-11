@@ -50,7 +50,7 @@
             </div>
         </div>
         <div v-else-if="prestamos.length === 0">
-            <p class="text-center text-gray-500">No se encontraron cuotas para este cliente.</p>
+            <p class="text-center">No se encontraron cuotas para este cliente.</p>
         </div>
         <div v-else>
             <br>

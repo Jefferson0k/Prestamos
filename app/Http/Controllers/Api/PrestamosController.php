@@ -155,18 +155,16 @@ class PrestamosController extends Controller{
             'Finalizado' => $finalizados,
         ]);
     }
- 
     public function consultaTalonario($id, Prestamos $prestamos){
         Gate::authorize('view', $prestamos);
-        $prestamo = Prestamos::with('cuotas', 'cliente')->findOrFail($id);
+        $prestamo = Prestamos::with('cuotas', 'cliente', 'user')->findOrFail($id);
         $cliente = $prestamo->cliente;
         $cuotas = $prestamo->cuotas->sortBy('numero_cuota')->values();
-    
         return response()->json([
-            'cliente' => new PrestamoCollection($cliente),
+            'cliente' => new PrestamoCollection($cliente, $prestamo),
             'cantidad_prestamos' => 1,
             'cantidad_cuotas' => $cuotas->count(),
-            'cuotas' => CuotaResource::collection($cuotas)
+            'cuotas' => CuotaResource::collection($cuotas),
         ]);
     }    
 }

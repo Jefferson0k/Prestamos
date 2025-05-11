@@ -99,8 +99,13 @@ const clienteSeleccionado = ref(null);
 const clienteRecomendado = ref(null);
 const clientes = ref([]);
 const recomendos = ref([]);
-const dates = ref();
-const prestamo = ref([]);
+const dates = ref([]);
+const prestamo = ref({
+    capital: null,
+    numero_cuotas: null,
+    tasa_interes_diario: null,
+    estado_cliente: null,
+});
 let debounceTimeout = null;
 let debounceTimeoutRecomendado = null;
 const statuses = ref([
@@ -111,7 +116,15 @@ const statuses = ref([
 const emit = defineEmits(['prestamoAgregado']);
 
 function openNew() {
-    product.value = {};
+    prestamo.value = {
+        capital: null,
+        numero_cuotas: null,
+        tasa_interes_diario: null,
+        estado_cliente: null,
+    };
+    clienteSeleccionado.value = null;
+    clienteRecomendado.value = null;
+    dates.value = [];
     submitted.value = false;
     prestamoDialog.value = true;
 }
@@ -119,6 +132,15 @@ function openNew() {
 function hideDialog() {
     prestamoDialog.value = false;
     submitted.value = false;
+    clienteSeleccionado.value = null;
+    clienteRecomendado.value = null;
+    dates.value = [];
+    prestamo.value = {
+        capital: null,
+        numero_cuotas: null,
+        tasa_interes_diario: null,
+        estado_cliente: null,
+    };
 }
 
 function formatDate(date) {
@@ -187,6 +209,7 @@ const buscarclientesRecomendado = async (evento) => {
         }
     }, 500);
 };
+
 function saveProduct() {
     submitted.value = true;
     if (

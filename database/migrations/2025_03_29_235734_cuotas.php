@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->enum('estado', ['Pendiente', 'Pagado', 'Vencido', 'Cancelado', 'Parcial'])->default('Pendiente');
             $table->foreignId('prestamo_id')->constrained()->onDelete('cascade');
             $table->foreignId('usuario_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->string('referencia')->nullable();
+            $table->string('referencia')->nullable()->unique();
             $table->date('fecha_pago')->nullable();
             $table->text('observacion')->nullable();
             $table->timestamps();
