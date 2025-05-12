@@ -7,11 +7,8 @@ use App\Models\Prestamos;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-class PrestamoService
-{
-    public function crearPrestamo(array $data)
-    {
-        // Primero se crea el préstamo sin la referencia
+class PrestamoService{
+    public function crearPrestamo(array $data){
         $prestamo = Prestamos::create([
             'cliente_id' => $data['cliente_id'],
             'fecha_inicio' => $data['fecha_inicio'],
@@ -25,7 +22,6 @@ class PrestamoService
             'usuario_id' => Auth::id(),
         ]);
 
-        // Generar referencia del préstamo
         $referencia = 'PREST-' . Carbon::now()->format('Ymd') . '-' . str_pad($prestamo->id, 4, '0', STR_PAD_LEFT);
         $prestamo->referencia = $referencia;
         $prestamo->save();
@@ -33,9 +29,7 @@ class PrestamoService
         $this->generarCuotas($prestamo);
         return $prestamo;
     }
-
-    public function generarCuotas(Prestamos $prestamo)
-    {
+    public function generarCuotas(Prestamos $prestamo){
         $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
         $capital = $prestamo->capital;
         $usuarioId = Auth::id();
@@ -61,10 +55,9 @@ class PrestamoService
             ]);
         }
     }
-
-    public function actualizarPrestamo(Prestamos $prestamo, array $data)
-    {
+    public function actualizarPrestamo(Prestamos $prestamo, array $data){
         $numeroCuotasAnterior = $prestamo->numero_cuotas;
+        $capitalAnterior = $prestamo->capital;
 
         $prestamo->fill([
             'fecha_inicio' => $data['fecha_inicio'] ?? $prestamo->fecha_inicio,
@@ -78,27 +71,35 @@ class PrestamoService
         ]);
 
         $prestamo->save();
-        $this->actualizarCuotas($prestamo, $numeroCuotasAnterior);
+        $this->actualizarCuotas($prestamo, $numeroCuotasAnterior, $capitalAnterior);
         return $prestamo;
     }
 
-    public function actualizarCuotas(Prestamos $prestamo, int $numeroCuotasAnterior)
-    {
+    public function actualizarCuotas(Prestamos $prestamo, int $numeroCuotasAnterior, float $capitalAnterior = null){
         $cuotasExistentes = Cuotas::where('prestamo_id', $prestamo->id)->orderBy('numero_cuota')->get();
+        
+        $capitalRestante = $prestamo->capital;
+        $capitalOriginal = $prestamo->capital;
+        
+        foreach ($cuotasExistentes as $cuota) {
+            if ($cuota->estado == 'Pagada' || $cuota->estado == 'Parcial') {
+                $capitalPagado = $cuota->capital - $cuota->saldo_capital;
+                $capitalRestante -= $capitalPagado;
+            }
+        }
 
         if ($prestamo->numero_cuotas > $numeroCuotasAnterior) {
-            $capital = $prestamo->capital;
             for ($i = $numeroCuotasAnterior + 1; $i <= $prestamo->numero_cuotas; $i++) {
                 Cuotas::create([
                     'prestamo_id' => $prestamo->id,
                     'numero_cuota' => $i,
-                    'capital' => $capital,
+                    'capital' => $capitalOriginal,
                     'interes' => 0.00,
                     'dias' => 0,
                     'tasa_interes_diario' => $prestamo->tasa_interes_diario,
                     'monto_interes_pagar' => 0.00,
                     'monto_capital_pagar' => null,
-                    'saldo_capital' => $capital,
+                    'saldo_capital' => $capitalRestante,
                     'fecha_inicio' => null,
                     'fecha_vencimiento' => null,
                     'monto_capital_mas_interes_a_pagar' => 0.00,
@@ -120,13 +121,23 @@ class PrestamoService
                 ->where('numero_cuota', '>', $prestamo->numero_cuotas)
                 ->delete();
         }
-
-        Cuotas::where('prestamo_id', $prestamo->id)->update([
-            'capital' => $prestamo->capital,
-            'tasa_interes_diario' => $prestamo->tasa_interes_diario,
-            'saldo_capital' => $prestamo->capital
-        ]);
-
+        foreach ($cuotasExistentes as $cuota) {
+            if ($cuota->numero_cuota <= $prestamo->numero_cuotas) {
+                $cuotaModel = Cuotas::find($cuota->id);
+                if ($cuotaModel) {
+                    $estado = $cuotaModel->estado;
+                    $saldoCapital = $cuotaModel->saldo_capital;
+                    if ($estado == 'Pendiente') {
+                        $saldoCapital = $capitalRestante;
+                    }
+                    $cuotaModel->capital = $capitalOriginal;
+                    $cuotaModel->tasa_interes_diario = $prestamo->tasa_interes_diario;
+                    $cuotaModel->saldo_capital = $saldoCapital;
+                    $cuotaModel->estado = $estado;
+                    $cuotaModel->save();
+                }
+            }
+        }
         $primeraCuota = Cuotas::where('prestamo_id', $prestamo->id)
             ->where('numero_cuota', 1)
             ->first();

@@ -46,4 +46,5 @@ class Prestamos extends Model{
     public function user() {
         return $this->belongsTo(User::class, 'usuario_id');
     }
+    
 }
