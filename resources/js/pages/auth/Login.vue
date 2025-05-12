@@ -1,21 +1,21 @@
-<script setup lang="ts">
-import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthBase from '@/layouts/AuthLayout.vue';
+<script setup>
+import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { ref } from 'vue';
+import Password from 'primevue/password';
+import Checkbox from 'primevue/checkbox';
+import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
+import InlineMessage from 'primevue/inlinemessage';
 
-defineProps<{
-    status?: string;
-    canResetPassword: boolean;
-}>();
+defineProps({
+    status: String,
+    canResetPassword: Boolean
+});
 
 const form = useForm({
-    email: '',
+    username: '',
     password: '',
     remember: false,
 });
@@ -28,66 +28,109 @@ const submit = () => {
 </script>
 
 <template>
-    <AuthBase title="Log in to your account" description="Enter your email and password below to log in">
-        <Head title="Log in" />
-
-        <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
-            {{ status }}
-        </div>
-
-        <form @submit.prevent="submit" class="flex flex-col gap-6">
-            <div class="grid gap-6">
-                <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        required
-                        autofocus
-                        :tabindex="1"
-                        autocomplete="email"
-                        v-model="form.email"
-                        placeholder="email@example.com"
-                    />
-                    <InputError :message="form.errors.email" />
-                </div>
-
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between">
-                        <Label for="password">Password</Label>
-                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" :tabindex="5">
-                            Forgot password?
-                        </TextLink>
+    <FloatingConfigurator />
+    <Head title="Log in" />
+    <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
+        <div class="flex flex-col items-center justify-center">
+            <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)">
+                <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20" style="border-radius: 53px">
+                    <div class="text-center mb-8">
+                        <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">¡Bienvenido!</div>
+                        <span class="text-muted-color font-medium">Inicia sesión para continuar</span>
                     </div>
-                    <Input
-                        id="password"
-                        type="password"
-                        required
-                        :tabindex="2"
-                        autocomplete="current-password"
-                        v-model="form.password"
-                        placeholder="Password"
-                    />
-                    <InputError :message="form.errors.password" />
+                    
+                    <Message v-if="status" severity="success" :closable="false" class="mb-4">{{ status }}</Message>
+                    
+                    <form @submit.prevent="submit">
+                        <div>
+                            <label for="username" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Usuario</label>
+                            <InputText 
+                                id="username" 
+                                type="text" 
+                                placeholder="Usuario" 
+                                class="w-full md:w-[30rem] mb-1" 
+                                v-model="form.username"
+                                :class="{ 'p-invalid': form.errors.username }"
+                                autofocus
+                                required
+                                autocomplete="username"
+                            />
+                            <InlineMessage v-if="form.errors.username" severity="error" class="w-full mb-4">{{ form.errors.username }}</InlineMessage>
+                            
+                            <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2 mt-4">Contraseña</label>
+                            <Password 
+                                id="password" 
+                                v-model="form.password" 
+                                placeholder="Contraseña" 
+                                :toggleMask="true" 
+                                class="w-full mb-1" 
+                                :class="{ 'p-invalid': form.errors.password }"
+                                :feedback="false"
+                                required
+                                autocomplete="current-password"
+                                inputClass="w-full"
+                            />
+                            <InlineMessage v-if="form.errors.password" severity="error" class="w-full mb-4">{{ form.errors.password }}</InlineMessage>
+                            
+                            <div class="flex items-center justify-between mt-4 mb-8 gap-8">
+                                <div class="flex items-center">
+                                    <Checkbox v-model="form.remember" id="remember" binary class="mr-2"></Checkbox>
+                                    <label for="remember" class="text-surface-600 dark:text-surface-300">Recordarme</label>
+                                </div>
+                                <a 
+                                    v-if="canResetPassword" 
+                                    :href="route('password.request')" 
+                                    class="font-medium no-underline ml-2 text-right cursor-pointer text-primary"
+                                >
+                                    ¿Olvidó su contraseña?
+                                </a>
+                            </div>
+                            
+                            <Button 
+                                type="submit" 
+                                label="Iniciar sesión" 
+                                class="w-full" 
+                                :loading="form.processing"
+                                :disabled="form.processing"
+                            />
+                        </div>
+                    </form>
                 </div>
-
-                <div class="flex items-center justify-between" :tabindex="3">
-                    <Label for="remember" class="flex items-center space-x-3">
-                        <Checkbox id="remember" v-model:checked="form.remember" :tabindex="4" />
-                        <span>Remember me</span>
-                    </Label>
-                </div>
-
-                <Button type="submit" class="mt-4 w-full" :tabindex="4" :disabled="form.processing">
-                    <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
-                    Log in
-                </Button>
             </div>
-
-            <div class="text-center text-sm text-muted-foreground">
-                Don't have an account?
-                <TextLink :href="route('register')" :tabindex="5">Sign up</TextLink>
-            </div>
-        </form>
-    </AuthBase>
+        </div>
+    </div>
 </template>
+
+<style scoped>
+.pi-eye {
+    transform: scale(1.6);
+    margin-right: 1rem;
+}
+.pi-eye-slash {
+    transform: scale(1.6);
+    margin-right: 1rem;
+}
+
+:deep(.p-password) {
+    width: 100%;
+}
+
+:deep(.p-password-input) {
+    width: 100%;
+}
+
+:deep(.p-invalid) {
+    border-color: var(--red-500);
+}
+
+:deep(.p-message) {
+    border-width: 0;
+    border-radius: 6px;
+}
+
+:deep(.p-inline-message) {
+    border-width: 0;
+    padding: 0.3rem 0.5rem;
+    margin-top: 0.25rem;
+}
+</style>

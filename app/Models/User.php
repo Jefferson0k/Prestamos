@@ -6,11 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
+use Spatie\Activitylog\LogOptions;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,HasRoles,LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -19,8 +21,14 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'dni',
+        'apellidos',
+        'nacimiento',
         'email',
+        'username',
         'password',
+        'status',
+        'restablecimiento',
     ];
 
     /**
@@ -45,4 +53,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function getActivitylogOptions(): LogOptions{
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'username', 'status'])
+            ->useLogName('usuario')
+            ->logOnlyDirty();
+    }
+    public function isOnline(): bool    {
+        return cache()->has('user-is-online-' . $this->id);
+    }
+
 }

@@ -2,90 +2,183 @@
 
 namespace App\Services;
 
-use App\Models\CuotasModelo;
-use App\Models\PagosModelo;
-use App\Models\PrestamosModelo;
+use App\Models\Cuotas;
+use App\Models\Pagos;
+use App\Models\Prestamos;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class PagoService{
-    public function registrarPago(CuotasModelo $cuota, $fechaPago){
-        $prestamo = $cuota->prestamo;
-        $fechaPago = Carbon::parse($fechaPago);
+    protected $interesCalculator;
     
-        $pago = PagosModelo::create([
-            'prestamo_id' => $prestamo->id,
-            'cuota_id' => $cuota->id,
-            'fecha_pago' => $fechaPago,
-            'capital' => $cuota->capital ?? 0,
-            'monto_capital' => $cuota->capital,
-            'monto_interes' => $cuota->interes,
-            'monto_total' => $cuota->monto_total
-        ]);
+    public function __construct(InteresCalculatorService $interesCalculator) {
+        $this->interesCalculator = $interesCalculator;
+    }
     
-        $cuota->update(['estado' => 'Pagado']);
-        $this->actualizarEstadoPrestamo($prestamo);
-    
-        return $pago;
-    }    
-    public function actualizarEstadoPrestamo(PrestamosModelo $prestamo){
-        $cuotasPendientes = $prestamo->cuotas()->where('estado', '!=', 'Pagado')->count();
-        $cuotasVencidas = $prestamo->cuotas()
-            ->where('estado', '!=', 'Pagado')
-            ->where('fecha_vencimiento', '<', Carbon::now())
-            ->count();        
-        if ($cuotasPendientes == 0) {
-            $prestamo->update(['estado_cliente' => 'Paga']);
-        } elseif ($cuotasVencidas > 0) {
-            $prestamo->update(['estado_cliente' => 'Moroso']);
+    public function registrarPago($cuotaId, $montoCapitalPagado){
+        try {
+            $cuota = Cuotas::findOrFail($cuotaId);
+            $prestamo = $cuota->prestamo;
+            $hoy = Carbon::now()->startOfDay();
+
+            $fechaInicio = $cuota->fecha_inicio ? Carbon::parse($cuota->fecha_inicio)->startOfDay() : null;
+            if (!$fechaInicio) {
+                throw new \Exception("La cuota aún no está activa. No tiene Fecha_Inicio.");
+            }
+
+            // Usando la misma lógica exacta que en CuotaResource
+            $dias = $this->interesCalculator->calcularDias($fechaInicio, $hoy);
+            $capital = floatval($cuota->capital ?? 0);
+            $tasaInteresDiario = floatval($cuota->tasa_interes_diario ?? 0);
+            
+            $montoCapitalPagado = floatval($montoCapitalPagado);
+            if ($montoCapitalPagado > $capital) {
+                throw new \Exception("El monto de pago excede el capital pendiente.");
+            }
+            
+            // Determinar si es un pago completo
+            $esPagoCompleto = ($montoCapitalPagado >= $capital);
+            
+            // Calculamos el interés aplicando las reglas de negocio, indicando si es pago completo
+            $datosInteres = $this->interesCalculator->calcularInteres($capital, $tasaInteresDiario, $dias, true, $esPagoCompleto);
+            
+            // Calculamos el pago
+            $saldoCapital = $capital - $montoCapitalPagado;
+            $montoTotalPagar = $datosInteres['monto_interes_pagar'] + $montoCapitalPagado;
+            $estado = $saldoCapital > 0 ? 'Parcial' : 'Pagado';
+
+            // Actualizamos la cuota
+            $cuota->update([
+                'fecha_vencimiento' => $hoy,
+                'dias' => $dias, // Guardamos los días reales calculados con +1
+                'interes' => $datosInteres['interes'], // Guardamos el interés calculado
+                'monto_interes_pagar' => $datosInteres['monto_interes_pagar'], // Monto de interés a pagar
+                'monto_capital_pagar' => $montoCapitalPagado,
+                'saldo_capital' => $saldoCapital,
+                'monto_capital_mas_interes_a_pagar' => $montoTotalPagar, // Monto total a pagar
+                'estado' => $estado,
+                'usuario_id' => Auth::id(),
+            ]);
+
+            // Creamos el registro de pago
+            Pagos::create([
+                'prestamo_id' => $prestamo->id,
+                'cuota_id' => $cuota->id,
+                'capital' => $capital,
+                'fecha_pago' => $hoy,
+                'monto_capital' => $montoCapitalPagado,
+                'monto_interes' => $datosInteres['monto_interes_pagar'],
+                'monto_total' => $montoTotalPagar,
+                'usuario_id' => Auth::id(),
+            ]);
+
+            // Procesamos las cuotas restantes
+            if ($esPagoCompleto) {
+                $this->cancelarCuotasRestantes($prestamo->id, $cuota->numero_cuota);
+            } else {
+                $this->actualizarCuotasPendientes($prestamo->id, $cuota->numero_cuota, $saldoCapital, $hoy, $tasaInteresDiario);
+            }
+
+            $this->actualizarEstadoPrestamo($prestamo->id);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Error al registrar pago: " . $e->getMessage());
+            throw $e;
         }
     }
-
-public function simularCalendarioPagos(PrestamosModelo $prestamo)
-{
-    $calendario = [];
-    $saldoCapital = $prestamo->capital; // Capital inicial
-    $capitalPorCuota = $saldoCapital / $prestamo->numero_cuotas; // Pago de capital por cuota
-    $fechaInicio = Carbon::parse($prestamo->fecha_inicio);
     
-    for ($i = 1; $i <= $prestamo->numero_cuotas; $i++) {
-        $fechaVencimiento = $fechaInicio->copy()->addMonthsNoOverflow($i);
+    private function cancelarCuotasRestantes($prestamoId, $numeroCuota){
+        Cuotas::where('prestamo_id', $prestamoId)
+            ->where('numero_cuota', '>', $numeroCuota)
+            ->update([
+                'estado' => 'Cancelado',
+                'fecha_inicio' => null,
+                'capital' => 0,
+                'saldo_capital' => 0,
+            ]);
+    }
+    
+    private function actualizarCuotasPendientes($prestamoId, $numeroCuota, $saldoCapital, $fechaInicio, $tasaInteresDiario){
+        $siguienteNumero = $numeroCuota + 1;
+        $cuotasPendientes = Cuotas::where('prestamo_id', $prestamoId)
+            ->where('numero_cuota', '>=', $siguienteNumero)
+            ->where('estado', 'Pendiente')
+            ->orderBy('numero_cuota')
+            ->get();
 
-        // Obtener los días del mes para calcular los intereses
-        $diasInteres = $fechaVencimiento->daysInMonth;
-
-        // Calcular la tasa de interés efectiva del mes
-        $tasaInteresMensual = ($prestamo->tasa_interes_diario / 100) * $diasInteres;
-
-        // Calcular el monto de interés
-        $montoInteresPagar = $saldoCapital * $tasaInteresMensual;
-
-        // Determinar el pago de capital (empieza en la mitad del préstamo)
-        $montoCapitalPagar = ($i < ceil($prestamo->numero_cuotas / 2)) ? 0 : $capitalPorCuota;
-
-        // Reducir saldo capital si hay pago de capital
-        if ($montoCapitalPagar > 0) {
-            $saldoCapital -= $montoCapitalPagar;
-            if ($saldoCapital < 0) {
-                $saldoCapital = 0; // Evitar saldo negativo
+        foreach ($cuotasPendientes as $index => $cuotaPendiente) {
+            if ($index === 0) {
+                $cuotaPendiente->update([
+                    'capital' => $saldoCapital,
+                    'fecha_inicio' => $fechaInicio,
+                    'saldo_capital' => $saldoCapital,
+                ]);
+            } else {
+                $cuotaAnterior = $cuotasPendientes[$index - 1];
+                $nuevoCapital = $cuotaAnterior->capital;
+                $cuotaPendiente->update([
+                    'capital' => $nuevoCapital,
+                    'saldo_capital' => $nuevoCapital,
+                ]);
             }
         }
 
-        $calendario[] = [
-            'numero_cuota' => $i,
-            'capital' => $saldoCapital + $montoCapitalPagar,
-            'fecha_inicio' => $fechaInicio->copy()->addMonthsNoOverflow($i - 1)->format('d/m/Y'),
-            'fecha_pago' => $fechaVencimiento->format('d/m/Y'),
-            'dias_interes' => $diasInteres,
-            'tasa_interes_diario' => $prestamo->tasa_interes_diario,
-            'tasa_interes_mensual' => round($tasaInteresMensual * 100, 2), // Convertido a porcentaje
-            'monto_interes_pagar' => round($montoInteresPagar, 2),
-            'monto_capital_pagar' => round($montoCapitalPagar, 2),
-            'saldo_capital' => round($saldoCapital, 2),
-            'monto_capital_mas_interes' => round($montoCapitalPagar + $montoInteresPagar, 2)
-        ];
+        if ($cuotasPendientes->isEmpty() && $saldoCapital > 0) {
+            $dias = $this->interesCalculator->calcularDias($fechaInicio, Carbon::now()->startOfDay());
+            $datosInteres = $this->interesCalculator->calcularInteres($saldoCapital, $tasaInteresDiario, $dias, true, false);
+
+            Cuotas::create([
+                'prestamo_id' => $prestamoId,
+                'numero_cuota' => $siguienteNumero,
+                'capital' => $saldoCapital,
+                'fecha_inicio' => $fechaInicio,
+                'fecha_vencimiento' => null,
+                'dias' => $dias,
+                'interes' => $datosInteres['interes'],
+                'tasa_interes_diario' => $tasaInteresDiario,
+                'monto_interes_pagar' => $datosInteres['monto_interes_pagar'],
+                'monto_capital_pagar' => null,
+                'saldo_capital' => $saldoCapital,
+                'monto_capital_mas_interes_a_pagar' => $saldoCapital + $datosInteres['monto_interes_pagar'],
+                'estado' => 'Pendiente'
+            ]);
+
+            $prestamo = Prestamos::find($prestamoId);
+            $prestamo->numero_cuotas = Cuotas::where('prestamo_id', $prestamoId)->count();
+            $prestamo->save();
+        }
+
+
     }
+    
+    private function actualizarEstadoPrestamo($prestamoId){
+        try {
+            $prestamo = Cuotas::where('prestamo_id', $prestamoId)->first()->prestamo;
+            $cuotasConSaldo = Cuotas::where('prestamo_id', $prestamoId)
+                ->where('saldo_capital', '>', 0)
+                ->count();
 
-    return $calendario;
-}
+            Log::info("Verificando estado préstamo {$prestamoId}: Cuotas con saldo > 0 = {$cuotasConSaldo}");
 
+            if ($cuotasConSaldo === 0) {
+                Cuotas::where('prestamo_id', $prestamoId)
+                    ->where('estado', 'Parcial')
+                    ->where('saldo_capital', '<=', 0)
+                    ->update(['estado' => 'Pagado']);
+                $prestamo->update([
+                    'estado_cliente' => 4
+                ]);
+
+                Log::info("Préstamo {$prestamoId} marcado como pagado completamente (estado_cliente=4)");
+                return true;
+            }
+
+            return false;
+        } catch (\Exception $e) {
+            Log::error("Error al actualizar estado del préstamo: " . $e->getMessage());
+            return false;
+        }
+    }
 }
