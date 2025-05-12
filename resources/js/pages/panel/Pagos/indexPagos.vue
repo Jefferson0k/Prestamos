@@ -27,11 +27,13 @@
           </div>
           <div>
             <ListPagos :cuotas="cuotasSeleccionadas" @abrir-dialogo="abrirDialogoPago"
-              @imprimir-comprobante="onImprimirComprobante" />
+              @imprimir-comprobante="onImprimirComprobante" @abrir-actualizacion="abrirDialogoPagoActualizar" />
 
           </div>
           <DialogPagos v-model:visible="dialogVisible" :cuotaId="cuotaIdParaDialogo || 0"
             @pago-guardado="refrescarCuotas" />
+          <UpdatePago v-model:visible="dialogVisible1" :cuotaId="cuotaIdParaDialogo1 || 0"
+            @pago-actualizado="refrescarCuotas" />
           <ComprobantePago v-model:visible="mostrarComprobante" :comprobante-id="comprobanteId" />
 
         </template>
@@ -51,12 +53,15 @@ import Skeleton from 'primevue/skeleton';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import ComprobantePago from './Desarrollo/ComprobantePago.vue';
+import UpdatePago from './Desarrollo/UpdatePago.vue';
 
 const isLoading = ref(true);
 const isLoadingListPagos = ref(true);  // Agregar esta variable específica para ListPagos
 const toast = useToast();
 const dialogVisible = ref(false);
+const dialogVisible1 = ref(false);
 const cuotaIdParaDialogo = ref(0);
+const cuotaIdParaDialogo1 = ref(0);
 const prestamoIdActual = ref(null);
 const comprobanteId = ref(0);
 
@@ -110,6 +115,21 @@ const abrirDialogoPago = (idCuota) => {
   if (idCuota) {
     cuotaIdParaDialogo.value = idCuota;
     dialogVisible.value = true;
+  } else {
+    toast.add({
+      severity: 'warn',
+      summary: 'Advertencia',
+      detail: 'No se ha seleccionado una cuota válida',
+      life: 3000,
+    });
+  }
+};
+
+const abrirDialogoPagoActualizar = (idCuota) => {
+  // Asegurarse de que idCuota no sea null o undefined
+  if (idCuota) {
+    cuotaIdParaDialogo1.value = idCuota;
+    dialogVisible1.value = true;
   } else {
     toast.add({
       severity: 'warn',

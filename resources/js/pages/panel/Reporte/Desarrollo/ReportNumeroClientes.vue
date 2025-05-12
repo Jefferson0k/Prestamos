@@ -1,85 +1,46 @@
+<script setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import Message from 'primevue/message';
+
+const numeroClientes = ref(null);
+const error = ref(null);
+
+// Llamada a la API cuando el componente se monta
+onMounted(async () => {
+    try {
+        const response = await axios.get('/reporte/clientes/count');
+        numeroClientes.value = response.data.numeroClientes;
+        error.value = null;  // Limpiar error si la consulta es exitosa
+    } catch (err) {
+        error.value = 'Error al obtener el número de clientes';
+        numeroClientes.value = null;
+    }
+});
+</script>
 
 <template>
-                    <Chart type="line" :data="lineData" :options="lineOptions"></Chart>
+    <div class="p-4">
+        <!-- Usamos el componente Message de PrimeVue con clases personalizadas para el tamaño del texto -->
+        <Message v-if="numeroClientes" severity="info" class="text-4xl p-5">
+            Número de clientes: {{ numeroClientes }}
+        </Message>
+        <Message v-else-if="error" severity="error" class="text-2xl p-5">
+            {{ error }}
+        </Message>
+    </div>
 </template>
 
-<script setup>
-import { ref,onMounted,watch } from "vue";
-import Chart from 'primevue/chart';
-import { useLayout } from '@/layout/composables/layout';
-
-const { getPrimary, getSurface, isDarkTheme } = useLayout();
-const lineOptions = ref(null);
-const lineData = ref(null);
-
-onMounted(() => {
-    setColorOptions();
-});
-
-function setColorOptions() {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
-    const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
-
-    lineData.value = {
-        labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-        datasets: [
-            {
-                label: 'First Dataset',
-                data: [65, 59, 80, 81, 56, 55, 40],
-                fill: false,
-                backgroundColor: documentStyle.getPropertyValue('--p-primary-500'),
-                borderColor: documentStyle.getPropertyValue('--p-primary-500'),
-                tension: 0.4
-            },
-            {
-                label: 'Second Dataset',
-                data: [28, 48, 40, 19, 86, 27, 90],
-                fill: false,
-                backgroundColor: documentStyle.getPropertyValue('--p-primary-200'),
-                borderColor: documentStyle.getPropertyValue('--p-primary-200'),
-                tension: 0.4
-            }
-        ]
-    };
-
-    lineOptions.value = {
-        plugins: {
-            legend: {
-                labels: {
-                    fontColor: textColor
-                }
-            }
-        },
-        scales: {
-            x: {
-                ticks: {
-                    color: textColorSecondary
-                },
-                grid: {
-                    color: surfaceBorder,
-                    drawBorder: false
-                }
-            },
-            y: {
-                ticks: {
-                    color: textColorSecondary
-                },
-                grid: {
-                    color: surfaceBorder,
-                    drawBorder: false
-                }
-            }
-        }
-    };
+<style scoped>
+/* Si deseas personalizar aún más el tamaño de los textos y el padding */
+.text-4xl {
+    font-size: 3rem; /* Tamaño más grande para el número de clientes */
+    font-weight: bold;
 }
-
-watch(
-    [getPrimary, getSurface, isDarkTheme],
-    () => {
-        setColorOptions();
-    },
-    { immediate: true }
-);
-</script>
+.text-2xl {
+    font-size: 1.5rem; /* Tamaño moderado para los mensajes de error */
+}
+.p-5 {
+    padding: 2rem;
+}
+</style>

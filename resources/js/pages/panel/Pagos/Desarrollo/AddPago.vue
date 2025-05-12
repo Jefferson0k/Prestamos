@@ -8,7 +8,7 @@
 
         </template>
         <template #end>
-            <Button icon="pi pi-sign-out" label="Salir" outlined severity="danger" class="mr-2" />
+            <Button icon="pi pi-sign-out" label="Salir" outlined severity="danger" class="mr-2" @click="goToProfile"/>
         </template>
     </Toolbar>
     <Dialog v-model:visible="clienteDialog" :style="{ width: '1100px' }" header="Registro de Pagos" :modal="true">
@@ -124,6 +124,7 @@ import Avatar from 'primevue/avatar';
 import SelectButton from 'primevue/selectbutton';
 import Skeleton from 'primevue/skeleton';
 import MultiSelect from 'primevue/multiselect';
+import { router } from '@inertiajs/vue3';
 
 const toast = useToast();
 const clienteSeleccionado = ref(null);
@@ -263,5 +264,7 @@ const botonClienteSeverity = computed(() => {
 const botonClienteVariant = computed(() => {
     return (accionSeleccionada.value && clienteSeleccionado.value) ? 'text' : undefined;
 });
-
+const goToProfile = () => {
+    router.get('/pagos');
+};
 </script>

@@ -68,6 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     #REPORTE => PAGO
     Route::prefix('reporte')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('reporte.index');
+        Route::get('/intereses/mensuales', [ReporteController::class, 'calcularInteresesMensuales']);
+        Route::get('/clientes/count', [ReporteController::class, 'contarClientes']);
+        Route::get('/prestamos/estado', [ReporteController::class, 'numeroPrestamosPorEstado']);
         Route::get('/total/{anio}', [ReporteController::class, 'clientesPorAnio'])->name('cliente.clientesPorAnio');
         Route::get('/capital/{anio}', [ReporteController::class, 'CantidadEmprestada'])->name('reporte.capitalPorAnio');
     });
@@ -75,6 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     #CUOTA => BACKNED
     Route::prefix('cuota')->group(function (): void {
         Route::get('/{prestamo_id}', [CuotasController::class, 'list'])->name('cuota.list');
+        Route::get('/{prestamo_id}/show', [CuotasController::class, 'show'])->name('cuota.show');
+        Route::put('/{id}/actualizar', [CuotasController::class, 'actualizar']);
         Route::post('/', [CuotasController::class, 'pagarCuota'])->name('cuota.pagarCuota');
     });
 

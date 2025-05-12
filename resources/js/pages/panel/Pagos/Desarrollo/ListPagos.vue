@@ -12,7 +12,6 @@ import Tag from 'primevue/tag';
 import { useToast } from 'primevue/usetoast';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
-import ComprobantePago from './ComprobantePago.vue';
 
 const toast = useToast();
 const dt = ref();
@@ -41,7 +40,7 @@ const puedeEditar = (cuota) => {
     return ultima?.id === cuota.id
 }
 
-const emit = defineEmits(['abrir-dialogo', 'monto-cambio', 'imprimir-comprobante']);
+const emit = defineEmits(['abrir-dialogo', 'monto-cambio', 'imprimir-comprobante', 'abrir-actualizacion']);
 
 const calcularTotales = () => {
     if (!props.cuotas || props.cuotas.length === 0) return {
@@ -112,7 +111,7 @@ const handleMontoChange = (cuotaId, newMonto) => {
                 <Button icon="pi pi-dollar" outlined rounded severity="success" class="mr-2"
                     :disabled="slotProps.data.fecha_inicio === '00-00-0000' || slotProps.data.fecha_vencimiento !== '00-00-0000'"
                     @click="$emit('abrir-dialogo', slotProps.data.id)" />
-                <Button icon="pi pi-pencil" outlined rounded class="mr-2" :disabled="!puedeEditar(slotProps.data)" />
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2" :disabled="!puedeEditar(slotProps.data)" @click="$emit('abrir-actualizacion', slotProps.data.id)"/>
                 <Button icon="pi pi-print" outlined rounded severity="help" class="mr-2"
                     :disabled="['Cancelado', 'Pendiente'].includes(slotProps.data.estado)"
                     @click="$emit('imprimir-comprobante', slotProps.data.id)"/>

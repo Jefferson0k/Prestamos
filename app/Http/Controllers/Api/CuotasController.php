@@ -22,6 +22,19 @@ class CuotasController extends Controller{
                         ->get();    
         return CuotaResource::collection($cuotas);
     }
+    public function show($id) {
+        Gate::authorize('viewAny', Cuotas::class);
+        $cuotas = Cuotas::where('id', $id)
+                        ->orderBy('numero_cuota', 'asc')
+                        ->get();    
+        return CuotaResource::collection($cuotas);
+    }
+    public function actualizar(Request $request, $id){
+        $cuota = Cuotas::findOrFail($id);
+        $cuota->monto_capital_pagar = $request->input('monto_capital_pagar');
+        $cuota->save();
+        return response()->json(['message' => 'Pago actualizado correctamente']);
+    }
     public function pagarCuota(Request $request){
         Gate::authorize('create', Pagos::class);
         $validated = $request->validate([

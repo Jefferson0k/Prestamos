@@ -8,7 +8,7 @@
       </div>
       <template #footer>
         <Button label="Cancelar" icon="pi pi-times" text @click="cerrarDialogo" />
-        <Button label="Guardar" icon="pi pi-check" @click="guardarPago" :loading="guardando" :disabled="!montoCapitalPagar" />
+        <Button label="Guardar" icon="pi pi-check" @click="guardarPago" :loading="guardando" :disabled="montoCapitalPagar === null" />
       </template>
     </Dialog>
   </div>

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
+use App\Models\Cliente;
+use App\Models\Cuotas;
 use App\Models\Prestamos;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -62,5 +64,33 @@ class ReporteController extends Controller{
             'capital_total_formatted' => 'S/ ' . number_format($capitalTotal, 2),
             'por_mes' => $capitalPorMes,
         ]);
+    }
+    public function calcularInteresesMensuales(){
+        $fecha_inicio_mes = Carbon::now()->startOfMonth();
+        $fecha_fin_mes = Carbon::now()->endOfMonth();
+
+        $total_intereses = Prestamos::with('cuotas')
+            ->whereHas('cuotas', function ($query) use ($fecha_inicio_mes, $fecha_fin_mes) {
+                $query->whereBetween('fecha_vencimiento', [$fecha_inicio_mes, $fecha_fin_mes]);
+            })
+            ->get()
+            ->reduce(function ($carry, $prestamo) {
+                return $carry + $prestamo->cuotas->sum('monto_interes_pagar');
+            }, 0);
+
+        return response()->json([
+            'total_intereses' => number_format($total_intereses, 2)
+        ]);
+    }
+    public function contarClientes(){
+        $numeroClientes = Cliente::count();
+        return response()->json(['numeroClientes' => $numeroClientes]);
+    }
+    public function numeroPrestamosPorEstado(){
+        // Contar las cuotas cuyo estado es 'Vencido'
+        $numeroVencidas = Cuotas::where('estado', 'Vencido')->count();
+
+        // Retornar el número de cuotas vencidas
+        return response()->json(['numeroVencidas' => $numeroVencidas]);
     }
 }
