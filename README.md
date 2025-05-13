@@ -1,8 +1,8 @@
-# Laravel 12 Project
+# Prestamos – Laravel 12 + PrimeVue + Docker + PostgreSQL
 
-This is a Laravel 12 project developed by [Coveñas Roman Jeferson Grabiel](https://github.com/Jefferson0k), using Docker and PostgreSQL.
+**Prestamos** is a full-stack application developed by [Coveñas Roman Jeferson Grabiel](https://github.com/Jefferson0k), built using **Laravel 12**, **Docker**, **PostgreSQL**, and **[PrimeVue](https://primevue.org/)** for the user interface.
 
-> ⚠️ This project is intended for educational and personal use only. Commercial use is prohibited under the current license. See the [LICENSE](./LICENSE) file for details.
+> ⚠️ This project is licensed for **educational and personal use only**. Commercial use is **not permitted**. See the [LICENSE](./LICENSE) file for more information.
 
 ---
 
@@ -15,46 +15,46 @@ This is a Laravel 12 project developed by [Coveñas Roman Jeferson Grabiel](http
 
 ---
 
-## 🚀 Installation (Docker-based)
+## 🚀 Installation (Docker)
 
 1. Clone the repository:
 
     ```bash
-    git clone <repository-url>
-    cd prueba_1
+    git clone https://github.com/Jefferson0k/Prestamos.git
+    cd Prestamos
     ```
 
-2. Copy the environment file:
+2. Copy the environment configuration:
 
     ```bash
     cp .env.example .env
     ```
 
-3. Build and start the containers:
+3. Start the Docker containers:
 
     ```bash
     docker-compose up -d
     ```
 
-4. Install PHP dependencies (inside the container):
+4. Install PHP dependencies:
 
     ```bash
     docker-compose exec app composer install
     ```
 
-5. Install JavaScript dependencies:
+5. Install frontend dependencies:
 
     ```bash
     npm install
     ```
 
-6. Generate the application key:
+6. Generate application key:
 
     ```bash
     docker-compose exec app php artisan key:generate
     ```
 
-7. Configure your database in the `.env` file (example):
+7. Configure the database in `.env`:
 
     ```
     DB_CONNECTION=pgsql
@@ -65,7 +65,7 @@ This is a Laravel 12 project developed by [Coveñas Roman Jeferson Grabiel](http
     DB_PASSWORD=your_password
     ```
 
-8. Run migrations:
+8. Run database migrations:
 
     ```bash
     docker-compose exec app php artisan migrate
@@ -77,7 +77,7 @@ This is a Laravel 12 project developed by [Coveñas Roman Jeferson Grabiel](http
     npm run dev
     ```
 
-10. Access the app:
+10. Start the development server:
 
     ```bash
     php artisan serve
@@ -85,9 +85,18 @@ This is a Laravel 12 project developed by [Coveñas Roman Jeferson Grabiel](http
 
 ---
 
+## 🎨 UI Framework
+
+This project uses [PrimeVue](https://primevue.org/) to build responsive and elegant user interfaces with Vue 3 components.
+
+---
+
 ## 👨‍💻 Author
 
-- [Coveñas Roman Jeferson Grabiel](https://github.com/Jefferson0k)
+Developed entirely by:
+
+**Coveñas Roman Jeferson Grabiel**  
+🔗 [GitHub - Jefferson0k](https://github.com/Jefferson0k)
 
 ---
 
@@ -96,7 +105,7 @@ This is a Laravel 12 project developed by [Coveñas Roman Jeferson Grabiel](http
 This project is licensed under the  
 **[Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/legalcode)**
 
-You are free to study and modify the code for non-commercial purposes.  
-**Commercial use is strictly prohibited without prior permission.**
+You may study, copy, and modify this code for **non-commercial** purposes only.  
+**Commercial use is prohibited** without express permission from the author.
 
-See the [LICENSE](./LICENSE) file for full terms.
+See the [LICENSE](./LICENSE) file for full legal terms.
