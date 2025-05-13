@@ -17,7 +17,8 @@ import DeleteCliente from './DeleteCliente.vue';
 import EditCliente from './UpdateCliente.vue';
 
 const dt = ref();
-const clientes = ref();
+const clientes = ref([]);
+const clientesTransformados = ref([]);
 const selectedClientes = ref();
 const loading = ref(false);
 const totalRecords = ref(0);
@@ -39,7 +40,6 @@ const estadoClienteOptions = ref([
     { name: 'TODOS', value: '' },
     { name: 'PAGA', value: 1 },
     { name: 'MOROSOS', value: 2 },
-    { name: 'PENDIENTE', value: 3 },
     { name: 'TERMINARON', value: 4 },
 ]);
 
@@ -48,7 +48,7 @@ const selectedClienteId = ref(null);
 const selectedEstadoCliente = ref(null);
 
 const optionalColumns = ref([
-    { field: 'direccion', header: 'Direccion' },
+    { field: 'direccion', header: 'Dirección' },
     { field: 'centro_trabajo', header: 'Centro de Trabajo' },
     { field: 'foto', header: 'Imagen' },
     { field: 'recomendacion', header: 'Recomendación' }
@@ -80,6 +80,33 @@ watch(() => props.refresh, () => {
     loadClientes();
 });
 
+const transformarDatos = (data) => {
+    return data.map(cliente => {
+        const prestamo = cliente.prestamos && cliente.prestamos.length > 0 ? cliente.prestamos[0] : {};
+        
+        const cuotaKeys = prestamo.cuotas ? Object.keys(prestamo.cuotas) : [];
+        const cuota = cuotaKeys.length > 0 ? prestamo.cuotas[cuotaKeys[0]] : {};
+        
+        return {
+            ...cliente,
+            fecha_inicio: prestamo.fecha_inicio || '',
+            fecha_vencimiento: prestamo.fecha_vencimiento || '',
+            tasa_interes_diario: prestamo.tasa_interes || '',
+            capital_inicial: prestamo.capital || '',
+            numero_cuotas: prestamo.numero_cuotas || 0,
+            recomendacion: prestamo.recomendacion || '',
+            fecha_Inicio_pago_mes: cuota.fecha_inicio || '',
+            fecha_vencimientos: cuota.fecha_vencimientos || '',
+            capital_del_mes: cuota.monto_capital_pagar || 0,
+            capital_actual: cuota.capital_actual || 0,
+            interes_actual: cuota.interes_actual || 0,
+            interes_total: cuota.interes_totales || 0,
+            total: cuota.totales || 0,
+            estado_cliente: prestamo.Estado
+        };
+    });
+};
+
 const loadClientes = async () => {
     loading.value = true;
     try {
@@ -95,6 +122,7 @@ const loadClientes = async () => {
         const response = await axios.get('/cliente', { params });
 
         clientes.value = response.data.data;
+        clientesTransformados.value = transformarDatos(response.data.data);
         totalRecords.value = response.data.meta.total;
     } catch (error) {
         console.error('Error al cargar clientes:', error);
@@ -103,6 +131,7 @@ const loadClientes = async () => {
         loading.value = false;
     }
 };
+
 function confirmDeleteProduct(cliente) {
     product.value = cliente;
     deleteProductDialog.value = true;
@@ -111,6 +140,7 @@ function confirmDeleteProduct(cliente) {
 function handleClientDeleted() {
     loadClientes();
 }
+
 watch(() => filters.value.global.value, (newValue) => {
     if (searchTimeout.value) {
         clearTimeout(searchTimeout.value);
@@ -143,6 +173,7 @@ const onPerPageChange = (event) => {
 const isColumnSelected = (fieldName) => {
     return selectedColumns.value.some(col => col.field === fieldName);
 };
+
 function getStatusLabel(status) {
     switch (status) {
         case 1:
@@ -151,6 +182,7 @@ function getStatusLabel(status) {
             return 'danger';
         case 4:
             return 'contrast';    
+        case 3:
         case '':
         case null:
         case undefined:
@@ -167,7 +199,8 @@ function getStatusText(status) {
         case 2:
             return 'MOROSO';
         case 4:
-            return 'FINALIZADO';    
+            return 'TERMINADO';    
+        case 3:
         case '':
         case null:
         case undefined:
@@ -176,10 +209,19 @@ function getStatusText(status) {
             return 'Desconocido';
     }
 }
+
+const formatCurrency = (value) => {
+    if (value === null || value === undefined) return '';
+    return new Intl.NumberFormat('es-PE', {
+        style: 'currency',
+        currency: 'PEN',
+        minimumFractionDigits: 2
+    }).format(value);
+};
 </script>
 
 <template>
-    <DataTable ref="dt" v-model:selection="selectedClientes" :value="clientes" dataKey="id" :paginator="true"
+    <DataTable ref="dt" v-model:selection="selectedClientes" :value="clientesTransformados" dataKey="id" :paginator="true"
         :loading="loading" :filters="filters"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rowsPerPageOptions="[15, 10, 5]" :rows="perPage" :totalRecords="totalRecords" :lazy="true" @page="onPage"
@@ -230,8 +272,16 @@ function getStatusText(status) {
 
         <Column field="fecha_inicio" header="F. I. Contrato" sortable style="min-width: 12rem"></Column>
         <Column field="fecha_vencimiento" header="F. V. Contrato" sortable style="min-width: 12rem"></Column>
-        <Column field="tasa_interes_diario" header="T. Interés Diario" sortable style="min-width: 12rem"></Column>
-        <Column field="capital_inicial" header="Capital Inicial" sortable style="min-width: 12rem"></Column>
+        <Column field="tasa_interes_diario" header="T. Interés Diario" sortable style="min-width: 12rem">
+            <template #body="slotProps">
+                {{ slotProps.data.tasa_interes_diario }}%
+            </template>
+        </Column>
+        <Column field="capital_inicial" header="Capital Inicial" sortable style="min-width: 12rem">
+            <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.capital_inicial) }}
+            </template>
+        </Column>
         <Column field="numero_cuotas" header="N° Cuotas" sortable style="min-width: 8rem"></Column>
         <Column field="estado_cliente" header="Estado" sortable style="min-width: 10rem">
             <template #body="slotProps">
@@ -243,13 +293,33 @@ function getStatusText(status) {
             style="min-width: 35rem"></Column>
 
         <Column field="fecha_Inicio_pago_mes" header="I. P. mes" sortable style="min-width: 12rem"></Column>
-        <Column field="fecha_vencimiento_pago_mes" header="V. P. por mes" sortable style="min-width: 12rem"></Column>
-        <Column field="capital_del_mes" header="Capital del mes" sortable style="min-width: 12rem"></Column>
-        <Column field="capital_actual" header="Capital Actual" sortable style="min-width: 12rem"></Column>
-        <Column field="interes_actual" header="Interés Actual" sortable style="min-width: 12rem"></Column>
-        <Column field="Interes_total" header="Interés Total" sortable style="min-width: 12rem"></Column>
+        <Column field="fecha_vencimientos" header="V. P. por mes" sortable style="min-width: 12rem"></Column>
+        <Column field="capital_del_mes" header="Capital del mes" sortable style="min-width: 12rem">
+            <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.capital_actual) }}
+            </template>
+        </Column>
+        <Column field="capital_actual" header="Capital Actual" sortable style="min-width: 12rem">
+            <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.capital_actual) }}
+            </template>
+        </Column>
+        <Column field="interes_actual" header="Interés Actual" sortable style="min-width: 12rem">
+            <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.interes_actual) }}
+            </template>
+        </Column>
+        <Column field="interes_total" header="Interés Total" sortable style="min-width: 12rem">
+            <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.interes_total) }}
+            </template>
+        </Column>
         <Column field="total" header="Total" sortable style="min-width: 12rem" alignFrozen="right"
-            :frozen="balanceFrozen" frozen class="font-bold"></Column>
+            :frozen="balanceFrozen" frozen class="font-bold">
+            <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.total) }}
+            </template>
+        </Column>
         <Column :exportable="false" style="min-width: 8rem">
             <template #body="slotProps">
                 <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="editCliente(slotProps.data)" />

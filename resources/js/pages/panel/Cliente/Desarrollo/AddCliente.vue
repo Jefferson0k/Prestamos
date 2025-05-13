@@ -233,7 +233,6 @@ function saveCliente() {
     if (!cliente.value.direccion) return;
     if (!cliente.value.correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.value.correo)) return;
     if (!cliente.value.centro_trabajo) return;
-    if (!cliente.value.foto) return;
 
     const formData = new FormData();
     formData.append('dni', cliente.value.dni);
@@ -243,8 +242,10 @@ function saveCliente() {
     formData.append('direccion', cliente.value.direccion);
     formData.append('correo', cliente.value.correo);
     formData.append('centro_trabajo', cliente.value.centro_trabajo);
-    formData.append('foto', cliente.value.foto);
 
+    if (cliente.value.foto) {
+        formData.append('foto', cliente.value.foto);
+    }
     axios.post('/cliente', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
@@ -264,7 +265,7 @@ function saveCliente() {
                     direccion: '',
                     correo: '',
                     centro_trabajo: '',
-                    foto: null,
+                    foto: '',
                 };
                 emit('cliente-agregado');
             }

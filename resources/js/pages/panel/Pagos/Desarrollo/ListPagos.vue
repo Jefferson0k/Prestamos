@@ -1,6 +1,6 @@
 <script setup>
 import { FilterMatchMode } from '@primevue/core/api';
-import { ref, watch, defineProps, defineEmits } from 'vue';
+import { ref, watch, defineProps, defineEmits, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import IconField from 'primevue/iconfield';
@@ -29,18 +29,22 @@ const props = defineProps({
     }
 });
 
+const emit = defineEmits(['abrir-dialogo', 'monto-cambio', 'imprimir-comprobante', 'abrir-actualizacion']);
+
 const puedeEditar = (cuota) => {
     const cuotasConFechasValidas = props.cuotas.filter(c =>
         c.fecha_inicio !== '00-00-0000' &&
         c.fecha_vencimiento !== '00-00-0000'
-    )
+    );
 
-    const ultima = cuotasConFechasValidas.at(-1)
+    const ultima = cuotasConFechasValidas.at(-1);
+    return ultima?.id === cuota.id;
+};
 
-    return ultima?.id === cuota.id
-}
-
-const emit = defineEmits(['abrir-dialogo', 'monto-cambio', 'imprimir-comprobante', 'abrir-actualizacion']);
+const limpiarNumero = (valor) => {
+    if (!valor) return 0;
+    return parseFloat(valor.toString().replace(/[^\d.-]+/g, '')) || 0;
+};
 
 const calcularTotales = () => {
     if (!props.cuotas || props.cuotas.length === 0) return {
@@ -50,12 +54,21 @@ const calcularTotales = () => {
     };
 
     return props.cuotas.reduce((totales, cuota) => {
-        totales.montoInteres += parseFloat(cuota.monto_interes_pagar?.toString() || '0');
-        totales.montoCapital += parseFloat(cuota.monto_capital_pagar?.toString() || '0');
-        totales.montoTotal += parseFloat(cuota.monto_total_pagar?.toString() || '0');
+        totales.montoInteres += limpiarNumero(cuota.monto_interes_pagar);
+        totales.montoCapital += limpiarNumero(cuota.monto_capital_pagar);
+        totales.montoTotal += limpiarNumero(cuota.monto_total_pagar);
         return totales;
     }, { montoInteres: 0, montoCapital: 0, montoTotal: 0 });
 };
+
+// Computed para mejor rendimiento
+const totales = computed(() => calcularTotales());
+
+// Formato amigable para miles
+const formatear = (numero) => new Intl.NumberFormat('es-PE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+}).format(numero);
 
 const handleMontoChange = (cuotaId, newMonto) => {
     emit('monto-cambio', { cuotaId, newMonto });
@@ -80,6 +93,7 @@ const handleMontoChange = (cuotaId, newMonto) => {
                 </IconField>
             </div>
         </template>
+
         <Column selectionMode="multiple" style="width: 1rem" :exportable="false"></Column>
         <Column field="estado" header="Estado" sortable style="min-width: 6rem">
             <template #body="slotProps">
@@ -105,29 +119,33 @@ const handleMontoChange = (cuotaId, newMonto) => {
             </template>
         </Column>
         <Column field="saldo_capital" header="Saldo Capital" sortable style="min-width: 9rem"></Column>
-        <Column field="monto_total_pagar" header="Capital mas Interes" sortable style="min-width: 12rem"></Column>
+        <Column field="monto_total_pagar" header="Capital más Interes" sortable style="min-width: 12rem"></Column>
         <Column :exportable="false" style="min-width: 12rem">
             <template #body="slotProps">
                 <Button icon="pi pi-dollar" outlined rounded severity="success" class="mr-2"
                     :disabled="slotProps.data.fecha_inicio === '00-00-0000' || slotProps.data.fecha_vencimiento !== '00-00-0000'"
                     @click="$emit('abrir-dialogo', slotProps.data.id)" />
-                <Button icon="pi pi-pencil" outlined rounded class="mr-2" :disabled="!puedeEditar(slotProps.data)" @click="$emit('abrir-actualizacion', slotProps.data.id)"/>
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2"
+                    :disabled="!puedeEditar(slotProps.data)" @click="$emit('abrir-actualizacion', slotProps.data.id)" />
                 <Button icon="pi pi-print" outlined rounded severity="help" class="mr-2"
                     :disabled="['Cancelado', 'Pendiente'].includes(slotProps.data.estado)"
-                    @click="$emit('imprimir-comprobante', slotProps.data.id)"/>
+                    @click="$emit('imprimir-comprobante', slotProps.data.id)" />
             </template>
         </Column>
 
+        <!-- Totales en el pie -->
         <ColumnGroup type="footer">
             <Row>
                 <Column footer="Totales:" :colspan="8" footerStyle="text-align:right; font-weight: bold;" />
-                <Column :footer="calcularTotales().montoInteres.toFixed(2)" footerStyle="font-weight: bold;" />
-                <Column :footer="calcularTotales().montoCapital.toFixed(2)" footerStyle="font-weight: bold;" />
+                <Column :footer="formatear(totales.montoInteres)" footerStyle="font-weight: bold;" />
+                <Column :footer="formatear(totales.montoCapital)" footerStyle="font-weight: bold;" />
                 <Column footer="" footerStyle="font-weight: bold;" />
-                <Column :footer="calcularTotales().montoTotal.toFixed(2)" footerStyle="font-weight: bold;" />
+                <Column :footer="formatear(totales.montoTotal)" footerStyle="font-weight: bold;" />
             </Row>
         </ColumnGroup>
     </DataTable>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* Puedes agregar estilos si es necesario */
+</style>

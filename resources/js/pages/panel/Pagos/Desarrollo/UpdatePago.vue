@@ -3,7 +3,6 @@
     <Dialog v-model:visible="dialogVisible" modal header="Actualizar Pago" :style="{ width: '40vw' }"
       :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
       <div class="flex flex-column gap-3">
-        <label for="monto">Monto Capital a Actualizar</label>
         <InputNumber v-model="montoCapitalPagarActualizar" inputId="monto" :minFractionDigits="2" mode="decimal"
           placeholder="0.00" class="w-full" :max="capitalMaximo" />
         <small v-if="montoCapitalPagarActualizar > capitalMaximo" class="text-red-500">
