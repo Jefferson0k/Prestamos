@@ -21,8 +21,13 @@ return new class extends Migration {
             $table->decimal('saldo_capital', 15, 2);
             $table->decimal('monto_capital_mas_interes_a_pagar', 15, 2);
             $table->enum('estado', ['Pendiente', 'Pagado', 'Vencido', 'Cancelado', 'Parcial'])->default('Pendiente');
-            $table->foreignId('prestamo_id')->constrained()->onDelete('cascade');
+
+            // Relación con préstamo: ahora es restrictiva
+            $table->foreignId('prestamo_id')->constrained()->onDelete('restrict');
+
+            // Relación con usuario: está bien con set null
             $table->foreignId('usuario_id')->nullable()->constrained('users')->onDelete('set null');
+
             $table->string('referencia')->nullable()->unique();
             $table->date('fecha_pago')->nullable();
             $table->text('observacion')->nullable();
