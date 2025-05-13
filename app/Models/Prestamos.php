@@ -32,7 +32,7 @@ class Prestamos extends Model{
         'fecha_vencimiento',
     ];
     public function cliente(){
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(Cliente::class, 'cliente_id');
     }
     public function recomendacion(){
         return $this->belongsTo(Cliente::class, 'recomendado_id');

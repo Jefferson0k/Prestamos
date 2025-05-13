@@ -15,7 +15,7 @@
                 <div class="col-span-6">
                     <label for="capital" class="block font-bold mb-3">Capital <span
                             class="text-red-500">*</span></label>
-                    <InputNumber v-model="prestamo.capital" mode="currency" currency="PEN" locale="es-PE"
+                    <InputNumber v-model="prestamo.capital" mode="currency" currency="PEN" disabled locale="es-PE"
                         :useGrouping="true" :minFractionDigits="2" fluid />
                 </div>
             </div>

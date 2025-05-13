@@ -64,9 +64,11 @@ class ClienteController extends Controller {
         return ClienteResource::collection($clientes);
     }        
     public function store(StoreClienteRequest $request) {
-        Gate::authorize('create', Cliente::class);
+        Gate::authorize('create', Cliente::class);        
         $data = $request->validated();
-        $data['foto'] = $this->handleFotoUpload($request);
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $this->handleFotoUpload($request);
+        }
         $cliente = Cliente::create($data);
         return response()->json([
             'message' => 'Cliente registrado exitosamente',
