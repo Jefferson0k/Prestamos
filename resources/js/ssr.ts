@@ -4,6 +4,7 @@ import { renderToString } from '@vue/server-renderer';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createSSRApp, h } from 'vue';
 import { route as ziggyRoute } from 'ziggy-js';
+import { setupPrimeVue } from './plugins/primevue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -34,7 +35,8 @@ createServer((page) =>
             }
 
             app.use(plugin);
-
+            setupPrimeVue(app);
+            
             return app;
         },
     }),
