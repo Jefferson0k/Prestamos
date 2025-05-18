@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Cuota\CuotaResource;
+use App\Models\Cliente;
 use App\Models\Cuotas;
 use App\Models\Pagos;
 use App\Services\PagoService;
@@ -15,18 +16,23 @@ class CuotasController extends Controller{
     public function __construct(PagoService $pagoService){
         $this->pagoService = $pagoService;
     }
-    public function list($prestamo_id) {
+    public function list(Request $request, $prestamo_id){
         Gate::authorize('viewAny', Cuotas::class);
-        $cuotas = Cuotas::where('prestamo_id', $prestamo_id)
-                        ->orderBy('numero_cuota', 'asc')
-                        ->get();    
+        $perPage = $request->input('per_page', 15);
+        $query = Cuotas::where('prestamo_id', $prestamo_id)
+                    ->orderBy('numero_cuota', 'asc');
+        if ($request->filled('estado')) {
+            $query->where('estado', 'like', '%' . $request->estado . '%');
+        }
+        $cuotas = $query->paginate($perPage);
         return CuotaResource::collection($cuotas);
     }
-    public function show($id) {
+
+    public function cuotasPorPrestamo($prestamoId){
         Gate::authorize('viewAny', Cuotas::class);
-        $cuotas = Cuotas::where('id', $id)
+        $cuotas = Cuotas::where('prestamo_id', $prestamoId)
                         ->orderBy('numero_cuota', 'asc')
-                        ->get();    
+                        ->get();
         return CuotaResource::collection($cuotas);
     }
     public function actualizar(Request $request, $id){
@@ -43,5 +49,15 @@ class CuotasController extends Controller{
         ]);
         $this->pagoService->registrarPago($validated['cuota_id'], $validated['monto_capital_pagar']);
         return response()->json(['message' => 'Pago registrado correctamente']);
+    }    
+    public function Pendientes(){
+        $clientes = Cliente::whereHas('cuotas', function($query) {
+            $query->pendientes();
+        })
+        ->with(['cuotas' => function($query) {
+            $query->pendientes();
+        }])
+        ->paginate(15);
+        return $clientes;
     }
 }

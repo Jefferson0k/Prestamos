@@ -45,4 +45,8 @@ class Cuotas extends Model{
     public function pagos(){
         return $this->hasMany(Pagos::class);
     }
+    public function scopePendientes($query){
+        return $query->where('estado', 'Pendiente');
+    }
+
 }

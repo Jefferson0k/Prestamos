@@ -66,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/cliente', [PrestamosController::class, 'indexcliente'])->name('prestamo.indexcliente');
         Route::post('/', [PrestamosController::class, 'store'])->name('prestamo.store');
         Route::get('{prestamos}', [PrestamosController::class, 'show'])->name('prestamo.show');
+        Route::get('{prestamos}/cliente', [PrestamosController::class, 'clientePrestamo'])->name('prestamo.clientePrestamo');
         Route::put('{prestamo}', [PrestamosController::class, 'update'])->name('prestamo.update');
         Route::delete('/{prestamo}/destroy', [PrestamosController::class, 'destroy'])->name('prestamo.destroy');
         Route::get('/{id}/Cuotas', [PrestamosController::class, 'ConsultarPrestamo'])->name('prestamos.ConsultarPrestamo');
@@ -88,9 +89,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     #CUOTA => BACKNED
-    Route::prefix('cuota')->group(function (): void {
+   Route::prefix('cuota')->group(function (): void {
+        Route::get('/pendientes', [CuotasController::class, 'Pendientes'])->name('cuota.Pendientes');
         Route::get('/{prestamo_id}', [CuotasController::class, 'list'])->name('cuota.list');
-        Route::get('/{prestamo_id}/show', [CuotasController::class, 'show'])->name('cuota.show');
+        Route::get('/{prestamoId}/prestamo', [CuotasController::class, 'cuotasPorPrestamo'])->name('cuota.cuotasPorPrestamo');
         Route::put('/{id}/actualizar', [CuotasController::class, 'actualizar']);
         Route::post('/', [CuotasController::class, 'pagarCuota'])->name('cuota.pagarCuota');
     });

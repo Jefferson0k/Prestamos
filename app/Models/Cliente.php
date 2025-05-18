@@ -20,4 +20,8 @@ class Cliente extends Model{
     public function user(){
         return $this->belongsTo(user::class,'usuario_id');
     }
+    public function cuotas(){
+        return $this->hasManyThrough(Cuotas::class, Prestamos::class);
+    }
+    
 }
