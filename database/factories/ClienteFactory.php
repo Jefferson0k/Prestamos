@@ -19,6 +19,8 @@ class ClienteFactory extends Factory
             'direccion' => $this->faker->address,
             'correo' => $this->faker->unique()->safeEmail,
             'centro_trabajo' => $this->faker->company,
+            'tipoCliente_id' => 1,
+            'usuario_id' => 1
         ];
     }
 }

@@ -1,15 +1,12 @@
 <?php
-namespace App\Http\Resources;
 
+namespace App\Http\Resources\Cliente;
 use App\Services\InteresCalculatorService;
 use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ClienteResource extends JsonResource
-{
-    public function toArray($request)
-    {
-        // Create instance of InteresCalculatorService
+class ClienteResource extends JsonResource{
+    public function toArray($request){
         $interesCalculator = new InteresCalculatorService();
         
         return [
@@ -19,11 +16,13 @@ class ClienteResource extends JsonResource
             'centro_trabajo' => $this->centro_trabajo,
             'celular' => $this->telefono,
             'dni' => $this->dni,
+            'tipoCliente' => $this->tipoCliente_id,
+            'nomTipoCliente' => $this->tipoCliente->nombre,
             'foto' => $this->foto
                 ? asset("customers/{$this->foto}")
                 : asset("customers/SinFoto.jpg"),
-            // Asegúrate de que todos los préstamos se estén procesando
-            'prestamos' => $this->whenLoaded('prestamos', function() use ($interesCalculator) {
+
+                'prestamos' => $this->whenLoaded('prestamos', function() use ($interesCalculator) {
                 return $this->prestamos->map(function($prestamo) use ($interesCalculator) {
                     $cuotasActivas = $prestamo->cuotas->filter(function($cuota) {
                         return !empty($cuota->fecha_inicio) && empty($cuota->fecha_vencimiento);
@@ -43,29 +42,20 @@ class ClienteResource extends JsonResource
                             ? $prestamo->recomendacion->nombre.' '. $prestamo->recomendacion->apellidos.' '.$prestamo->recomendacion->dni
                             : 'Sin recomendación',
                         'cuotas' => $cuotasActivas->map(function($cuota) use ($prestamo, $interesCalculator) {
-                            // Calcular los días transcurridos desde la fecha de inicio hasta hoy
-                            $dias = $interesCalculator->calcularDias($cuota->fecha_inicio);
-                            
-                            // Determinar si es pago completo
+                            $dias = $interesCalculator->calcularDias($cuota->fecha_inicio);                            
                             $pagoCompleto = ($cuota->monto_capital_pagar == $cuota->capital);
-                            
-                            // Calcular el interés según las reglas de negocio
                             $datosInteres = $interesCalculator->calcularInteres(
                                 $cuota->capital, 
                                 $prestamo->tasa_interes_diario, 
                                 $dias, 
                                 true, 
                                 $pagoCompleto
-                            );
-                            
-                            // Calcular información de pago
+                            );                            
                             $datosPago = $interesCalculator->calcularPago(
                                 $cuota->capital,
                                 $cuota->monto_capital_pagar ?? 0,
                                 $datosInteres
-                            );
-                            
-                            // Actualizar el estado según los días transcurridos
+                            );                            
                             $estado = $interesCalculator->determinarEstado($cuota->estado, $dias);
                             $totalCuotas = $prestamo->cuotas->sum('monto_capital_mas_interes_a_pagar');
                             $totalInteres = $prestamo->cuotas->sum('monto_interes_pagar');

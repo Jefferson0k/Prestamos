@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\CuotaResource;
+use App\Http\Resources\Cuota\CuotaResource;
 use App\Models\Cuotas;
 use App\Models\Pagos;
 use App\Services\PagoService;

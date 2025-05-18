@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Buscador\PrestamoFilterRequest;
 use App\Http\Requests\Prestamo\StorePrestamoRequest;
 use App\Http\Requests\Prestamo\UpdatePrestamoRequest;
-use App\Http\Resources\ClientePrestamoResource;
-use App\Http\Resources\CuotaResource;
-use App\Http\Resources\PrestamoCollection;
-use App\Http\Resources\PrestamoResource;
-use App\Http\Resources\TalonarioResource;
+use App\Http\Resources\Prestamo\ClientePrestamoResource;
+use App\Http\Resources\Cuota\CuotaResource;
+use App\Http\Resources\Prestamo\PrestamoCollection;
+use App\Http\Resources\Prestamo\PrestamoResource;
 use App\Models\Cliente;
 use App\Models\Prestamos;
 use App\Services\PrestamoService;
@@ -17,7 +17,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
-
+use Illuminate\Pipeline\Pipeline;
+use App\Filters\Prestamos\SearchFilter;
+use App\Filters\Prestamos\EstadoClienteFilter;
 class PrestamosController extends Controller{
     protected $prestamoService;
     public function __construct(PrestamoService $prestamoService){
@@ -25,31 +27,14 @@ class PrestamosController extends Controller{
     }
     public function index(Request $request){
         Gate::authorize('viewAny', Prestamos::class);
-        
         $perPage = $request->input('per_page', 15);
-        $search = $request->input('search', '');
-        $estadoCliente = $request->input('estado_cliente');        
-        $query = Prestamos::with('cliente', 'pagos');        
-        if (!is_null($estadoCliente)) {
-            $query->where('estado_cliente', $estadoCliente);
-        }        
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('id', 'LIKE', "%{$search}%")
-                ->orWhere('cliente_id', 'LIKE', "%{$search}%")
-                ->orWhere('capital', 'LIKE', "%{$search}%")
-                ->orWhere('numero_cuotas', 'LIKE', "%{$search}%")
-                ->orWhere('estado_cliente', 'LIKE', "%{$search}%")
-                ->orWhere('recomendado_id', 'LIKE', "%{$search}%")
-                ->orWhere('tasa_interes_diario', 'LIKE', "%{$search}%")
-                ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
-                    $clienteQuery->where('dni', 'LIKE', "%{$search}%")
-                        ->orWhere('nombre', 'LIKE', "%{$search}%")
-                        ->orWhere('apellidos', 'LIKE', "%{$search}%");
-                });
-            });
-        }
-        
+        $query = app(Pipeline::class)
+            ->send(Prestamos::with('cliente', 'pagos'))
+            ->through([
+                EstadoClienteFilter::class,
+                SearchFilter::class,
+            ])
+            ->thenReturn();
         $prestamos = $query->paginate($perPage);
         return PrestamoResource::collection($prestamos);
     }

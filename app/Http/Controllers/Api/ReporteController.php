@@ -6,7 +6,6 @@ use App\Models\Cliente;
 use App\Models\Cuotas;
 use App\Models\Prestamos;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -87,10 +86,7 @@ class ReporteController extends Controller{
         return response()->json(['numeroClientes' => $numeroClientes]);
     }
     public function numeroPrestamosPorEstado(){
-        // Contar las cuotas cuyo estado es 'Vencido'
         $numeroVencidas = Cuotas::where('estado', 'Vencido')->count();
-
-        // Retornar el número de cuotas vencidas
         return response()->json(['numeroVencidas' => $numeroVencidas]);
     }
 }

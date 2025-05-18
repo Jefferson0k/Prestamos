@@ -2,16 +2,22 @@
     <Toolbar class="mb-6">
         <template #start>
             <Button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" @click="openNew" />
-            <Button label="Delete" icon="pi pi-trash" severity="secondary" @click="confirmDeleteSelected"
-                :disabled="!selectedClientes || !selectedClientes.length" />
         </template>
 
         <template #end>
-            <Button label="Export" icon="pi pi-upload" severity="secondary" @click="exportCSV($event)" />
         </template>
     </Toolbar>
     <Dialog v-model:visible="clienteDialog" :style="{ width: '450px' }" header="Registro de clientes" :modal="true">
         <div class="flex flex-col gap-6">
+            <div>
+                <label for="tipoCliente_id" class="block font-bold mb-3">Tipo de cliente <span
+                        class="text-red-500">*</span></label>
+                <Select v-model="cliente.tipoCliente_id" :options="estadoTipoClienteOptions" fluid optionLabel="label"
+                    optionValue="value" :invalid="(submitted && !cliente.tipoCliente_id) || serverErrors.tipoCliente_id"
+                    placeholder="Seleccione el tipo de cliente" class="w-full md:w-56" />
+
+            </div>
+
             <div>
                 <label for="dni" class="block font-bold mb-3">DNI <span class="text-red-500">*</span></label>
                 <InputText id="dni" v-model.trim="cliente.dni" required="true" autofocus
@@ -83,7 +89,7 @@
                 <small v-if="submitted && !cliente.centro_trabajo" class="text-red-500">El centro de trabajo es
                     obligatorio.</small>
                 <small v-else-if="serverErrors.centro_trabajo" class="text-red-500">{{ serverErrors.centro_trabajo[0]
-                    }}</small>
+                }}</small>
             </div>
             <div>
                 <label for="foto" class="block font-bold mb-3">Foto <span class="text-red-500">*</span></label>
@@ -118,7 +124,7 @@
                                         </div>
                                         <span
                                             class="font-semibold text-ellipsis max-w-60 whitespace-nowrap overflow-hidden">{{
-                                            file.name }}</span>
+                                                file.name }}</span>
                                         <div>{{ formatSize(file.size) }}</div>
                                         <Badge value="Pendiente" severity="warn" />
                                         <Button icon="pi pi-times"
@@ -139,7 +145,7 @@
                                         </div>
                                         <span
                                             class="font-semibold text-ellipsis max-w-60 whitespace-nowrap overflow-hidden">{{
-                                            file.name }}</span>
+                                                file.name }}</span>
                                         <div>{{ formatSize(file.size) }}</div>
                                         <Badge value="Completado" class="mt-4" severity="success" />
                                         <Button icon="pi pi-times" @click="removeUploadedFileCallback(index)" outlined
@@ -167,19 +173,9 @@
             <Button label="Guardar" icon="pi pi-check" @click="saveCliente" />
         </template>
     </Dialog>
-    <Dialog v-model:visible="deleteClientesDialog" :style="{ width: '450px' }" header="Confirmar" :modal="true">
-        <div class="flex items-center gap-4">
-            <i class="pi pi-exclamation-triangle !text-3xl" />
-            <span v-if="cliente">¿Está seguro de que desea eliminar los clientes seleccionados?</span>
-        </div>
-        <template #footer>
-            <Button label="No" icon="pi pi-times" text @click="deleteClientesDialog = false" />
-            <Button label="Sí" icon="pi pi-check" text @click="deleteSelectedClientes" />
-        </template>
-    </Dialog>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
@@ -192,12 +188,14 @@ import { usePrimeVue } from 'primevue/config';
 import ProgressBar from 'primevue/progressbar';
 import Badge from 'primevue/badge';
 import { defineEmits } from 'vue';
+import Select from 'primevue/select';
 
 const clientes = ref([]);
 const cliente = ref({});
 const submitted = ref(false);
-const selectedClientes = ref();
 const serverErrors = ref({});
+const estadoTipoClienteOptions = ref([]);
+
 const emit = defineEmits(['cliente-agregado']);
 function openNew() {
     cliente.value = {};
@@ -210,17 +208,6 @@ function hideDialog() {
     submitted.value = false;
 }
 const clienteDialog = ref(false);
-const deleteClientesDialog = ref(false);
-
-function deleteSelectedClientes() {
-    clientes.value = clientes.value.filter((val) => !selectedClientes.value.includes(val));
-    deleteClientesDialog.value = false;
-    selectedClientes.value = null;
-    toast.add({ severity: 'success', summary: 'Exitoso', detail: 'Clientes eliminados', life: 3000 });
-}
-function confirmDeleteSelected() {
-    deleteClientesDialog.value = true;
-}
 
 function saveCliente() {
     submitted.value = true;
@@ -242,6 +229,7 @@ function saveCliente() {
     formData.append('direccion', cliente.value.direccion);
     formData.append('correo', cliente.value.correo);
     formData.append('centro_trabajo', cliente.value.centro_trabajo);
+    formData.append('tipoCliente_id', cliente.value.tipoCliente_id);
 
     if (cliente.value.foto) {
         formData.append('foto', cliente.value.foto);
@@ -345,4 +333,15 @@ function consultarClientePorDNI(event) {
             });
     }
 }
+onMounted(async () => {
+    try {
+        const response = await axios.get('/cliente/tipos');
+        estadoTipoClienteOptions.value = response.data.data.map(tc => ({
+            label: tc.nombre,
+            value: tc.id
+        }));
+    } catch (error) {
+        console.error('Error al cargar tipos de cliente:', error);
+    }
+});
 </script>

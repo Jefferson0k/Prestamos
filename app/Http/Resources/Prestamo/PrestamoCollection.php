@@ -1,22 +1,15 @@
 <?php
 
-namespace App\Http\Resources;
-
+namespace App\Http\Resources\Prestamo;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\File;
-
-class PrestamoCollection extends JsonResource
-{
+class PrestamoCollection extends JsonResource{
     protected $prestamo;
-
-    public function __construct($resource, $prestamo = null)
-    {
+    public function __construct($resource, $prestamo = null){
         parent::__construct($resource);
         $this->prestamo = $prestamo;
     }
-
-    public function toArray($request)
-    {
+    public function toArray($request){
         $prestamo = $this->prestamo;
         $estadoCliente = $prestamo ? ($prestamo->estado_cliente == 1 ? 'Pendiente' : 'Pagado') : null;
         $recomendado = $prestamo ? $prestamo->recomendacion : null;

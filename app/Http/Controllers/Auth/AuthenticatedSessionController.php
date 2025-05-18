@@ -38,6 +38,9 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
         cache()->put('user-is-online-' . $user->id, true);
+        if ($user->restablecimiento == 0) {
+            return redirect()->route('usuario.restablecer');
+        }
         return redirect()->intended(route('dashboard', absolute: false));
     }
     /**

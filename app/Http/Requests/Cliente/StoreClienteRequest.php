@@ -16,6 +16,7 @@ class StoreClienteRequest extends FormRequest {
             'correo' => 'required|unique:clientes,correo',
             'centro_trabajo' => 'required|string|max:150',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'tipoCliente_id' => 'required'
         ];
     }
     public function messages() {
@@ -51,6 +52,8 @@ class StoreClienteRequest extends FormRequest {
             'centro_trabajo.required' => 'El centro de trabajo es obligatorio.',
             'centro_trabajo.string' => 'El centro de trabajo debe ser una cadena de texto.',
             'centro_trabajo.max' => 'El centro de trabajo no puede tener más de 150 caracteres.',
+
+            'tipoCliente_id.required' => 'El tipo de cliente es obligatorio',
         ];
     }
 }
