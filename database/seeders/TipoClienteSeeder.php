@@ -7,6 +7,6 @@ use App\Models\TipoCliente;
 
 class TipoClienteSeeder extends Seeder{
     public function run(){
-        TipoCliente::factory(20)->create();
+        TipoCliente::factory(2)->create();
     }
 }

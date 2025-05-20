@@ -170,4 +170,3 @@ class PrestamosController extends Controller{
         ]);
     }
 }
-#panel/Pagos/DesarrolloDetalle/indexDetallePago

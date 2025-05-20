@@ -13,9 +13,9 @@ use App\Pipelines\SearchClienteFilter;
 use App\Pipelines\TipoClienteFilter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
-use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Pipeline;
 
 class ClienteController extends Controller {
     public function index(Request $request){
@@ -26,8 +26,8 @@ class ClienteController extends Controller {
         $estadoCliente = $request->input('estado_cliente');
         $tipoClienteId = $request->input('tipoCliente_id');
 
-        $query = app(Pipeline::class)
-            ->send(Cliente::query())
+        $query = (Pipeline::class)
+            ::send(Cliente::query())
             ->through([
                 new SearchClienteFilter($search),
                 new EstadoClientePrestamoFilter($estadoCliente),

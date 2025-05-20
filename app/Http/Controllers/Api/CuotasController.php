@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Cuota\CuotaResource;
+use App\Http\Resources\Cuota\CuotaInteresResource;
 use App\Models\Cliente;
 use App\Models\Cuotas;
 use App\Models\Pagos;
@@ -45,9 +46,17 @@ class CuotasController extends Controller{
         Gate::authorize('create', Pagos::class);
         $validated = $request->validate([
             'cuota_id' => 'required|exists:cuotas,id',
-            'monto_capital_pagar' => 'required|numeric|min:0'
+            'monto_capital_pagar' => 'required|numeric|min:0',
+            'fecha_pago' => 'nullable|date',
+            'dias' => 'nullable|integer|min:0'
         ]);
-        $this->pagoService->registrarPago($validated['cuota_id'], $validated['monto_capital_pagar']);
+        $this->pagoService->registrarPago(
+            $validated['cuota_id'], 
+            $validated['monto_capital_pagar'],
+            $validated['fecha_pago'] ?? null,
+            $validated['dias'] ?? null
+        );
+        
         return response()->json(['message' => 'Pago registrado correctamente']);
     }    
     public function Pendientes(){
@@ -60,4 +69,26 @@ class CuotasController extends Controller{
         ->paginate(15);
         return $clientes;
     }
+    public function showInteres($id){
+        Gate::authorize('viewAny', Cuotas::class);
+        $cuota = Cuotas::findOrFail($id);
+        return new CuotaInteresResource($cuota);
+    }
+    
+    public function updateInteresz(Request $request, $id){
+        Gate::authorize('viewAny', Cuotas::class);
+        $request->validate([
+            'monto_interes_pagar' => 'required|numeric|min:0',
+        ]);
+        $cuota = Cuotas::findOrFail($id);
+        $cuota->monto_interes_pagar = $request->monto_interes_pagar;
+        $cuota->monto_capital_mas_interes_a_pagar = $request->monto_interes_pagar;
+        $cuota->state = false;
+        $cuota->save();
+        return response()->json([
+            'message' => 'Interés actualizado correctamente.',
+            'cuota' => $cuota
+        ]);
+    }
+
 }

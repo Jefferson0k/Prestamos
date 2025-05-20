@@ -95,6 +95,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{prestamoId}/prestamo', [CuotasController::class, 'cuotasPorPrestamo'])->name('cuota.cuotasPorPrestamo');
         Route::put('/{id}/actualizar', [CuotasController::class, 'actualizar']);
         Route::post('/', [CuotasController::class, 'pagarCuota'])->name('cuota.pagarCuota');
+        Route::get('/{id}/show/intereses', [CuotasController::class, 'showInteres'])->name('cuota.showInteres');
+        Route::post('/{id}/update/interes', [CuotasController::class, 'updateInteresz']);
     });
 
     #USUARIOS -> BACKEND

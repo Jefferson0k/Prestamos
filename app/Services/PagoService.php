@@ -16,62 +16,89 @@ class PagoService{
         $this->interesCalculator = $interesCalculator;
     }
     
-    public function registrarPago($cuotaId, $montoCapitalPagado){
+    public function registrarPago($cuotaId, $montoCapitalPagado, $fechaPago = null, $dias = null){
         try {
             $cuota = Cuotas::findOrFail($cuotaId);
             $prestamo = $cuota->prestamo;
-            $hoy = Carbon::now()->startOfDay();
+            
+            // Verificamos el estado (state) del préstamo o cuota
+            $state = $cuota->state ?? true; // Por defecto consideramos true si no existe
+            $esEstadoActivo = (bool)$state;
+            
+            // Usar la fecha proporcionada o la fecha actual si no se proporciona
+            $fechaPago = $fechaPago ? Carbon::parse($fechaPago)->startOfDay() : Carbon::now()->startOfDay();
 
             $fechaInicio = $cuota->fecha_inicio ? Carbon::parse($cuota->fecha_inicio)->startOfDay() : null;
             if (!$fechaInicio) {
                 throw new \Exception("La cuota aún no está activa. No tiene Fecha_Inicio.");
             }
 
-            // Usando la misma lógica exacta que en CuotaResource
-            $dias = $this->interesCalculator->calcularDias($fechaInicio, $hoy);
+            // Usar los días proporcionados o calcularlos si no se proporcionan
+            if ($dias === null) {
+                $dias = $this->interesCalculator->calcularDias($fechaInicio, $fechaPago);
+            } else {
+                $dias = intval($dias);
+            }
+            
             $capital = floatval($cuota->capital ?? 0);
             $tasaInteresDiario = floatval($cuota->tasa_interes_diario ?? 0);
             
             $montoCapitalPagado = floatval($montoCapitalPagado);
-            if ($montoCapitalPagado > $capital) {
+            if ($montoCapitalPagado > $capital && $esEstadoActivo) {
                 throw new \Exception("El monto de pago excede el capital pendiente.");
             }
             
-            // Determinar si es un pago completo del capital de esta cuota
             $esPagoCompleto = ($montoCapitalPagado >= $capital);
             
-            // Calculamos el interés aplicando las reglas de negocio, indicando si es pago completo
             $datosInteres = $this->interesCalculator->calcularInteres($capital, $tasaInteresDiario, $dias, true, $esPagoCompleto);
             
-            // Calculamos el pago y actualizamos el saldo capital
             $saldoCapital = $capital - $montoCapitalPagado;
             $montoTotalPagar = $datosInteres['monto_interes_pagar'] + $montoCapitalPagado;
             
-            // Establecer el estado de la cuota basado en el saldo capital
             $estado = $saldoCapital > 0 ? 'Parcial' : 'Pagado';
             
             // Actualizamos la cuota
-            $cuota->update([
-                'fecha_vencimiento' => $hoy,
-                'dias' => $dias,
-                'interes' => $datosInteres['interes'],
-                'monto_interes_pagar' => $datosInteres['monto_interes_pagar'],
-                'monto_capital_pagar' => $montoCapitalPagado,
-                'saldo_capital' => $saldoCapital,
-                'monto_capital_mas_interes_a_pagar' => $montoTotalPagar,
-                'estado' => $estado,
-                'usuario_id' => Auth::id(),
-            ]);
+            if ($esEstadoActivo) {
+                // Comportamiento normal (reemplazar valores)
+                $cuota->update([
+                    'fecha_vencimiento' => $fechaPago,
+                    'dias' => $dias,
+                    'interes' => $datosInteres['interes'],
+                    'monto_interes_pagar' => $datosInteres['monto_interes_pagar'],
+                    'monto_capital_pagar' => $montoCapitalPagado,
+                    'saldo_capital' => $saldoCapital,
+                    'monto_capital_mas_interes_a_pagar' => $montoTotalPagar,
+                    'estado' => $estado,
+                    'usuario_id' => Auth::id(),
+                ]);
+            } else {
+                // Comportamiento cuando state es false (caso especial)
+                // Al monto_capital_pagar se le asigna directamente el montoCapitalPagado
+                // Y se suma este valor con el monto_capital_mas_interes_a_pagar existente
+                $montoTotalPagarNuevo = ($cuota->monto_capital_mas_interes_a_pagar ?? 0) + $montoCapitalPagado;
+                
+                $cuota->update([
+                    'fecha_vencimiento' => $fechaPago,
+                    'dias' => $dias,
+                    'interes' => $datosInteres['interes'],
+                    // monto_interes_pagar no se modifica, se mantiene el valor existente
+                    'monto_capital_pagar' => $montoCapitalPagado,
+                    'saldo_capital' => $saldoCapital,
+                    'monto_capital_mas_interes_a_pagar' => $montoTotalPagarNuevo,
+                    'estado' => $estado,
+                    'usuario_id' => Auth::id(),
+                ]);
+            }
             
             // Registrar para debugging
-            Log::info("Cuota {$cuotaId} actualizada: Capital={$capital}, MontoCapitalPagado={$montoCapitalPagado}, SaldoCapital={$saldoCapital}, Estado={$estado}");
+            Log::info("Cuota {$cuotaId} actualizada: Capital={$capital}, MontoCapitalPagado={$montoCapitalPagado}, SaldoCapital={$saldoCapital}, Estado={$estado}, EstadoActivo={$esEstadoActivo}");
 
             // Creamos el registro de pago
             Pagos::create([
                 'prestamo_id' => $prestamo->id,
                 'cuota_id' => $cuota->id,
                 'capital' => $capital,
-                'fecha_pago' => $hoy,
+                'fecha_pago' => $fechaPago,
                 'monto_capital' => $montoCapitalPagado,
                 'monto_interes' => $datosInteres['monto_interes_pagar'],
                 'monto_total' => $montoTotalPagar,
@@ -82,11 +109,10 @@ class PagoService{
             if ($esPagoCompleto) {
                 $this->cancelarCuotasRestantes($prestamo->id, $cuota->numero_cuota);
             } else {
-                $this->actualizarCuotasPendientes($prestamo->id, $cuota->numero_cuota, $saldoCapital, $hoy, $tasaInteresDiario);
+                $this->actualizarCuotasPendientes($prestamo->id, $cuota->numero_cuota, $saldoCapital, $fechaPago, $tasaInteresDiario);
             }
 
             // Verificar el estado del préstamo después de cada pago
-            // Pasamos el ID de la cuota que acaba de ser pagada
             $this->actualizarEstadoPrestamo($prestamo->id);
 
             return true;
@@ -133,7 +159,9 @@ class PagoService{
         }
 
         if ($cuotasPendientes->isEmpty() && $saldoCapital > 0) {
-            $dias = $this->interesCalculator->calcularDias($fechaInicio, Carbon::now()->startOfDay());
+            // No calculamos días automáticamente, usamos el valor por defecto de 0
+            // ya que la próxima vez el usuario enviará los días desde el frontend
+            $dias = 0;
             $datosInteres = $this->interesCalculator->calcularInteres($saldoCapital, $tasaInteresDiario, $dias, true, false);
 
             Cuotas::create([
@@ -149,7 +177,8 @@ class PagoService{
                 'monto_capital_pagar' => null,
                 'saldo_capital' => $saldoCapital,
                 'monto_capital_mas_interes_a_pagar' => $saldoCapital + $datosInteres['monto_interes_pagar'],
-                'estado' => 'Pendiente'
+                'estado' => 'Pendiente',
+                'state' => true, // Por defecto, establecemos state como true para nuevas cuotas
             ]);
 
             $prestamo = Prestamos::find($prestamoId);
@@ -160,15 +189,10 @@ class PagoService{
     
     private function actualizarEstadoPrestamo($prestamoId){
         try {
-            // No necesitamos verificar todas las cuotas, solo la cuota actual
-            // El estado de la cuota ya se ha actualizado en registrarPago()
-            // antes de llamar a esta función
-            
             // Obtenemos el préstamo
             $prestamo = Prestamos::findOrFail($prestamoId);
             
             // Verificamos si la última cuota actualizada está en estado "Pagado"
-            // Esto lo podemos hacer consultando la última actualización de pago
             $ultimoPago = Pagos::where('prestamo_id', $prestamoId)
                 ->orderBy('id', 'desc')
                 ->first();

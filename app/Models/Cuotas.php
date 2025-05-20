@@ -26,6 +26,7 @@ class Cuotas extends Model{
         'referencia',
         'fecha_pago',
         'observacion',
+        'state',
     ];
     protected $casts = [
         //'fecha_vencimiento' => 'date',

@@ -1,17 +1,27 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
 import axios from 'axios';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
+import AddClientePago from './AddClientePago.vue';
+import { useToast } from 'primevue/usetoast';
+import Toolbar from 'primevue/toolbar';
+import InputNumber from 'primevue/inputnumber';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
+import DialogInteres from './DialogInteres.vue';
 
+const toast = useToast();
 const cuotas = ref([]);
 const loading = ref(false);
-const selectedEstadoPrestamo = ref('');
-const selectedCuotas = ref([]);
+const selectedEstadoPrestamo = ref('Pendiente');
+const selectedCuotas = ref(null);
+const pagoDialog = ref(false);
 const dt = ref();
+const visible = ref(false);
 
 const props = defineProps({
     idPrestamo: {
@@ -34,6 +44,7 @@ const estadoPrestamoOptions = ref([
     { name: 'TODOS', value: '' },
     { name: 'PENDIENTES', value: 'Pendiente' },
     { name: 'PAGADOS', value: 'Pagado' },
+    { name: 'PARCIAL', value: 'Parcial' },
 ]);
 
 watch(() => props.refresh, () => {
@@ -44,12 +55,6 @@ watch(() => selectedEstadoPrestamo.value, () => {
     pagination.value.currentPage = 1;
     loadCuotas();
 });
-
-const getEstadoSeverity = (estado) => {
-    if (estado === 'Pendiente') return 'warn';
-    if (estado === 'Pagado') return 'success';
-    return 'info';
-};
 
 const loadCuotas = async () => {
     if (!props.idPrestamo || loading.value) return;
@@ -83,41 +88,126 @@ const onPage = (event) => {
 onMounted(() => {
     loadCuotas();
 });
+
+const hasSelectedCuotas = computed(() => {
+    return selectedCuotas.value !== null;
+});
+
+const validateSelection = () => {
+    if (!selectedCuotas.value) {
+        return false;
+    }
+    return true;
+};
+
+watch(() => selectedCuotas.value, (newValue) => {
+    if (newValue === null) {
+        return;
+    }
+
+}, { deep: true });
+
+const openPagoDialog = () => {
+    if (!hasSelectedCuotas.value) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Debe seleccionar una cuota para registrar un pago',
+            life: 3000
+        });
+        return;
+    }
+
+    if (!validateSelection()) return;
+
+    pagoDialog.value = true;
+};
+
+const onPagoAgregado = () => {
+    pagoDialog.value = false;
+    selectedCuotas.value = null;
+    loadCuotas();
+};
+const selectedCuota = ref(null)
+
+function abrirDialogo(cuota) {
+    selectedCuota.value = cuota
+    visible.value = true
+}
 </script>
 
 <template>
-    <DataTable ref="dt" :value="cuotas" v-model:selection="selectedCuotas" :loading="loading" dataKey="id"
-        :paginator="true" :rows="pagination.perPage" :totalRecords="pagination.total" @page="onPage" :lazy="true"
-        :rowsPerPageOptions="[15, 10, 5]" scrollable scrollHeight="425px" responsiveLayout="scroll" class="p-datatable-sm"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} cuotas"
-        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown">
-        <template #header>
-            <div class="flex flex-wrap gap-2 items-center justify-between">
-                <h4 class="m-0">Cuotas del Préstamo</h4>
-                <div class="flex flex-wrap gap-2">
-                    <Select v-model="selectedEstadoPrestamo" :options="estadoPrestamoOptions" optionLabel="name"
-                        optionValue="value" placeholder="Seleccionar Estado" class="w-full md:w-auto" />
-                    <Button icon="pi pi-refresh" outlined rounded aria-label="Refresh" @click="loadCuotas" />
-                </div>
-            </div>
-        </template>
-
-        <Column selectionMode="multiple" headerStyle="width: 3rem" />
-        <Column field="numero_cuota" header="N° Cuota" sortable />
-        <Column field="capital" header="Capital" sortable />
-        <Column field="fecha_inicio" header="Inicio" sortable />
-        <Column field="fecha_vencimiento" header="Vencimiento" sortable />
-        <Column field="dias" header="Días" sortable />
-        <Column field="tasa_interes_diario" header="I. Diario (%)" sortable />
-        <Column field="interes" header="Interés" sortable />
-        <Column field="monto_interes_pagar" header="A pagar interés" sortable />
-        <Column field="monto_capital_paga" header="Capital pagado" sortable />
-        <Column field="saldo_capital" header="Saldo capital" sortable />
-        <Column field="monto_capital_mas_interes_a_pagar" header="Total a pagar" sortable />
-        <Column field="estado" header="Estado" sortable>
-            <template #body="{ data }">
-                <Tag :value="data.estado" :severity="getEstadoSeverity(data.estado)" />
+    <div>
+        <Toolbar class="mb-6">
+            <template #start>
+                <Button label="Nuevo Pago" icon="pi pi-plus" severity="secondary" class="mr-2" @click="openPagoDialog"
+                    :disabled="!hasSelectedCuotas" />
             </template>
-        </Column>
-    </DataTable>
+        </Toolbar>
+
+        <DataTable ref="dt" :value="cuotas" v-model:selection="selectedCuotas" :loading="loading" dataKey="id"
+            :paginator="true" :rows="pagination.perPage" :totalRecords="pagination.total" @page="onPage" :lazy="true"
+            :rowsPerPageOptions="[15, 10, 5]" scrollable scrollHeight="359px" responsiveLayout="scroll"
+            class="p-datatable-sm" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} cuotas"
+            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+            selectionMode="single">
+            <template #header>
+                <div class="flex flex-wrap gap-2 items-center justify-between">
+                    <h4 class="m-0">Cuotas del Préstamo</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <Select v-model="selectedEstadoPrestamo" :options="estadoPrestamoOptions" optionLabel="name"
+                            optionValue="value" placeholder="Seleccionar Estado" class="w-full md:w-auto" />
+                        <Button icon="pi pi-refresh" outlined rounded aria-label="Refresh" @click="loadCuotas" />
+                    </div>
+                </div>
+            </template>
+            <Column selectionMode="single" style="width: 1rem" :exportable="false"></Column>
+            <Column field="estado" header="Estado" sortable style="min-width: 6rem">
+                <template #body="slotProps">
+                    <Tag :severity="slotProps.data.estado === 'Pendiente' ? 'warn' :
+                        slotProps.data.estado === 'Cancelado' ? 'info' :
+                            slotProps.data.estado === 'Pagado' ? 'success' :
+                                slotProps.data.estado === 'Parcial' ? 'info' :
+                                    'danger'">
+                        {{ slotProps.data.estado }}
+                    </Tag>
+                </template>
+            </Column>
+            <Column field="numero_cuota" header="N° Cuota" sortable style="min-width: 8rem"></Column>
+            <Column field="capital" header="Capital" sortable style="min-width: 6rem"></Column>
+            <Column field="fecha_inicio" header="Inicio" sortable style="min-width: 7rem"></Column>
+            <Column field="fecha_vencimiento" header="Vencimiento" sortable style="min-width: 7rem"></Column>
+            <Column field="dias" header="Días Interes" sortable style="min-width: 8rem"></Column>
+            <Column field="interes" header="Tasa de Interes Diario" sortable style="min-width: 13rem"></Column>
+            <Column header="Monto Interes Pagar" sortable style="min-width: 13rem">
+                <template #body="{ data }">
+                    <div class="flex justify-between items-center">
+                        <span>{{ data.monto_interes_pagar }}</span>
+                        <Button icon="pi pi-check" size="small" aria-label="Editar interés"
+                            @click="abrirDialogo(data)" />
+                    </div>
+                </template>
+            </Column>
+            <Column header="Monto Capital Pagar" sortable style="min-width: 12rem">
+                <template #body="{ data }">
+                    <InputNumber v-model="data.monto_capital_pagar" disabled inputId="minmaxfraction"
+                        :minFractionDigits="2" :maxFractionDigits="5" />
+                </template>
+            </Column>
+            <Column field="saldo_capital" header="Saldo Capital" sortable style="min-width: 9rem"></Column>
+            <Column field="monto_total_pagar" header="Capital mas Interes" sortable style="min-width: 12rem"></Column>
+            <ColumnGroup type="footer">
+                <Row>
+                    <Column footer="Totales:" :colspan="8" footerStyle="text-align:right; font-weight: bold;" />
+                    <Column footer="00.00" footerStyle="font-weight: bold;" />
+                    <Column footer="00.00" footerStyle="font-weight: bold;" />
+                    <Column footer="" footerStyle="font-weight: bold;" />
+                    <Column footer="00.00" footerStyle="font-weight: bold;" />
+                </Row>
+            </ColumnGroup>
+        </DataTable>
+        <DialogInteres :visible="visible" :cuota="selectedCuota" @update:visible="visible = $event" />
+        <AddClientePago v-model:visible="pagoDialog" :cuotasSeleccionadas="selectedCuotas ? [selectedCuotas] : []"
+            @pago-agregado="onPagoAgregado" />
+    </div>
 </template>

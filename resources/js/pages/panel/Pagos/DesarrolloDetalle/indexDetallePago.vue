@@ -77,7 +77,6 @@
             </template>
             <template v-else>
                 <div class="card py-4">
-                    <AddClientePago />
                     <ListClientePago :idPrestamo="prestamos.data.idPrestamo" :refresh="refresh" />
                 </div>
             </template>
@@ -91,7 +90,6 @@ import AppLayout from '@/layout/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import Espera from '@/components/Espera.vue'
 import ListClientePago from './Desarrollo/ListClientePago.vue';
-import AddClientePago from './Desarrollo/AddClientePago.vue';
 import Fieldset from 'primevue/fieldset';
 import Avatar from 'primevue/avatar';
 import Tag from 'primevue/tag';
