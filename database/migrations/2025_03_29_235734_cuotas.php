@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->date('fecha_inicio')->nullable();
             $table->date('fecha_vencimiento')->nullable();
             $table->integer('dias')->nullable();
-            $table->decimal('interes', 15, 2);            
+            $table->decimal('interes', 15, 2);   
             $table->decimal('tasa_interes_diario', 15, 2);
             $table->decimal('monto_interes_pagar', 15, 2);
             $table->decimal('monto_capital_pagar', 15, 2)->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration {
 
             // Relación con usuario: está bien con set null
             $table->foreignId('usuario_id')->nullable()->constrained('users')->onDelete('set null');
-
+            $table->boolean('state')->default(true)->comment('true: activo, false: inactivo');
             $table->string('referencia')->nullable()->unique();
             $table->date('fecha_pago')->nullable();
             $table->text('observacion')->nullable();

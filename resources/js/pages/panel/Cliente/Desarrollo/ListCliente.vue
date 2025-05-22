@@ -15,7 +15,9 @@ import ToggleButton from 'primevue/togglebutton';
 import MultiSelect from 'primevue/multiselect';
 import DeleteCliente from './DeleteCliente.vue';
 import EditCliente from './UpdateCliente.vue';
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 const dt = ref();
 const clientes = ref([]);
 const clientesTransformados = ref([]);
@@ -28,13 +30,14 @@ const searchValue = ref('');
 const searchTimeout = ref(null);
 const deleteProductDialog = ref(false);
 const product = ref({});
+const severityColors = ['success', 'info', 'warning', 'danger', 'secondary', 'contrast'];
+const severityMap = ref({});
 
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 
 const balanceFrozen = ref(false);
-const metaKey = ref(true);
 
 const estadoClienteOptions = ref([
     { name: 'TODOS', value: '' },
@@ -43,9 +46,12 @@ const estadoClienteOptions = ref([
     { name: 'TERMINARON', value: 4 },
 ]);
 
+const estadoTipoClienteOptions = ref([]);
+
 const editClienteDialog = ref(false);
 const selectedClienteId = ref(null);
 const selectedEstadoCliente = ref(null);
+const selectedTipoCliente = ref(null);
 
 const optionalColumns = ref([
     { field: 'direccion', header: 'Dirección' },
@@ -83,10 +89,10 @@ watch(() => props.refresh, () => {
 const transformarDatos = (data) => {
     return data.map(cliente => {
         const prestamo = cliente.prestamos && cliente.prestamos.length > 0 ? cliente.prestamos[0] : {};
-        
+
         const cuotaKeys = prestamo.cuotas ? Object.keys(prestamo.cuotas) : [];
         const cuota = cuotaKeys.length > 0 ? prestamo.cuotas[cuotaKeys[0]] : {};
-        
+
         return {
             ...cliente,
             fecha_inicio: prestamo.fecha_inicio || '',
@@ -117,6 +123,9 @@ const loadClientes = async () => {
         };
         if (selectedEstadoCliente.value) {
             params.estado_cliente = selectedEstadoCliente.value.value;
+        }
+        if (selectedTipoCliente.value) {
+            params.tipoCliente_id = selectedTipoCliente.value.value;
         }
 
         const response = await axios.get('/cliente', { params });
@@ -158,6 +167,11 @@ watch(() => selectedEstadoCliente.value, () => {
     loadClientes();
 });
 
+watch(() => selectedTipoCliente.value, () => {
+    currentPage.value = 1;
+    loadClientes();
+});
+
 const onPage = (event) => {
     currentPage.value = event.page + 1;
     perPage.value = event.rows;
@@ -174,6 +188,14 @@ const isColumnSelected = (fieldName) => {
     return selectedColumns.value.some(col => col.field === fieldName);
 };
 
+function color(tipo) {
+    if (!severityMap.value[tipo]) {
+        const index = Object.keys(severityMap.value).length % severityColors.length;
+        severityMap.value[tipo] = severityColors[index];
+    }
+    return severityMap.value[tipo];
+}
+
 function getStatusLabel(status) {
     switch (status) {
         case 1:
@@ -181,7 +203,7 @@ function getStatusLabel(status) {
         case 2:
             return 'danger';
         case 4:
-            return 'contrast';    
+            return 'contrast';
         case 3:
         case '':
         case null:
@@ -199,7 +221,7 @@ function getStatusText(status) {
         case 2:
             return 'MOROSO';
         case 4:
-            return 'TERMINADO';    
+            return 'TERMINADO';
         case 3:
         case '':
         case null:
@@ -218,11 +240,45 @@ const formatCurrency = (value) => {
         minimumFractionDigits: 2
     }).format(value);
 };
+
+onMounted(async () => {
+    try {
+        const response = await axios.get('/cliente/tipos');
+        estadoTipoClienteOptions.value = response.data.data.map(tc => ({
+            label: tc.nombre,
+            value: tc.id
+        }));
+    } catch (error) {
+        console.error('Error al cargar tipos de cliente:', error);
+    }
+});
+
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            toast.add({
+                severity: 'success',
+                summary: 'Copiado',
+                detail: `DNI ${text} copiado al portapapeles`,
+                life: 2000
+            });
+        })
+        .catch(() => {
+            toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo copiar',
+                life: 2000
+            });
+        });
+}
 </script>
 
 <template>
-    <DataTable ref="dt" v-model:selection="selectedClientes" :value="clientesTransformados" dataKey="id" :paginator="true"
-        :loading="loading" :filters="filters"
+    <Toast />
+    <DataTable ref="dt" v-model:selection="selectedClientes" :value="clientesTransformados" dataKey="id"
+        :paginator="true" :loading="loading" :filters="filters"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rowsPerPageOptions="[15, 10, 5]" :rows="perPage" :totalRecords="totalRecords" :lazy="true" @page="onPage"
         @update:rows="onPerPageChange" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes"
@@ -243,16 +299,26 @@ const formatCurrency = (value) => {
 
                     <Select v-model="selectedEstadoCliente" :options="estadoClienteOptions" optionLabel="name"
                         placeholder="Estado del cliente" class="w-full md:w-auto" />
+                    <Select v-model="selectedTipoCliente" :options="estadoTipoClienteOptions" optionLabel="label"
+                        placeholder="Tipo Clientes" class="w-full md:w-auto" />
+
                     <MultiSelect v-model="selectedColumns" :options="optionalColumns" optionLabel="header"
                         display="chip" placeholder="Seleccionar Columnas" />
-                    <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open"
-                        onLabel="Total Fijo" offLabel="Total" />
+                    <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Fijo"
+                        offLabel="Total" />
                     <Button icon="pi pi-refresh" outlined rounded aria-label="Refresh" @click="loadClientes" />
                 </div>
             </div>
         </template>
-        <Column field="dni" header="DNI" sortable style="min-width: 4rem" frozen class="font-bold"></Column>
-        <Column field="nombre_completo" header="Nombre y Apellidos" sortable style="min-width: 20rem"></Column>
+        <Column field="dni" header="DNI" sortable style="min-width: 4rem" frozen class="font-bold">
+            <template #body="{ data }">
+                <span @click="copyToClipboard(data.dni)" style="cursor: pointer;" title="Haz clic para copiar">
+                    {{ data.dni }}
+                </span>
+            </template>
+        </Column>
+
+        <Column field="nombre_completo" header="Nombre y Apellidos" sortable style="min-width: 30rem"></Column>
 
         <Column v-if="isColumnSelected('direccion')" field="direccion" header="Dirección" sortable
             style="min-width: 41rem">
@@ -283,6 +349,11 @@ const formatCurrency = (value) => {
             </template>
         </Column>
         <Column field="numero_cuotas" header="N° Cuotas" sortable style="min-width: 8rem"></Column>
+        <Column field="nomTipoCliente" header="Tipo" sortable style="min-width: 10rem">
+            <template #body="slotProps">
+                <Tag :value="slotProps.data.nomTipoCliente" :severity="color(slotProps.data.nomTipoCliente)" />
+            </template>
+        </Column>
         <Column field="estado_cliente" header="Estado" sortable style="min-width: 10rem">
             <template #body="slotProps">
                 <Tag :value="getStatusText(slotProps.data.estado_cliente)"

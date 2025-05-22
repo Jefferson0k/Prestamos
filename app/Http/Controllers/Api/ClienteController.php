@@ -4,68 +4,52 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cliente\StoreClienteRequest;
 use App\Http\Requests\Cliente\UpdateClienteRequest;
-use App\Http\Resources\ClienteResource;
+use App\Http\Resources\Cliente\ClienteResource;
+use App\Http\Resources\TipoCliente\TipoClienteResource;
 use App\Models\Cliente;
+use App\Models\TipoCliente;
+use App\Pipelines\EstadoClientePrestamoFilter;
+use App\Pipelines\SearchClienteFilter;
+use App\Pipelines\TipoClienteFilter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Pipeline;
 
 class ClienteController extends Controller {
     public function index(Request $request){
         Gate::authorize('viewAny', Cliente::class);
+
         $perPage = $request->input('per_page', 15);
         $search = $request->input('search', '');
         $estadoCliente = $request->input('estado_cliente');
-        
-        $searchTerms = [];
-        if (!empty($search)) {
-            $normalizedSearch = strtolower(trim(preg_replace('/\s+/', ' ', $search)));
-            $searchTerms = explode(' ', $normalizedSearch);
-        }
-        $query = Cliente::query();        
-        if (!is_null($estadoCliente)) {
-            $query->whereHas('prestamos', function($q) use ($estadoCliente) {
-                $q->where('estado_cliente', $estadoCliente)
-                ->orderBy('fecha_inicio', 'desc');
-            });
-        }
-        
-        $query->with(['prestamos' => function($query) use ($estadoCliente) {
-            $subQuery = $query->latest('fecha_inicio')
-                ->take(1)
-                ->with(['pagos' => function($query) {
-                    $query->select('id', 'prestamo_id', 'monto_capital', 'monto_interes', 'monto_total');
-                }]);
-            
-            if (!is_null($estadoCliente)) {
-                $subQuery->where('estado_cliente', $estadoCliente);
-            }
-        }]);
-        
-        if (!empty($searchTerms)) {
-            $query->where(function($q) use ($searchTerms) {
-                foreach ($searchTerms as $term) {
-                    if (strlen($term) < 2) continue;
-                    $q->where(function($query) use ($term) {
-                        $query->whereRaw("LOWER(dni) LIKE ?", ["%{$term}%"])
-                            ->orWhereRaw("LOWER(nombre) LIKE ?", ["%{$term}%"])
-                            ->orWhereRaw("LOWER(apellidos) LIKE ?", ["%{$term}%"])
-                            ->orWhereRaw("LOWER(telefono) LIKE ?", ["%{$term}%"])
-                            ->orWhereRaw("LOWER(direccion) LIKE ?", ["%{$term}%"])
-                            ->orWhereRaw("LOWER(correo) LIKE ?", ["%{$term}%"])
-                            ->orWhereRaw("LOWER(centro_trabajo) LIKE ?", ["%{$term}%"]);
-                    });
+        $tipoClienteId = $request->input('tipoCliente_id');
+
+        $query = (Pipeline::class)
+            ::send(Cliente::query())
+            ->through([
+                new SearchClienteFilter($search),
+                new EstadoClientePrestamoFilter($estadoCliente),
+                new TipoClienteFilter($tipoClienteId),
+            ])
+            ->thenReturn()
+            ->with(['prestamos' => function($query) use ($estadoCliente) {
+                $query->latest('fecha_inicio')
+                    ->take(1)
+                    ->with(['pagos' => fn($q) => $q->select('id', 'prestamo_id', 'monto_capital', 'monto_interes', 'monto_total')]);
+
+                if (!is_null($estadoCliente)) {
+                    $query->where('estado_cliente', $estadoCliente);
                 }
-            });
-        }
-        
-        $clientes = $query->paginate($perPage);
-        return ClienteResource::collection($clientes);
+            }]);
+
+        return ClienteResource::collection($query->paginate($perPage));
     }        
     public function store(StoreClienteRequest $request) {
         Gate::authorize('create', Cliente::class);        
         $data = $request->validated();
+        $data['usuario_id'] = Auth::id();
         if ($request->hasFile('foto')) {
             $data['foto'] = $this->handleFotoUpload($request);
         }
@@ -115,5 +99,10 @@ class ClienteController extends Controller {
         $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $file->move(public_path('customers'), $fileName);
         return $fileName;
+    }
+    public function indexList(){
+        Gate::authorize('viewAny', Cliente::class);
+        $tipoclientes = TipoCliente::where('estado', 'activo')->get();
+        return TipoClienteResource::collection($tipoclientes);
     }
 }

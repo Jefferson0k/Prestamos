@@ -19,13 +19,9 @@ import { Head, Link } from '@inertiajs/vue3';
             <span class="text-muted-color mb-8">El recurso solicitado no está disponible.</span>
             <img src="/imagenes/access/asset-error.svg" alt="Error" class="mb-8" width="80%" />
             <div class="col-span-12 mt-8 text-center">
-              <!-- Opción 1: Usar Link de Inertia -->
               <Link href="/dashboard" class="no-underline">
                 <Button label="Ir al panel de control" severity="danger" />
               </Link>
-              
-              <!-- Opción 2: Usar el evento onClick (alternativa) -->
-              <!-- <Button label="Ir al panel de control" severity="danger" @click="$inertia.visit('/dashboard')" /> -->
             </div>
           </div>
         </div>

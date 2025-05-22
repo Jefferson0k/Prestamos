@@ -48,5 +48,11 @@ class PermissionSeeder extends Seeder{
         Permission::create(['name' =>'ver permisos']);
         #Reportes
         Permission::create(['name' => 'ver reportes']);
+        #Tipo Cliente
+        Permission::create(['name' =>'crear tipo_cliente']);
+        Permission::create(['name' =>'editar tipo_cliente']);
+        Permission::create(['name' =>'eliminar tipo_cliente']);
+        Permission::create(['name' =>'ver tipo_cliente']);
+
     }
 }

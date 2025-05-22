@@ -1,33 +1,18 @@
 <template>
+
     <Head title="Clientes" />
     <AppLayout>
         <div>
-            <div class="card">
-                <!-- Mostrar skeleton si está cargando -->
-                <template v-if="isLoading">
-                    <div class="rounded border border-surface-200 dark:border-surface-700 p-10 bg-surface-0 dark:bg-surface-900">
-                        <div class="flex items-center mb-8">
-                            <Skeleton shape="circle" size="6rem" class="mr-6" />
-                            <div>
-                                <Skeleton width="15rem" height="2rem" class="mb-4" />
-                                <Skeleton width="8rem" height="1.5rem" class="mb-2" />
-                                <Skeleton width="12rem" height="0.75rem" />
-                            </div>
-                        </div>
-                        <Skeleton width="100%" height="500px" class="mb-8" />
-                        <div class="flex justify-between mt-6">
-                            <Skeleton width="6rem" height="3rem" />
-                            <Skeleton width="6rem" height="3rem" />
-                        </div>
-                    </div>
-                </template>
+            <template v-if="isLoading">
+                <Espera />
+            </template>
 
-                <!-- Mostrar contenido real cuando ya esté listo -->
-                <template v-else>
+            <template v-else>
+                <div class="card">
                     <AddCliente @cliente-agregado="refrescarListado" />
                     <ListCliente :refresh="refreshKey" />
-                </template>
-            </div>
+                </div>
+            </template>
         </div>
     </AppLayout>
 </template>
@@ -38,7 +23,7 @@ import AppLayout from '@/layout/AppLayout.vue';
 import ListCliente from './Desarrollo/ListCliente.vue';
 import AddCliente from './Desarrollo/AddCliente.vue';
 import { Head } from '@inertiajs/vue3';
-import Skeleton from 'primevue/skeleton';
+import Espera from '@/components/Espera.vue';
 
 const refreshKey = ref(0);
 const isLoading = ref(true);
@@ -47,10 +32,9 @@ function refrescarListado() {
     refreshKey.value++;
 }
 
-// Simulamos la carga
 onMounted(() => {
     setTimeout(() => {
         isLoading.value = false;
-    }, 1000); // Puedes ajustar el tiempo de carga
+    }, 1000);
 });
 </script>

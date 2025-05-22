@@ -1,14 +1,13 @@
 <template>
     <Toolbar>
         <template #start>
-            <Button :label="botonClienteLabel" :icon="botonClienteIcono" :severity="botonClienteSeverity"
-                :variant="botonClienteVariant" class="mr-2" @click="openNew" />
+            <Button label="Buscar clientes" icon="pi pi-search" @click="openNew" />
         </template>
         <template #center>
 
         </template>
         <template #end>
-            <Button icon="pi pi-sign-out" label="Salir" outlined severity="danger" class="mr-2" @click="goToProfile"/>
+
         </template>
     </Toolbar>
     <Dialog v-model:visible="clienteDialog" :style="{ width: '1100px' }" header="Registro de Pagos" :modal="true">
@@ -28,7 +27,7 @@
                         </template>
                         <template #empty>Clientes no encontrado.</template>
                     </Select>
-                    <Button icon="pi pi-search" severity="info" :disabled="!clienteSeleccionado || inputsDeshabilitados"
+                    <Button icon="pi pi-search" :disabled="!clienteSeleccionado || inputsDeshabilitados"
                         tooltip="Cargar cuotas" @click="cargarCuotas(clienteSeleccionado)" />
                 </div>
             </div>
@@ -99,7 +98,6 @@
                                     @change="() => pagarPrestamo(prestamo.idPrestamo)" />
                             </template>
                         </div>
-
                     </div>
                 </Fieldset>
             </div>
@@ -135,6 +133,7 @@ const prestamos = ref([]);
 const estaCargandoCuotas = ref(false);
 const accionSeleccionada = ref(null);
 const inputsDeshabilitados = ref(false);
+let debounceTimeout;
 const selectedCities = ref([
     { name: 'TODOS', code: 0 }
 ]);
@@ -170,16 +169,6 @@ function hideDialog() {
     submitted.value = false;
 }
 
-function pagarPrestamo(idPrestamo) {
-    if (accionSeleccionada.value === idPrestamo) return;
-    accionSeleccionada.value = idPrestamo;
-
-    inputsDeshabilitados.value = true;
-    clienteDialog.value = false;
-
-    emit('ver-cuotas', idPrestamo);
-}
-
 const buscarclientes = async (evento) => {
     clearTimeout(debounceTimeout);
     const textoIngresado = evento.target?.value?.trim() || "";
@@ -209,13 +198,6 @@ const buscarclientes = async (evento) => {
     }, 500);
 };
 
-watch(selectedCities, async (newValues, oldValues) => {
-    prestamos.value = [];
-    if (clienteSeleccionado.value) {
-        await cargarCuotas(clienteSeleccionado.value);
-    }
-});
-
 const cargarCuotas = async (clienteId) => {
     if (!clienteId) return;
 
@@ -226,7 +208,7 @@ const cargarCuotas = async (clienteId) => {
         const estadosSeleccionados = selectedCities.value.map(e => e.code);
         const params = {};
         if (estadosSeleccionados.length > 0 && !estadosSeleccionados.includes(0)) {
-            params.estado = estadosSeleccionados.join(','); 
+            params.estado = estadosSeleccionados.join(',');
         }
         const response = await axios.get(`/prestamo/${clienteId}/Cuotas`, { params });
         prestamos.value = response.data.clientes;
@@ -243,28 +225,8 @@ const cargarCuotas = async (clienteId) => {
     }
 };
 
-let debounceTimeout = null;
-
-const botonClienteLabel = computed(() => {
-    if (accionSeleccionada.value && clienteSeleccionado.value) {
-        const cliente = clientes.value.find(c => c.value === clienteSeleccionado.value);
-        return cliente ? cliente.label : 'Cliente seleccionado';
-    }
-    return 'Nuevo Pago';
-});
-
-const botonClienteIcono = computed(() => {
-    return (accionSeleccionada.value && clienteSeleccionado.value) ? 'pi pi-user' : 'pi pi-plus';
-});
-
-const botonClienteSeverity = computed(() => {
-    return (accionSeleccionada.value && clienteSeleccionado.value) ? 'contrast' : 'secondary';
-});
-
-const botonClienteVariant = computed(() => {
-    return (accionSeleccionada.value && clienteSeleccionado.value) ? 'text' : undefined;
-});
-const goToProfile = () => {
-    router.get('/pagos');
-};
+function pagarPrestamo(idPrestamo) {
+    accionSeleccionada.value = idPrestamo;
+    router.visit(`/prestamo/${idPrestamo}/cliente`);
+}
 </script>

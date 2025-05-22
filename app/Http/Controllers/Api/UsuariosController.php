@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Usuario\StoreUserRequest;
 use App\Http\Requests\Usuario\UpdateUserRequest;
-use App\Http\Resources\UserResource;
+use App\Http\Resources\Usuario\UserResource;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Gate;

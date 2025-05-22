@@ -4,6 +4,14 @@
             <div v-if="cliente.foto" class="text-center">
                 <img :src="imageSrc" class="block m-auto pb-4 h-40 object-cover" />
             </div>
+            <div>
+                <label for="tipoCliente_id" class="block font-bold mb-3">Tipo de cliente <span
+                        class="text-red-500">*</span></label>
+                <Select v-model="cliente.tipoCliente_id" :options="estadoTipoClienteOptions" fluid optionLabel="label"
+                    optionValue="value" :invalid="(submitted && !cliente.tipoCliente_id) || serverErrors.tipoCliente_id"
+                    placeholder="Seleccione el tipo de cliente" class="w-full md:w-56" />
+
+            </div>
 
             <div>
                 <label for="dni" class="block font-bold mb-3">DNI <span class="text-red-500">*</span></label>
@@ -164,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed} from 'vue';
+import { ref, watch, computed, onMounted} from 'vue';
 import axios from 'axios';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
@@ -175,6 +183,7 @@ import { useToast } from "primevue/usetoast";
 import { usePrimeVue } from 'primevue/config';
 import ProgressBar from 'primevue/progressbar';
 import Badge from 'primevue/badge';
+import Select from 'primevue/select';
 
 const props = defineProps({
     visible: Boolean,
@@ -205,6 +214,7 @@ const totalSizePercent = ref(0);
 const files = ref([]);
 const $primevue = usePrimeVue();
 const toast = useToast();
+const estadoTipoClienteOptions = ref([]);
 
 // Imagen del cliente
 const imageSrc = computed(() => {
@@ -300,6 +310,7 @@ async function updateCliente() {
     formData.append('telefono', cliente.value.telefono);
     formData.append('correo', cliente.value.correo);
     formData.append('centro_trabajo', cliente.value.centro_trabajo);
+    formData.append('tipoCliente_id', cliente.value.tipoCliente_id);
 
     // Solo si la foto es un archivo válido
     if (cliente.value.foto instanceof File) {
@@ -371,4 +382,15 @@ const formatSize = (bytes) => {
 
     return `${formattedSize} ${sizes[i]}`;
 };
+onMounted(async () => {
+    try {
+        const response = await axios.get('/cliente/tipos');
+        estadoTipoClienteOptions.value = response.data.data.map(tc => ({
+            label: tc.nombre,
+            value: tc.id
+        }));
+    } catch (error) {
+        console.error('Error al cargar tipos de cliente:', error);
+    }
+});
 </script>

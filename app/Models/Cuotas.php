@@ -26,6 +26,7 @@ class Cuotas extends Model{
         'referencia',
         'fecha_pago',
         'observacion',
+        'state',
     ];
     protected $casts = [
         //'fecha_vencimiento' => 'date',
@@ -45,4 +46,8 @@ class Cuotas extends Model{
     public function pagos(){
         return $this->hasMany(Pagos::class);
     }
+    public function scopePendientes($query){
+        return $query->where('estado', 'Pendiente');
+    }
+
 }

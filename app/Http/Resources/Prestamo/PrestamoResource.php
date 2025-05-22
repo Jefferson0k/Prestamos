@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Prestamo;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Carbon\Carbon;
 class PrestamoResource extends JsonResource{

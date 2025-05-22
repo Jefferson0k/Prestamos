@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PagosResource;
+use App\Http\Resources\Pago\PagosResource;
 use App\Models\Pagos;
 class PagosController extends Controller{
     public function pagosPorCuota($cuotaId){

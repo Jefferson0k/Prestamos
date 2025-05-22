@@ -1,14 +1,11 @@
 <?php
 
-namespace App\Http\Resources;
-
+namespace App\Http\Resources\Usuario;
 use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
-
 class UserResource extends JsonResource{
     public function toArray($request){
         $role = $this->roles->first();
-
         return [
             'id' => $this->id,
             'dni' => $this->dni,

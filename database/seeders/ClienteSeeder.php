@@ -7,6 +7,6 @@ use App\Models\Cliente;
 
 class ClienteSeeder extends Seeder{
     public function run(){
-        Cliente::factory(10)->create();
+        Cliente::factory(15)->create();
     }
 }

@@ -6,7 +6,6 @@ use App\Models\Cliente;
 use App\Models\Cuotas;
 use App\Models\Prestamos;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -87,10 +86,42 @@ class ReporteController extends Controller{
         return response()->json(['numeroClientes' => $numeroClientes]);
     }
     public function numeroPrestamosPorEstado(){
-        // Contar las cuotas cuyo estado es 'Vencido'
         $numeroVencidas = Cuotas::where('estado', 'Vencido')->count();
-
-        // Retornar el número de cuotas vencidas
         return response()->json(['numeroVencidas' => $numeroVencidas]);
+    }
+    public function reporteInteresAnual($año){
+        $meses = [
+            1 => 'Enero',
+            2 => 'Febrero', 
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre'
+        ];
+        $reporte = [];
+        $totalAnual = 0;
+        foreach ($meses as $numeroMes => $nombreMes) {
+            $interesMes = Cuotas::whereMonth('fecha_vencimiento', $numeroMes)
+                ->whereYear('fecha_vencimiento', $año)
+                ->whereNotNull('fecha_vencimiento')
+                ->sum('monto_interes_pagar');
+                
+            $reporte[] = [
+                'mes' => $nombreMes,
+                'interes' => number_format($interesMes, 2)
+            ];
+            $totalAnual += $interesMes;
+        }
+        return [
+            'año' => $año,
+            'meses' => $reporte,
+            'total_anual' => number_format($totalAnual, 2)
+        ];
     }
 }

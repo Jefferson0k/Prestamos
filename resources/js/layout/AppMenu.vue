@@ -17,6 +17,7 @@ const model = computed(() => [
     {
         label: 'Gestión Administrativa',
         items: [
+            hasPermission('ver tipo_cliente') && { label: 'Tipos Clientes', icon: 'pi pi-fw pi-id-card', to: '/tipos-clientes' },
             hasPermission('ver clientes') && { label: 'Clientes', icon: 'pi pi-fw pi-users', to: '/clientes' },
             hasPermission('ver prestamos') && { label: 'Préstamos', icon: 'pi pi-fw pi-briefcase', to: '/prestamos' },
             hasPermission('ver pagos') && { label: 'Pagos', icon: 'pi pi-fw pi-credit-card', to: '/pagos' },

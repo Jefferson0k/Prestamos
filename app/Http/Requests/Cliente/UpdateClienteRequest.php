@@ -19,6 +19,7 @@ class UpdateClienteRequest extends FormRequest {
             'correo' => "required|email|max:150|unique:clientes,correo,$id",
             'centro_trabajo' => 'required|string|max:150',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'tipoCliente_id' => 'required',
         ];
     }    
 
@@ -59,6 +60,8 @@ class UpdateClienteRequest extends FormRequest {
             'foto.image' => 'El archivo debe ser una imagen.',
             'foto.mimes' => 'La foto debe estar en formato JPG, JPEG o PNG.',
             'foto.max' => 'La foto no puede ser mayor a 2MB.',
+
+            'tipoCliente_id.required' => 'El tipo de cliente es obligatorio',
         ];
     }
 }

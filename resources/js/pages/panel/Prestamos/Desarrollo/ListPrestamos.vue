@@ -13,10 +13,12 @@ import axios from 'axios';
 import Talonario from './Talonario.vue';
 import DeletePrestamo from './DeletePrestamo.vue';
 import UpdatPrestamos from './UpdatPrestamos.vue';
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 const dt = ref();
 const prestamos = ref([]);
-const prestamo = ref ([]);
+const prestamo = ref([]);
 const selectedPrestamos = ref();
 const searchTerm = ref('');
 const debouncedSearchTerm = ref('');
@@ -25,7 +27,7 @@ const loading = ref(false);
 const totalRecords = ref(0);
 const perPage = ref(15);
 const currentPage = ref(1);
-const selectedEstado = ref('');
+const selectedEstado = ref(1);
 const showPrintDialog = ref(false);
 const prestamosId = ref(null);
 const deletePrestamoDialog = ref(false);
@@ -33,10 +35,7 @@ const updatePrestamoDialog = ref(false);
 const selectedPrestamoId = ref(null);
 
 const estadoOptions = ref([
-    { label: 'TODOS', value: '' },
     { label: 'PAGA', value: 1 },
-    { label: 'MOROSO', value: 2 },
-    { label: 'PENDIENTE', value: 3 },
     { label: 'FINALIZADO', value: 4 },
 ]);
 const props = defineProps({
@@ -118,9 +117,9 @@ function getStatusLabel(estado_cliente) {
         case 'MOROSO':
             return 'danger';
         case 'PENDIENTE':
-            return 'warn';    
+            return 'warn';
         case 'FINALIZADO':
-            return 'contrast'; 
+            return 'contrast';
         default:
             return null;
     }
@@ -163,6 +162,27 @@ onMounted(() => {
     loadPrestamos();
 });
 defineExpose({ loadPrestamos });
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            toast.add({
+                severity: 'success',
+                summary: 'Copiado',
+                detail: `DNI ${text} copiado al portapapeles`,
+                life: 2000
+            });
+        })
+        .catch(() => {
+            toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo copiar',
+                life: 2000
+            });
+        });
+}
+
 </script>
 
 <template>
@@ -193,7 +213,13 @@ defineExpose({ loadPrestamos });
                 </div>
             </div>
         </template>
-        <Column field="dni" header="DNI" sortable style="min-width: 4rem"></Column>
+        <Column field="dni" header="DNI" sortable style="min-width: 4rem" frozen class="font-bold">
+            <template #body="{ data }">
+                <span @click="copyToClipboard(data.dni)" style="cursor: pointer;" title="Haz clic para copiar">
+                    {{ data.dni }}
+                </span>
+            </template>
+        </Column>
         <Column field="NombreCompleto" header="Nombre y Apellido" sortable style="min-width: 25rem">
         </Column>
         <Column field="fecha_inicio" header="Fecha de inicio" sortable style="min-width: 14rem"></Column>
@@ -209,45 +235,21 @@ defineExpose({ loadPrestamos });
         <Column field="tasa_interes_diario" header="Tasa de interés diario" sortable style="min-width: 13em"></Column>
         <Column v-for="col of selectedColumns" :key="col.field" :field="col.field" :header="col.header"
             :style="{ 'min-width': col.width }" sortable></Column>
-            <Column :exportable="false" style="min-width: 12rem">
-                <template #body="slotProps">
-                    <Button
-                        icon="pi pi-pencil"
-                        outlined
-                        rounded
-                        class="mr-2"
-                        :disabled="slotProps.data.estado_cliente === 'FINALIZADO'"
-                        @click="editPrestamo(slotProps.data)"
-                    />
-                    <Button
-                        icon="pi pi-trash"
-                        outlined
-                        rounded
-                        severity="danger"
-                        class="mr-2"
-                        :disabled="slotProps.data.estado_cliente === 'FINALIZADO'"
-                        @click="confirmDeletePrestamo(slotProps.data)"
-                    />
-                    <Button
-                        icon="pi pi-print"
-                        outlined
-                        rounded
-                        severity="help"
-                        class="rl-2"
-                        @click="printprestamo(slotProps.data)"
-                    />
-                </template>
-            </Column>
+        <Column :exportable="false" style="min-width: 12rem">
+            <template #body="slotProps">
+                <Button icon="pi pi-pencil" outlined rounded class="mr-2"
+                    :disabled="slotProps.data.estado_cliente === 'FINALIZADO'" @click="editPrestamo(slotProps.data)" />
+                <Button icon="pi pi-trash" outlined rounded severity="danger" class="mr-2"
+                    :disabled="slotProps.data.estado_cliente === 'FINALIZADO'"
+                    @click="confirmDeletePrestamo(slotProps.data)" />
+                <Button icon="pi pi-print" outlined rounded severity="help" class="rl-2"
+                    @click="printprestamo(slotProps.data)" />
+            </template>
+        </Column>
     </DataTable>
-    <Talonario v-if="showPrintDialog" :prestamosId="prestamosId" v-model:visible="showPrintDialog" @close="handleClosePrestamo" />
-    <DeletePrestamo
-        v-model:visible="deletePrestamoDialog"
-        :prestamo="prestamo"
-        @deleted="handleUserDeleted"
-    />
-    <UpdatPrestamos
-        v-model:visible="updatePrestamoDialog"
-        :PrestamoId="selectedPrestamoId"
-        @updated="handlePrestamoUpdated"
-    />
+    <Talonario v-if="showPrintDialog" :prestamosId="prestamosId" v-model:visible="showPrintDialog"
+        @close="handleClosePrestamo" />
+    <DeletePrestamo v-model:visible="deletePrestamoDialog" :prestamo="prestamo" @deleted="handleUserDeleted" />
+    <UpdatPrestamos v-model:visible="updatePrestamoDialog" :PrestamoId="selectedPrestamoId"
+        @updated="handlePrestamoUpdated" />
 </template>

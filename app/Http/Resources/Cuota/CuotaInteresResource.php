@@ -1,12 +1,13 @@
 <?php
-namespace App\Http\Resources;
+
+namespace App\Http\Resources\Cuota;
 use App\Services\InteresCalculatorService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 
-class CuotaResource extends JsonResource
+class CuotaInteresResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

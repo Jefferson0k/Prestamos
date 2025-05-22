@@ -17,10 +17,12 @@ return new class extends Migration{
             $table->string('correo', 100)->unique();
             $table->string('centro_trabajo', 255)->nullable();
             $table->string('foto')->nullable();
+            $table->foreignId('tipoCliente_id')->references('id')->on('tipo_cliente');
+            $table->foreignId('usuario_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }
     public function down(){
-        Schema::dropIfExists('clientes');
+            Schema::dropIfExists('clientes');
     }
 };
