@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Cuota\CuotaResource;
 use App\Http\Resources\Cuota\CuotaInteresResource;
+use App\Http\Resources\Cuota\CuotaInteresResourceEdicion;
 use App\Models\Cliente;
 use App\Models\Cuotas;
 use App\Models\Pagos;
@@ -88,7 +89,11 @@ class CuotasController extends Controller{
         $cuota = Cuotas::findOrFail($id);
         return new CuotaInteresResource($cuota);
     }
-    
+    public function showIntereEdicion($id){
+        Gate::authorize('viewAny', Cuotas::class);
+        $cuota = Cuotas::findOrFail($id);
+        return new CuotaInteresResourceEdicion($cuota);
+    }    
     public function updateInteresz(Request $request, $id){
         Gate::authorize('viewAny', Cuotas::class);
         $request->validate([
@@ -97,6 +102,22 @@ class CuotasController extends Controller{
         $cuota = Cuotas::findOrFail($id);
         $cuota->monto_interes_pagar = $request->monto_interes_pagar;
         $cuota->monto_capital_mas_interes_a_pagar = $request->monto_interes_pagar;
+        $cuota->state = false;
+        $cuota->save();
+        return response()->json([
+            'message' => 'Interés actualizado correctamente.',
+            'cuota' => $cuota
+        ]);
+    }
+    public function updateInteres(Request $request, $id){
+        Gate::authorize('viewAny', Cuotas::class);
+        $request->validate([
+            'monto_interes_pagar' => 'required|numeric|min:0',
+            'monto_capital_mas_interes_a_pagar' => 'required|numeric|min:0',
+        ]);
+        $cuota = Cuotas::findOrFail($id);
+        $cuota->monto_interes_pagar = $request->monto_interes_pagar;
+        $cuota->monto_capital_mas_interes_a_pagar = $request->monto_capital_mas_interes_a_pagar;
         $cuota->state = false;
         $cuota->save();
         return response()->json([

@@ -1,7 +1,8 @@
 <template>
     <div class="space-y-4">
         <div class="flex justify-between items-center flex-wrap gap-4">
-            <Tag :value="`Total: S/ ${interesTotal}`" severity="success" class="text-lg px-3 py-2" />
+            <Tag :value="`Anual: S/ ${interesTotal}`" severity="info" class="text-lg px-3 py-2" />
+            <Tag :value="`Global: S/ ${interesTotalGobal}`" severity="success" class="text-lg px-3 py-2" />
 
             <div class="p-inputgroup w-36">
                 <IconField>
@@ -70,6 +71,7 @@ const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);
 const loading = ref(false);
 const interesTotal = ref('0.00');
+const interesTotalGobal = ref('0.00');
 const interesPorMes = ref([]);
 const barData = ref(null);
 const barOptions = ref(null);
@@ -85,7 +87,7 @@ const fetchData = async () => {
         const data = response.data;
         
         interesTotal.value = data.total_anual;
-        
+        interesTotalGobal.value = data.total_global;
         // Calcular porcentajes y formatear datos
         const totalNumerico = parseFloat(data.total_anual.replace(/,/g, ''));
         

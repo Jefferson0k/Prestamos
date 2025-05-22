@@ -91,21 +91,14 @@ class ReporteController extends Controller{
     }
     public function reporteInteresAnual($año){
         $meses = [
-            1 => 'Enero',
-            2 => 'Febrero', 
-            3 => 'Marzo',
-            4 => 'Abril',
-            5 => 'Mayo',
-            6 => 'Junio',
-            7 => 'Julio',
-            8 => 'Agosto',
-            9 => 'Septiembre',
-            10 => 'Octubre',
-            11 => 'Noviembre',
-            12 => 'Diciembre'
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
         ];
+
         $reporte = [];
         $totalAnual = 0;
+
         foreach ($meses as $numeroMes => $nombreMes) {
             $interesMes = Cuotas::whereMonth('fecha_vencimiento', $numeroMes)
                 ->whereYear('fecha_vencimiento', $año)
@@ -118,10 +111,16 @@ class ReporteController extends Controller{
             ];
             $totalAnual += $interesMes;
         }
+
+        // Obtener total global de todos los años
+        $totalGlobal = Cuotas::whereNotNull('fecha_vencimiento')
+            ->sum('monto_interes_pagar');
+
         return [
             'año' => $año,
             'meses' => $reporte,
-            'total_anual' => number_format($totalAnual, 2)
+            'total_anual' => number_format($totalAnual, 2),
+            'total_global' => number_format($totalGlobal, 2)
         ];
     }
 }
