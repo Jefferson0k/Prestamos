@@ -1,85 +1,189 @@
 <template>
-    <div class="card">
-        <Chart type="line" :data="chartData" :options="chartOptions" class="h-[30rem]" />
+    <div class="space-y-4">
+        <div class="flex justify-between items-center flex-wrap gap-4">
+            <Tag :value="`Total: S/ ${interesTotal}`" severity="success" class="text-lg px-3 py-2" />
+
+            <div class="p-inputgroup w-36">
+                <IconField>
+                    <InputIcon>
+                        <i class="pi pi-calendar" />
+                    </InputIcon>
+                    <InputNumber v-model="selectedYear" :min="2020" :max="currentYear" inputId="yearInput"
+                        :useGrouping="false" placeholder="Año" aria-label="Año de reporte" fluid />
+                </IconField>
+            </div>
+        </div>
+        
+        <div v-if="loading" class="flex justify-center py-6">
+            <ProgressSpinner />
+        </div>
+        
+        <div v-else>
+            <Chart v-if="barData && barOptions" type="bar" :data="barData" :options="barOptions" class="mb-6" />
+            
+            <DataTable :value="interesPorMes" responsiveLayout="scroll" dataKey="mes" :paginator="true" :rows="12"
+                :filters="filters"
+                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                :rowsPerPageOptions="[12, 24]"
+                currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
+                
+                <template #header>
+                    <div class="flex flex-wrap gap-2 items-center justify-between">
+                        <h4 class="m-0 text-lg font-semibold">Intereses Mensuales</h4>
+                        <IconField>
+                            <InputIcon><i class="pi pi-search" /></InputIcon>
+                            <InputText v-model="filters['global'].value" placeholder="Buscar..." />
+                        </IconField>
+                    </div>
+                </template>
+                
+                <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
+                <Column field="mes" header="MES" />
+                <Column field="interes_formatted" header="INTERÉS" />
+                <Column field="porcentaje" header="PORCENTAJE (%)" />
+            </DataTable>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import Chart from 'primevue/chart';
-import axios from 'axios'; // Asegúrate de tener Axios instalado
+import { ref, onMounted, watch, computed } from "vue";
+import axios from "axios";
 
-// Variables reactivas
-const chartData = ref();
-const chartOptions = ref();
+import Chart from "primevue/chart";
+import InputNumber from "primevue/inputnumber";
+import ProgressSpinner from "primevue/progressspinner";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import InputText from "primevue/inputtext";
+import Tag from "primevue/tag";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
+import { FilterMatchMode } from "@primevue/core/api";
+import { useLayout } from "@/layout/composables/layout";
+import { useToast } from "primevue/usetoast";
 
-// Cargar datos desde Laravel
-onMounted(async () => {
-    const response = await axios.get('/reporte/intereses/mensuales'); // Ruta definida en Laravel
-    const data = response.data;
+const { getPrimary, getSurface, isDarkTheme } = useLayout();
 
-    // Procesamos los datos recibidos para el gráfico
-    chartData.value = setChartData(data);
-    chartOptions.value = setChartOptions();
+const toast = useToast();
+const currentYear = new Date().getFullYear();
+const selectedYear = ref(currentYear);
+const loading = ref(false);
+const interesTotal = ref('0.00');
+const interesPorMes = ref([]);
+const barData = ref(null);
+const barOptions = ref(null);
+
+const filters = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 
-// Función para configurar los datos del gráfico
-const setChartData = (data) => {
+const fetchData = async () => {
+    loading.value = true;
+    try {
+        const response = await axios.get(`/reporte/intereses/${selectedYear.value}`);
+        const data = response.data;
+        
+        interesTotal.value = data.total_anual;
+        
+        // Calcular porcentajes y formatear datos
+        const totalNumerico = parseFloat(data.total_anual.replace(/,/g, ''));
+        
+        interesPorMes.value = data.meses.map(item => {
+            const interesNumerico = parseFloat(item.interes.replace(/,/g, ''));
+            const porcentaje = totalNumerico > 0 ? ((interesNumerico / totalNumerico) * 100).toFixed(2) : '0.00';
+            
+            return {
+                mes: item.mes,
+                interes: interesNumerico,
+                interes_formatted: `S/ ${item.interes}`,
+                porcentaje: `${porcentaje}%`
+            };
+        });
+        
+        updateChartData();
+    } catch (error) {
+        console.error("Error al obtener datos:", error);
+        toast.add({ 
+            severity: 'error', 
+            summary: 'Error', 
+            detail: 'No se pudieron cargar los datos de intereses.', 
+            life: 3000 
+        });
+    } finally {
+        loading.value = false;
+    }
+};
+
+const updateChartData = () => {
     const documentStyle = getComputedStyle(document.documentElement);
+    const primaryColor = documentStyle.getPropertyValue("--p-primary-500");
+    const primaryLightColor = documentStyle.getPropertyValue("--p-primary-200");
 
-    // Los datos que recibimos son un total de intereses, así que solo mostramos eso
-    const labels = ['Intereses Mensuales'];
-    const intereses = [parseFloat(data.total_intereses)];
-
-    return {
-        labels: labels,
+    barData.value = {
+        labels: interesPorMes.value.map(item => item.mes),
         datasets: [
             {
-                label: 'Total de Intereses del Mes',
-                data: intereses,
-                fill: false,
-                borderColor: documentStyle.getPropertyValue('--p-cyan-500'),
-                tension: 0.4
+                label: "Interés Cobrado",
+                backgroundColor: primaryColor,
+                borderColor: primaryColor,
+                data: interesPorMes.value.map(item => item.interes)
+            },
+            {
+                label: "Porcentaje (%)",
+                backgroundColor: primaryLightColor,
+                borderColor: primaryLightColor,
+                data: interesPorMes.value.map(item => parseFloat(item.porcentaje)),
+                yAxisID: "y1"
             }
         ]
     };
-};
 
-// Función para configurar las opciones del gráfico
-const setChartOptions = () => {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--p-text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--p-text-muted-color');
-    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
-
-    return {
-        maintainAspectRatio: false,
-        aspectRatio: 0.6,
+    barOptions.value = {
         plugins: {
             legend: {
                 labels: {
-                    color: textColor
+                    color: documentStyle.getPropertyValue("--text-color")
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: context =>
+                        context.datasetIndex === 0
+                            ? `Interés: S/ ${context.raw.toLocaleString()}`
+                            : `Porcentaje: ${context.raw}%`
                 }
             }
         },
         scales: {
-            x: {
-                ticks: {
-                    color: textColorSecondary
-                },
-                grid: {
-                    color: surfaceBorder
+            y: {
+                beginAtZero: true,
+                grid: { color: documentStyle.getPropertyValue("--surface-border") },
+                ticks: { 
+                    color: documentStyle.getPropertyValue("--text-color"),
+                    callback: value => `S/ ${value.toLocaleString()}`
                 }
             },
-            y: {
+            y1: {
+                beginAtZero: true,
+                position: "right",
+                grid: { drawOnChartArea: false },
                 ticks: {
-                    color: textColorSecondary
-                },
-                grid: {
-                    color: surfaceBorder
+                    color: documentStyle.getPropertyValue("--text-color"),
+                    callback: value => value + "%"
                 }
+            },
+            x: {
+                grid: { color: documentStyle.getPropertyValue("--surface-border") },
+                ticks: { color: documentStyle.getPropertyValue("--text-color") }
             }
         }
     };
 };
+
+onMounted(fetchData);
+watch(selectedYear, fetchData);
+watch([getPrimary, getSurface, isDarkTheme], () => {
+    if (interesPorMes.value.length > 0) updateChartData();
+});
 </script>

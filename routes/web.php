@@ -81,7 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     #REPORTE => PAGO
     Route::prefix('reporte')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('reporte.index');
-        Route::get('/intereses/mensuales', [ReporteController::class, 'calcularInteresesMensuales']);
+        Route::get('/intereses/{año}', [ReporteController::class, 'reporteInteresAnual']);
         Route::get('/clientes/count', [ReporteController::class, 'contarClientes']);
         Route::get('/prestamos/estado', [ReporteController::class, 'numeroPrestamosPorEstado']);
         Route::get('/total/{anio}', [ReporteController::class, 'clientesPorAnio'])->name('cliente.clientesPorAnio');

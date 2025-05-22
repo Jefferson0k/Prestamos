@@ -14,6 +14,7 @@ import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import DialogInteres from './DialogInteres.vue';
 import { router } from '@inertiajs/vue3';
+import VaoucherPago from './Impresiones/VaoucherPago.vue';
 
 const toast = useToast();
 const cuotas = ref([]);
@@ -23,6 +24,8 @@ const selectedCuotas = ref(null);
 const pagoDialog = ref(false);
 const dt = ref();
 const visible = ref(false);
+const showPrintDialog = ref(false);
+const pagosId = ref(null);
 
 const props = defineProps({
     idPrestamo: {
@@ -175,6 +178,27 @@ const estaHabilitado = (cuota) => {
 const goToProfile = () => {
     router.get('/pagos');
 };
+
+const printpago = async (pagoId) => {
+    try {
+        pagosId.value = pagoId;
+        showPrintDialog.value = true;
+    } catch (error) {
+        console.error('Error al preparar impresión A4:', error);
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo preparar la impresión A4',
+            life: 3000
+        });
+    }
+};
+
+
+const handleClosepago = () => {
+    showPrintDialog.value = false;
+    pagosId.value = null;
+};
 </script>
 
 <template>
@@ -252,16 +276,16 @@ const goToProfile = () => {
             </ColumnGroup>
             <Column :exportable="false" style="min-width: 12rem">
                 <template #body="slotProps">
-                    <Button icon="pi pi-pencil" outlined rounded class="mr-2" :disabled="!(slotProps.data)"
-                        @click="$emit('abrir-actualizacion', slotProps.data.id)" />
                     <Button icon="pi pi-print" outlined rounded severity="help" class="mr-2"
                         :disabled="['Cancelado', 'Pendiente'].includes(slotProps.data.estado)"
-                        @click="$emit('imprimir-comprobante', slotProps.data.id)" />
+                        @click="printpago(slotProps.data.id)" />
                 </template>
             </Column>
         </DataTable>
         <DialogInteres :visible="visible" :cuota="selectedCuota" @update:visible="visible = $event" />
         <AddClientePago v-model:visible="pagoDialog" :cuotasSeleccionadas="selectedCuotas ? [selectedCuotas] : []"
             @pago-agregado="onPagoAgregado" />
+        <VaoucherPago v-if="showPrintDialog" :prestamosId="pagosId" v-model:visible="showPrintDialog"
+            @close="handleClosepago" />
     </div>
 </template>

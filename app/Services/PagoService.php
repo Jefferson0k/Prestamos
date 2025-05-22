@@ -172,16 +172,23 @@ class PagoService{
         float $montoTotal,
         bool $interesReducido
     ): void {
+        // Obtener el último ID de pago (opcional: con fallback)
+        $ultimoId = Pagos::max('id') ?? 0;
+        $nuevoNumero = $ultimoId + 1;
+
+        $referencia = 'REC-' . now()->format('Ymd') . '-' . str_pad($nuevoNumero, 5, '0', STR_PAD_LEFT);
+
         Pagos::create([
-            'prestamo_id' => $prestamoId,
-            'cuota_id' => $cuotaId,
-            'capital' => $capital,
-            'fecha_pago' => $fechaPago,
-            'monto_capital' => $montoCapital,
-            'monto_interes' => $montoInteres,
-            'monto_total' => $montoTotal,
-            'usuario_id' => Auth::id(),
-            'interes_reducido' => $interesReducido,
+            'prestamo_id'     => $prestamoId,
+            'cuota_id'        => $cuotaId,
+            'capital'         => $capital,
+            'fecha_pago'      => $fechaPago,
+            'monto_capital'   => $montoCapital,
+            'monto_interes'   => $montoInteres,
+            'monto_total'     => $montoTotal,
+            'usuario_id'      => Auth::id(),
+            'interes_reducido'=> $interesReducido,
+            'referencia'      => $referencia, // ← aquí se guarda el número de recibo
         ]);
     }
     

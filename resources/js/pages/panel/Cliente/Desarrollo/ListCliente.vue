@@ -255,28 +255,28 @@ onMounted(async () => {
 
 
 function copyToClipboard(text) {
-  navigator.clipboard.writeText(text)
-    .then(() => {
-      toast.add({
-        severity: 'success',
-        summary: 'Copiado',
-        detail: `DNI ${text} copiado al portapapeles`,
-        life: 2000
-      });
-    })
-    .catch(() => {
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo copiar',
-        life: 2000
-      });
-    });
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            toast.add({
+                severity: 'success',
+                summary: 'Copiado',
+                detail: `DNI ${text} copiado al portapapeles`,
+                life: 2000
+            });
+        })
+        .catch(() => {
+            toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo copiar',
+                life: 2000
+            });
+        });
 }
 </script>
 
 <template>
-      <Toast />
+    <Toast />
     <DataTable ref="dt" v-model:selection="selectedClientes" :value="clientesTransformados" dataKey="id"
         :paginator="true" :loading="loading" :filters="filters"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
@@ -304,26 +304,19 @@ function copyToClipboard(text) {
 
                     <MultiSelect v-model="selectedColumns" :options="optionalColumns" optionLabel="header"
                         display="chip" placeholder="Seleccionar Columnas" />
-                    <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open"
-                        onLabel="Fijo" offLabel="Total" />
+                    <ToggleButton v-model="balanceFrozen" onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Fijo"
+                        offLabel="Total" />
                     <Button icon="pi pi-refresh" outlined rounded aria-label="Refresh" @click="loadClientes" />
                 </div>
             </div>
         </template>
-<Column
-  field="dni"
-  header="DNI"
-  sortable
-  style="min-width: 4rem"
-  frozen
-  class="font-bold"
->
-  <template #body="{ data }">
-    <span @click="copyToClipboard(data.dni)" style="cursor: pointer;" title="Haz clic para copiar">
-      {{ data.dni }}
-    </span>
-  </template>
-</Column>
+        <Column field="dni" header="DNI" sortable style="min-width: 4rem" frozen class="font-bold">
+            <template #body="{ data }">
+                <span @click="copyToClipboard(data.dni)" style="cursor: pointer;" title="Haz clic para copiar">
+                    {{ data.dni }}
+                </span>
+            </template>
+        </Column>
 
         <Column field="nombre_completo" header="Nombre y Apellidos" sortable style="min-width: 30rem"></Column>
 
