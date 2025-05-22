@@ -19,16 +19,30 @@ class CuotasController extends Controller{
     }
     public function list(Request $request, $prestamo_id){
         Gate::authorize('viewAny', Cuotas::class);
-        $perPage = $request->input('per_page', 15);
+        $perPage = $request->input('per_page', 15);        
         $query = Cuotas::where('prestamo_id', $prestamo_id)
                     ->orderBy('numero_cuota', 'asc');
+        
         if ($request->filled('estado')) {
             $query->where('estado', 'like', '%' . $request->estado . '%');
         }
+        
+        $sumQuery = Cuotas::where('prestamo_id', $prestamo_id);
+        
         $cuotas = $query->paginate($perPage);
-        return CuotaResource::collection($cuotas);
+        
+        $sumaInteres = $sumQuery->sum('monto_interes_pagar');
+        $sumaCapital = $sumQuery->sum('monto_capital_pagar');
+        $sumaTotal = $sumaInteres + $sumaCapital;
+        
+        return CuotaResource::collection($cuotas)->additional([
+            'sumas' => [
+                'monto_interes_pagar' => $sumaInteres,
+                'monto_capital_pagar' => $sumaCapital,
+                'monto_total_pagar' => $sumaTotal,
+            ]
+        ]);
     }
-
     public function cuotasPorPrestamo($prestamoId){
         Gate::authorize('viewAny', Cuotas::class);
         $cuotas = Cuotas::where('prestamo_id', $prestamoId)

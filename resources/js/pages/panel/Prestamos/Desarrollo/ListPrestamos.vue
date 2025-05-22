@@ -25,7 +25,7 @@ const loading = ref(false);
 const totalRecords = ref(0);
 const perPage = ref(15);
 const currentPage = ref(1);
-const selectedEstado = ref('');
+const selectedEstado = ref(1);
 const showPrintDialog = ref(false);
 const prestamosId = ref(null);
 const deletePrestamoDialog = ref(false);
@@ -33,10 +33,7 @@ const updatePrestamoDialog = ref(false);
 const selectedPrestamoId = ref(null);
 
 const estadoOptions = ref([
-    { label: 'TODOS', value: '' },
     { label: 'PAGA', value: 1 },
-    { label: 'MOROSO', value: 2 },
-    { label: 'PENDIENTE', value: 3 },
     { label: 'FINALIZADO', value: 4 },
 ]);
 const props = defineProps({

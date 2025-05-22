@@ -110,10 +110,6 @@ async function guardarPago() {
         return;
     }
 
-    if (value1.value <= 0) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'El capital a pagar debe ser mayor a cero', life: 3000 });
-        return;
-    }
 
     if (!props.cuotasSeleccionadas || props.cuotasSeleccionadas.length === 0) {
         toast.add({ severity: 'error', summary: 'Error', detail: 'No hay cuota seleccionada', life: 3000 });

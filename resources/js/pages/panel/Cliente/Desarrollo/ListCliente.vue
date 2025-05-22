@@ -15,7 +15,9 @@ import ToggleButton from 'primevue/togglebutton';
 import MultiSelect from 'primevue/multiselect';
 import DeleteCliente from './DeleteCliente.vue';
 import EditCliente from './UpdateCliente.vue';
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 const dt = ref();
 const clientes = ref([]);
 const clientesTransformados = ref([]);
@@ -250,9 +252,31 @@ onMounted(async () => {
         console.error('Error al cargar tipos de cliente:', error);
     }
 });
+
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Copiado',
+        detail: `DNI ${text} copiado al portapapeles`,
+        life: 2000
+      });
+    })
+    .catch(() => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo copiar',
+        life: 2000
+      });
+    });
+}
 </script>
 
 <template>
+      <Toast />
     <DataTable ref="dt" v-model:selection="selectedClientes" :value="clientesTransformados" dataKey="id"
         :paginator="true" :loading="loading" :filters="filters"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
@@ -286,7 +310,21 @@ onMounted(async () => {
                 </div>
             </div>
         </template>
-        <Column field="dni" header="DNI" sortable style="min-width: 4rem" frozen class="font-bold"></Column>
+<Column
+  field="dni"
+  header="DNI"
+  sortable
+  style="min-width: 4rem"
+  frozen
+  class="font-bold"
+>
+  <template #body="{ data }">
+    <span @click="copyToClipboard(data.dni)" style="cursor: pointer;" title="Haz clic para copiar">
+      {{ data.dni }}
+    </span>
+  </template>
+</Column>
+
         <Column field="nombre_completo" header="Nombre y Apellidos" sortable style="min-width: 30rem"></Column>
 
         <Column v-if="isColumnSelected('direccion')" field="direccion" header="Dirección" sortable

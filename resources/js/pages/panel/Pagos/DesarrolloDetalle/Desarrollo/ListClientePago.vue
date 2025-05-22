@@ -13,6 +13,7 @@ import InputNumber from 'primevue/inputnumber';
 import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import DialogInteres from './DialogInteres.vue';
+import { router } from '@inertiajs/vue3';
 
 const toast = useToast();
 const cuotas = ref([]);
@@ -47,6 +48,12 @@ const estadoPrestamoOptions = ref([
     { name: 'PARCIAL', value: 'Parcial' },
 ]);
 
+const sumas = ref({
+    monto_interes_pagar: 0,
+    monto_capital_pagar: 0,
+    monto_total_pagar: 0,
+});
+
 watch(() => props.refresh, () => {
     loadCuotas();
 });
@@ -72,6 +79,12 @@ const loadCuotas = async () => {
         cuotas.value = response.data.data;
         pagination.value.currentPage = response.data.meta.current_page;
         pagination.value.total = response.data.meta.total;
+
+        if (response.data.sumas) {
+            sumas.value.monto_interes_pagar = response.data.sumas.monto_interes_pagar || 0;
+            sumas.value.monto_capital_pagar = response.data.sumas.monto_capital_pagar || 0;
+            sumas.value.monto_total_pagar = response.data.sumas.monto_total_pagar || 0;
+        }
     } catch (error) {
         console.error('Error al cargar cuotas:', error);
     } finally {
@@ -90,8 +103,22 @@ onMounted(() => {
 });
 
 const hasSelectedCuotas = computed(() => {
-    return selectedCuotas.value !== null;
+    const selected = selectedCuotas.value;
+
+    if (!selected) return false;
+
+    const tieneFechaInicioValida = (cuota) => {
+        return cuota.fecha_inicio && cuota.fecha_inicio !== '00-00-0000';
+    };
+
+    if (Array.isArray(selected)) {
+        return selected.length > 0 &&
+            selected.every(c => c.estado === 'Pendiente' && tieneFechaInicioValida(c));
+    }
+
+    return selected.estado === 'Pendiente' && tieneFechaInicioValida(selected);
 });
+
 
 const validateSelection = () => {
     if (!selectedCuotas.value) {
@@ -134,6 +161,20 @@ function abrirDialogo(cuota) {
     selectedCuota.value = cuota
     visible.value = true
 }
+
+const estaHabilitado = (cuota) => {
+    const fechaInicio = cuota.fecha_inicio;
+    const fechaVenc = cuota.fecha_vencimiento;
+
+    const esFechaValida = (fecha) => {
+        return fecha && fecha !== "00-00-0000";
+    };
+
+    return esFechaValida(fechaInicio) && !esFechaValida(fechaVenc);
+};
+const goToProfile = () => {
+    router.get('/pagos');
+};
 </script>
 
 <template>
@@ -142,6 +183,10 @@ function abrirDialogo(cuota) {
             <template #start>
                 <Button label="Nuevo Pago" icon="pi pi-plus" severity="secondary" class="mr-2" @click="openPagoDialog"
                     :disabled="!hasSelectedCuotas" />
+            </template>
+            <template #end>
+                <Button icon="pi pi-sign-out" label="Salir" outlined severity="danger" class="mr-2"
+                    @click="goToProfile" />
             </template>
         </Toolbar>
 
@@ -165,7 +210,7 @@ function abrirDialogo(cuota) {
             <Column field="estado" header="Estado" sortable style="min-width: 6rem">
                 <template #body="slotProps">
                     <Tag :severity="slotProps.data.estado === 'Pendiente' ? 'warn' :
-                        slotProps.data.estado === 'Cancelado' ? 'info' :
+                        slotProps.data.estado === 'Cancelado' ? 'secondary' :
                             slotProps.data.estado === 'Pagado' ? 'success' :
                                 slotProps.data.estado === 'Parcial' ? 'info' :
                                     'danger'">
@@ -183,8 +228,8 @@ function abrirDialogo(cuota) {
                 <template #body="{ data }">
                     <div class="flex justify-between items-center">
                         <span>{{ data.monto_interes_pagar }}</span>
-                        <Button icon="pi pi-check" size="small" aria-label="Editar interés"
-                            @click="abrirDialogo(data)" />
+                        <Button icon="pi pi-check" size="small" aria-label="Editar interés" @click="abrirDialogo(data)"
+                            :disabled="!estaHabilitado(data)" />
                     </div>
                 </template>
             </Column>
@@ -199,12 +244,21 @@ function abrirDialogo(cuota) {
             <ColumnGroup type="footer">
                 <Row>
                     <Column footer="Totales:" :colspan="8" footerStyle="text-align:right; font-weight: bold;" />
-                    <Column footer="00.00" footerStyle="font-weight: bold;" />
-                    <Column footer="00.00" footerStyle="font-weight: bold;" />
+                    <Column :footer="sumas.monto_interes_pagar" footerStyle="font-weight: bold;" />
+                    <Column :footer="sumas.monto_capital_pagar" footerStyle="font-weight: bold;" />
                     <Column footer="" footerStyle="font-weight: bold;" />
-                    <Column footer="00.00" footerStyle="font-weight: bold;" />
+                    <Column :footer="sumas.monto_total_pagar" footerStyle="font-weight: bold;" />
                 </Row>
             </ColumnGroup>
+            <Column :exportable="false" style="min-width: 12rem">
+                <template #body="slotProps">
+                    <Button icon="pi pi-pencil" outlined rounded class="mr-2" :disabled="!(slotProps.data)"
+                        @click="$emit('abrir-actualizacion', slotProps.data.id)" />
+                    <Button icon="pi pi-print" outlined rounded severity="help" class="mr-2"
+                        :disabled="['Cancelado', 'Pendiente'].includes(slotProps.data.estado)"
+                        @click="$emit('imprimir-comprobante', slotProps.data.id)" />
+                </template>
+            </Column>
         </DataTable>
         <DialogInteres :visible="visible" :cuota="selectedCuota" @update:visible="visible = $event" />
         <AddClientePago v-model:visible="pagoDialog" :cuotasSeleccionadas="selectedCuotas ? [selectedCuotas] : []"
