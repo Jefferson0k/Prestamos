@@ -18,30 +18,17 @@ class UserSeeder extends Seeder{
         }
 
         $admin_1 = User::create([
-            'name' => 'Jefferson Grabiel',
-            'dni' => '76393671',
-            'apellidos' => 'Covenas Roman',
-            'nacimiento' => '2003-03-11',
-            'email' => 'jefersoncovenas7@gmail.com',
-            'username' => 'JCOVENASRO11',
-            'password' => Hash::make('12345678'),
-            'status' => true,
-            'restablecimiento' => 0,
-        ]);
-
-        $admin_2 = User::create([
             'name' => 'Luis Fernando',
             'dni' => '07777777',
             'apellidos' => 'Atocha Gonzales',
             'nacimiento' => '2003-03-11',
             'email' => 'luisatocha@gmail.com',
-            'username' => 'LATOCHA05',
+            'username' => 'ATOCHA11',
             'password' => Hash::make('12345678'),
             'status' => true,
             'restablecimiento' => 0,
         ]);
 
         $admin_1->assignRole($adminRole);
-        $admin_2->assignRole($adminRole);
     }
 }
