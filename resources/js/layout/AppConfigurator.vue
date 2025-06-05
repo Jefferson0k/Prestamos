@@ -93,6 +93,7 @@ function saveToLocalStorage() {
 }
 
 // Function to load settings from localStorage
+// Function to load settings from localStorage
 function loadFromLocalStorage() {
     try {
         const savedSettings = localStorage.getItem(STORAGE_KEY);
@@ -105,6 +106,13 @@ function loadFromLocalStorage() {
                 const primaryColor = primaryColors.value.find(c => c.name === settings.primary);
                 if (primaryColor) {
                     applyTheme('primary', primaryColor);
+                }
+            } else {
+                // Establecer 'blue' como valor por defecto si no hay configuración guardada
+                layoutConfig.primary = 'blue';
+                const blueColor = primaryColors.value.find(c => c.name === 'blue');
+                if (blueColor) {
+                    applyTheme('primary', blueColor);
                 }
             }
             
@@ -125,9 +133,30 @@ function loadFromLocalStorage() {
                 menuMode.value = settings.menuMode;
                 layoutConfig.menuMode = settings.menuMode;
             }
+        } else {
+            // Si no hay configuración guardada, establecer valores por defecto
+            layoutConfig.primary = 'blue';
+            const blueColor = primaryColors.value.find(c => c.name === 'blue');
+            if (blueColor) {
+                applyTheme('primary', blueColor);
+            }
+            
+            // También puedes establecer otros valores por defecto
+            layoutConfig.surface = 'zinc';
+            const slateColor = surfaces.value.find(s => s.name === 'zinc');
+            if (slateColor) {
+                applyTheme('surface', slateColor);
+            }
         }
     } catch (error) {
         console.error('Error loading theme settings from localStorage:', error);
+        
+        // En caso de error, establecer valores por defecto
+        layoutConfig.primary = 'blue';
+        const blueColor = primaryColors.value.find(c => c.name === 'blue');
+        if (blueColor) {
+            applyTheme('primary', blueColor);
+        }
     }
 }
 

@@ -2,11 +2,15 @@
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppMenuItem from './AppMenuItem.vue';
+import Avatar from 'primevue/avatar';
 
 const page = usePage();
+
+// Acceder a permisos del usuario
 const permissions = computed(() => page.props.auth.user?.permissions ?? []);
 const hasPermission = (perm) => permissions.value.includes(perm);
 
+// Estructura del menú
 const model = computed(() => [
     {
         label: 'Home',
@@ -35,6 +39,19 @@ const model = computed(() => [
 </script>
 
 <template>
+    <!-- Perfil del usuario centrado -->
+    <div class="flex flex-col items-center justify-center text-center p-4">
+        <Avatar 
+            image="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png"
+            size="xlarge"
+            shape="circle"
+            class="mb-3 !w-32 !h-32"
+        />
+        <div class="text-base font-medium">{{ page.props.auth.user.name }}</div>
+        <div class="text-sm font-bold">1234567890</div>
+    </div>
+
+    <!-- Menú lateral -->
     <ul class="layout-menu">
         <template v-for="(item, i) in model" :key="i">
             <app-menu-item :item="item" :index="i" />
@@ -43,5 +60,5 @@ const model = computed(() => [
 </template>
 
 <style scoped lang="scss">
-/* Puedes agregar tus estilos aquí si lo deseas */
+
 </style>
